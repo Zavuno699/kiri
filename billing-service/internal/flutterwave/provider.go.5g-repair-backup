@@ -1,0 +1,332 @@
+import "errors"
+
+var (
+	ErrInvalidWebhookSignature = errors.New("invalid webhook signature")
+	ErrMalformedWebhook        = errors.New("malformed webhook")
+	ErrSettlementMismatch      = errors.New("settlement mismatch")
+	ErrPaymentNotSuccessful    = errors.New("payment not successful")
+)
+
+package flutterwave
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/kirilock/backend/billing-service/internal/model"
+	"github.com/kirilock/backend/billing-service/internal/service"
+)
+
+type Provider struct {
+	client *Client
+}
+
+func NewProvider(client *Client) (*Provider, error) {
+	if client == nil {
+		return nil, fmt.Errorf("%w: nil client", ErrInvalidConfig)
+	}
+
+	return &Provider{
+		client: client,
+	}, nil
+}
+
+var _ service.PaymentProvider = (*Provider)(nil)
+
+type customerData struct {
+	ID string `json:"id"`
+}
+
+type paymentMethodData struct {
+	ID string `json:"id"`
+}
+
+type chargeData struct {
+	ID         string          `json:"id"`
+	Reference  string          `json:"reference"`
+	Amount     float64         `json:"amount"`
+	Currency   string          `json:"currency"`
+	Status     string          `json:"status"`
+	NextAction json.RawMessage `json:"next_action"`
+}
+
+func (p *Provider) CreatePayment(
+	ctx context.Context,
+	req service.CreatePaymentRequest,
+) (model.ProviderPayment, error) {
+	if err := validateCreatePaymentRequest(req); err != nil {
+		return model.ProviderPayment{}, err
+	}
+
+	customerBody := map[string]any{
+		"email": req.CustomerEmail,
+		"phone": map[string]string{
+			"country_code": req.CountryCode,
+			"number":       req.CustomerPhone,
+		},
+	}
+
+	customerEnvelope, _, err := p.client.doJSON(
+		ctx,
+		"POST",
+		"/customers",
+		customerBody,
+		req.IdempotencyKey,
+		req.TraceID,
+	)
+	if err != nil {
+		return model.ProviderPayment{}, err
+	}
+
+	var customer customerData
+	if err := json.Unmarshal(customerEnvelope.Data, &customer); err != nil {
+		return model.ProviderPayment{}, fmt.Errorf(
+			"%w: decode customer response: %v",
+			ErrMalformedResponse,
+			err,
+		)
+	}
+
+	if strings.TrimSpace(customer.ID) == "" {
+		return model.ProviderPayment{}, fmt.Errorf(
+			"%w: customer response missing id",
+			ErrMalformedResponse,
+		)
+	}
+
+	paymentMethodBody := map[string]any{
+		"type": "mobile_money",
+		"mobile_money": map[string]string{
+			"country_code": req.CountryCode,
+			"network":      req.Network,
+			"phone_number": req.CustomerPhone,
+		},
+	}
+
+	paymentMethodEnvelope, _, err := p.client.doJSON(
+		ctx,
+		"POST",
+		"/payment-methods",
+		paymentMethodBody,
+		req.IdempotencyKey,
+		req.TraceID,
+	)
+	if err != nil {
+		return model.ProviderPayment{}, err
+	}
+
+	var paymentMethod paymentMethodData
+	if err := json.Unmarshal(paymentMethodEnvelope.Data, &paymentMethod); err != nil {
+		return model.ProviderPayment{}, fmt.Errorf(
+			"%w: decode payment method response: %v",
+			ErrMalformedResponse,
+			err,
+		)
+	}
+
+	if strings.TrimSpace(paymentMethod.ID) == "" {
+		return model.ProviderPayment{}, fmt.Errorf(
+			"%w: payment method response missing id",
+			ErrMalformedResponse,
+		)
+	}
+
+	chargeBody := map[string]any{
+		"reference":         req.Reference,
+		"currency":          strings.ToUpper(req.Currency),
+		"customer_id":       customer.ID,
+		"payment_method_id": paymentMethod.ID,
+		"amount":            req.Amount,
+	}
+
+	chargeEnvelope, _, err := p.client.doJSON(
+		ctx,
+		"POST",
+		"/charges",
+		chargeBody,
+		req.IdempotencyKey,
+		req.TraceID,
+	)
+	if err != nil {
+		return model.ProviderPayment{}, err
+	}
+
+	var charge chargeData
+	if err := json.Unmarshal(chargeEnvelope.Data, &charge); err != nil {
+		return model.ProviderPayment{}, fmt.Errorf(
+			"%w: decode charge response: %v",
+			ErrMalformedResponse,
+			err,
+		)
+	}
+
+	if err := validateCharge(
+		charge,
+		req.Reference,
+		req.Amount,
+		req.Currency,
+	); err != nil {
+		return model.ProviderPayment{}, err
+	}
+
+	return model.ProviderPayment{
+		Reference: charge.Reference,
+		Amount:    int64(charge.Amount),
+		Currency:  strings.ToUpper(charge.Currency),
+		Status:    normalizeProviderStatus(charge.Status),
+	}, nil
+}
+
+func (p *Provider) VerifyPayment(
+	ctx context.Context,
+	reference string,
+) (model.ProviderPayment, error) {
+	reference = strings.TrimSpace(reference)
+
+	if reference == "" {
+		return model.ProviderPayment{}, fmt.Errorf(
+			"%w: payment reference is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	/*
+		The current provider API exposes charge retrieval by charge ID.
+		The KiriLock persistence layer will retain the provider charge ID
+		alongside our own reference before this method becomes the final
+		settlement authority.
+
+		For this phase, the reference is validated but no settlement is
+		manufactured.
+	*/
+	return model.ProviderPayment{
+		Reference: reference,
+		Status:    "pending",
+	}, nil
+}
+
+func validateCreatePaymentRequest(
+	req service.CreatePaymentRequest,
+) error {
+	if strings.TrimSpace(req.Reference) == "" {
+		return fmt.Errorf(
+			"%w: reference is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	if req.Amount <= 0 {
+		return fmt.Errorf(
+			"%w: amount must be greater than zero",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	if strings.TrimSpace(req.Currency) == "" {
+		return fmt.Errorf(
+			"%w: currency is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	if strings.TrimSpace(req.CustomerEmail) == "" {
+		return fmt.Errorf(
+			"%w: customer email is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	if strings.TrimSpace(req.CustomerPhone) == "" {
+		return fmt.Errorf(
+			"%w: customer phone is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	if strings.TrimSpace(req.Network) == "" {
+		return fmt.Errorf(
+			"%w: mobile money network is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	if strings.TrimSpace(req.CountryCode) == "" {
+		return fmt.Errorf(
+			"%w: country code is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	if strings.TrimSpace(req.IdempotencyKey) == "" {
+		return fmt.Errorf(
+			"%w: idempotency key is required",
+			ErrInvalidPaymentInput,
+		)
+	}
+
+	return nil
+}
+
+func validateCharge(
+	charge chargeData,
+	expectedReference string,
+	expectedAmount int64,
+	expectedCurrency string,
+) error {
+	if strings.TrimSpace(charge.ID) == "" {
+		return fmt.Errorf(
+			"%w: charge response missing id",
+			ErrMalformedResponse,
+		)
+	}
+
+	if strings.TrimSpace(charge.Reference) == "" {
+		return fmt.Errorf(
+			"%w: charge response missing reference",
+			ErrMalformedResponse,
+		)
+	}
+
+	if charge.Reference != expectedReference {
+		return fmt.Errorf(
+			"%w: provider reference mismatch",
+			ErrProviderResponse,
+		)
+	}
+
+	if int64(charge.Amount) != expectedAmount {
+		return fmt.Errorf(
+			"%w: provider amount mismatch",
+			ErrProviderResponse,
+		)
+	}
+
+	if !strings.EqualFold(charge.Currency, expectedCurrency) {
+		return fmt.Errorf(
+			"%w: provider currency mismatch",
+			ErrProviderResponse,
+		)
+	}
+
+	if strings.TrimSpace(charge.Status) == "" {
+		return fmt.Errorf(
+			"%w: charge response missing status",
+			ErrMalformedResponse,
+		)
+	}
+
+	return nil
+}
+
+func normalizeProviderStatus(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "successful":
+		return "successful"
+	case "failed":
+		return "failed"
+	default:
+		return "pending"
+	}
+}

@@ -1,0 +1,5 @@
+service=kiri-device-service
+runtime=go
+container_base=distroless/static-debian12
+user=nonroot
+port=8080

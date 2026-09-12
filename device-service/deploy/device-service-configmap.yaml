@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kiri-device-service-config
+  namespace: kirilock
+data:
+  KIRI_ENV: production
+  DEVICE_SERVICE_HTTP_ADDRESS: "0.0.0.0"
+  DEVICE_SERVICE_HTTP_PORT: "8080"
+  DEVICE_TIMEOUT_MS: "5000"
+  DEVICE_DB_MAX_OPEN_CONNS: "25"
+  DEVICE_DB_MAX_IDLE_CONNS: "10"
+  DEVICE_DB_MAX_LIFETIME_MINUTES: "30"
+  DEVICE_DB_MAX_IDLE_MINUTES: "5"
+  KIRI_SHUTDOWN_TIMEOUT_SECONDS: "30"
+  KIRI_READINESS_REQUIRED: "true"
+  KIRI_STARTUP_DIAGNOSTICS: "true"

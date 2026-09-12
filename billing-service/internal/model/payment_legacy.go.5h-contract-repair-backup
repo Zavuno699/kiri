@@ -1,0 +1,32 @@
+package model
+
+// PaymentRequest is the request accepted by the existing billing service.
+//
+// This is intentionally separate from Payment, which is the persistent
+// financial ledger entity introduced by Phase 5H.
+type PaymentRequest struct {
+	TenantPhone    string `json:"tenant_phone"`
+	AmountUGX      int64  `json:"amount_ugx"`
+	DaysRequested  int    `json:"days_requested"`
+	IdempotencyKey string `json:"idempotency_key"`
+	CurrencyCode   string `json:"currency_code"`
+}
+
+// PaymentStatusAccepted is the existing API/service-level status used when
+// a payment request has been accepted for processing.
+//
+// It is deliberately distinct from PaymentSettled:
+// accepted != financially settled.
+const PaymentStatusAccepted PaymentStatus = "ACCEPTED"
+
+// PaymentResult is the result returned by the existing billing service.
+//
+// Provider settlement must never be inferred from this result alone.
+type PaymentResult struct {
+	Reference      string        `json:"reference"`
+	AmountUGX      int64         `json:"amount_ugx"`
+	DaysGranted    int           `json:"days_granted"`
+	Currency       string        `json:"currency"`
+	Status         PaymentStatus `json:"status"`
+	IdempotencyKey string        `json:"idempotency_key"`
+}

@@ -1,0 +1,118 @@
+name: device-service
+
+on:
+  push:
+    paths:
+      - "device-service/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/device-service.yml"
+  pull_request:
+    paths:
+      - "device-service/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/device-service.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Go version
+        run: go version
+
+      - name: Format check
+        shell: bash
+        run: |
+          files="$(gofmt -l device-service)"
+          if [[ -n "${files}" ]]; then
+            echo "Files requiring gofmt:"
+            echo "${files}"
+            exit 1
+          fi
+
+      - name: Dependency verification
+        run: go mod verify
+
+      - name: Device service compile
+        run: go test ./device-service/...
+
+      - name: Device service vet
+        run: go vet ./device-service/...
+
+      - name: PostgreSQL placeholder scan
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path("device-service/internal/persistence")
+
+          excluded = {
+              "migration_validation.go",
+              "sql_placeholders.go",
+          }
+
+          patterns = [
+              re.compile(r"WHERE\s+[A-Za-z_][A-Za-z0-9_]*\s*=\s*\?"),
+              re.compile(r"VALUES\s*\([^)]*\?[^)]*\)"),
+          ]
+
+          failures = []
+
+          for path in sorted(root.glob("*.go")):
+              if path.name in excluded:
+                  continue
+
+              for number, line in enumerate(
+                  path.read_text().splitlines(),
+                  1,
+              ):
+                  for pattern in patterns:
+                      if pattern.search(line):
+                          failures.append(
+                              f"{path}:{number}: {line.strip()}"
+                          )
+
+          if failures:
+              print("\n".join(failures))
+              raise SystemExit(1)
+
+          print("Executable persistence SQL placeholder scan: OK")
+          PY
+
+      - name: Build executable
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+          go build \
+            -trimpath \
+            -ldflags="-s -w" \
+            -o /tmp/device-service \
+            ./device-service/cmd/device-service
+
+      - name: Verify production artifacts
+        shell: bash
+        run: |
+          test -f device-service/Dockerfile
+          test -f device-service/.dockerignore
+          test -x device-service/container-entrypoint.sh
+          test -f device-service/deploy/kustomization.yaml
+          test -f device-service/deploy/device-service-deployment.yaml
+          test -f device-service/deploy/device-service-service.yaml
+          test -f device-service/deploy/device-service-pdb.yaml
+          test -f device-service/deploy/device-service-hpa.yaml
+          test -f device-service/deploy/device-service-networkpolicy.yaml

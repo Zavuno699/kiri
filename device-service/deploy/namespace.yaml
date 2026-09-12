@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kirilock
+  labels:
+    app.kubernetes.io/part-of: kirilock
+    app.kubernetes.io/component: device-service

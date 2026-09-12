@@ -1,0 +1,27 @@
+{
+  "event_family": "lease.lifecycle",
+  "version": 1,
+  "events": [
+    {
+      "type": "lease.created"
+    },
+    {
+      "type": "lease.status.changed"
+    },
+    {
+      "type": "lease.entitlement.extended"
+    },
+    {
+      "type": "lease.lockout.required"
+    }
+  ],
+  "metadata": {
+    "event_id": "uuid",
+    "event_type": "string",
+    "event_version": "integer",
+    "occurred_at": "RFC3339 timestamp",
+    "correlation_id": "string",
+    "causation_id": "string",
+    "producer": "string"
+  }
+}

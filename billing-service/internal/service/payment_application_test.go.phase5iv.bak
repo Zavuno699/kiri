@@ -1,0 +1,501 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/google/uuid"
+
+	"github.com/kirilock/backend/billing-service/internal/model"
+	"github.com/kirilock/backend/billing-service/internal/repository"
+)
+
+type applicationTestProvider struct {
+	payment model.ProviderPayment
+	err     error
+	request CreatePaymentRequest
+}
+
+func (p *applicationTestProvider) CreatePayment(
+	_ context.Context,
+	request CreatePaymentRequest,
+) (model.ProviderPayment, error) {
+	p.request = request
+
+	if p.err != nil {
+		return model.ProviderPayment{}, p.err
+	}
+
+	return p.payment, nil
+}
+
+func (p *applicationTestProvider) VerifyPayment(
+	_ context.Context,
+	_ string,
+) (model.ProviderPayment, error) {
+	return model.ProviderPayment{}, errors.New("not implemented in test")
+}
+
+func TestBuildPendingPaymentPersistsProviderIdentity(t *testing.T) {
+	tenantID := uuid.New()
+
+	request := CreatePaymentRequest{
+		Reference:      "KIRI-TEST-0001",
+		Amount:         20000,
+		Currency:       "UGX",
+		CustomerEmail:  "tenant@example.com",
+		CustomerPhone:  "+256700000000",
+		Network:        "MTN",
+		CountryCode:    "UG",
+		IdempotencyKey: "abcdefghijkl",
+		TraceID:        "trace-test-001",
+	}
+
+	providerPayment := model.ProviderPayment{
+		ID:        "flw-charge-001",
+		Reference: request.Reference,
+		Amount:    request.Amount,
+		Currency:  request.Currency,
+		Status:    "PENDING",
+	}
+
+	payment, err := BuildPendingPayment(
+		tenantID.String(),
+		request,
+		"FLUTTERWAVE",
+		providerPayment,
+	)
+	if err != nil {
+		t.Fatalf("BuildPendingPayment() error = %v", err)
+	}
+
+	if payment.Provider != "FLUTTERWAVE" {
+		t.Fatalf("provider = %q, want FLUTTERWAVE", payment.Provider)
+	}
+
+	if payment.ProviderChargeID != providerPayment.ID {
+		t.Fatalf(
+			"provider charge ID = %q, want %q",
+			payment.ProviderChargeID,
+			providerPayment.ID,
+		)
+	}
+
+	if payment.Reference != request.Reference {
+		t.Fatalf("reference mismatch")
+	}
+
+	if payment.AmountUGX != request.Amount {
+		t.Fatalf("amount mismatch")
+	}
+
+	if payment.Currency != "UGX" {
+		t.Fatalf("currency = %q, want UGX", payment.Currency)
+	}
+
+	if payment.Status != model.PaymentPending {
+		t.Fatalf(
+			"status = %q, want %q",
+			payment.Status,
+			model.PaymentPending,
+		)
+	}
+
+	if err := payment.Validate(); err != nil {
+		t.Fatalf("payment.Validate() error = %v", err)
+	}
+}
+
+func TestBuildPendingPaymentRejectsProviderIdentityMismatch(t *testing.T) {
+	request := CreatePaymentRequest{
+		Reference:      "KIRI-TEST-0002",
+		Amount:         20000,
+		Currency:       "UGX",
+		IdempotencyKey: "abcdefghijkl",
+		TraceID:        "trace-test-002",
+	}
+
+	_, err := BuildPendingPayment(
+		uuid.New().String(),
+		request,
+		"FLUTTERWAVE",
+		model.ProviderPayment{
+			ID:        "",
+			Reference: request.Reference,
+			Amount:    request.Amount,
+			Currency:  request.Currency,
+			Status:    "PENDING",
+		},
+	)
+
+	if err == nil {
+		t.Fatal("expected missing provider payment ID to be rejected")
+	}
+}
+
+func TestPaymentApplicationPersistsCompletePayment(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New() error = %v", err)
+	}
+	defer db.Close()
+
+	repo := repository.NewPaymentRepository(db)
+
+	provider := &applicationTestProvider{
+		payment: model.ProviderPayment{
+			ID:        "flw-charge-application-001",
+			Reference: "KIRI-APP-0001",
+			Amount:    20000,
+			Currency:  "UGX",
+			Status:    "PENDING",
+		},
+	}
+
+	application, err := NewPaymentApplication(provider, repo)
+	if err != nil {
+		t.Fatalf("NewPaymentApplication() error = %v", err)
+	}
+
+	tenantID := uuid.New()
+
+	request := CreatePaymentRequest{
+		Reference:      "KIRI-APP-0001",
+		Amount:         20000,
+		Currency:       "UGX",
+		CustomerEmail:  "tenant@example.com",
+		CustomerPhone:  "+256700000000",
+		Network:        "MTN",
+		CountryCode:    "UG",
+		IdempotencyKey: "application-test-001",
+		TraceID:        "trace-application-001",
+	}
+
+	mock.ExpectQuery("SELECT.*FROM payments.*WHERE provider = \\$1.*AND idempotency_key = \\$2").
+		WithArgs("FLUTTERWAVE", request.IdempotencyKey).
+		WillReturnError(repository.ErrPaymentNotFound)
+
+	mock.ExpectExec("INSERT INTO payment_idempotency_claims").
+		WithArgs(
+			sqlmock.AnyArg(, sqlmock.AnyArg()),
+			"FLUTTERWAVE",
+			request.IdempotencyKey,
+			sqlmock.AnyArg(),
+			request.Reference,
+			"PROCESSING",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectExec("INSERT INTO payments").
+		WithArgs(
+			sqlmock.AnyArg(),
+			tenantID,
+			request.Reference,
+			"FLUTTERWAVE",
+			provider.payment.ID,
+			request.Amount,
+			"UGX",
+			model.PaymentPending,
+			request.IdempotencyKey,
+			request.TraceID,
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			int64(1),
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectExec("UPDATE payment_idempotency_claims").
+		WithArgs(
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			"FLUTTERWAVE",
+			request.IdempotencyKey,
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	payment, err := application.CreatePendingPayment(
+		context.Background(),
+		tenantID,
+		request,
+	)
+	if err != nil {
+		t.Fatalf("CreatePendingPayment() error = %v", err)
+	}
+
+	if payment.ID == uuid.Nil {
+		t.Fatal("payment ID must be generated")
+	}
+
+	if payment.TenantID != tenantID {
+		t.Fatalf("tenant ID = %s, want %s", payment.TenantID, tenantID)
+	}
+
+	if payment.ProviderChargeID != provider.payment.ID {
+		t.Fatalf(
+			"provider charge ID = %q, want %q",
+			payment.ProviderChargeID,
+			provider.payment.ID,
+		)
+	}
+
+	if payment.CorrelationID != request.TraceID {
+		t.Fatalf(
+			"correlation ID = %q, want %q",
+			payment.CorrelationID,
+			request.TraceID,
+		)
+	}
+
+	if payment.Status != model.PaymentPending {
+		t.Fatalf(
+			"status = %q, want %q",
+			payment.Status,
+			model.PaymentPending,
+		)
+	}
+
+	if payment.Version != 1 {
+		t.Fatalf("version = %d, want 1", payment.Version)
+	}
+
+	if payment.CreatedAt.IsZero() {
+		t.Fatal("created_at must be populated")
+	}
+
+	if payment.UpdatedAt.IsZero() {
+		t.Fatal("updated_at must be populated")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("repository expectations were not met: %v", err)
+	}
+}
+
+func TestPaymentApplicationReplaysSameIdempotencyRequest(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	repo := repository.NewPaymentRepository(db)
+
+	request := CreatePaymentRequest{
+		Reference:      "KIRI-REPLAY-0001",
+		Amount:         20000,
+		Currency:       "UGX",
+		CustomerEmail:  "tenant@example.com",
+		CustomerPhone:  "+256700000000",
+		Network:        "MTN",
+		CountryCode:    "UG",
+		IdempotencyKey: "replay-test-001",
+		TraceID:        "trace-replay-001",
+	}
+
+	hash, err := PaymentRequestHash(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	existing := model.Payment{
+		ID:               uuid.New(),
+		TenantID:         uuid.New(),
+		Reference:        request.Reference,
+		Provider:         "FLUTTERWAVE",
+		ProviderChargeID: "flw-existing-replay-001",
+		AmountUGX:        request.Amount,
+		Currency:         "UGX",
+		Status:           model.PaymentPending,
+		IdempotencyKey:   request.IdempotencyKey,
+		RequestHash:      hash,
+		CorrelationID:    request.TraceID,
+		CreatedAt:        time.Now().UTC(),
+		UpdatedAt:        time.Now().UTC(),
+		Version:          1,
+	}
+
+	mock.ExpectQuery("SELECT.*FROM payments.*WHERE provider = \\$1.*AND idempotency_key = \\$2").
+		WithArgs("FLUTTERWAVE", request.IdempotencyKey).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id",
+			"tenant_id",
+			"reference",
+			"provider",
+			"provider_charge_id",
+			"amount_ugx",
+			"currency",
+			"status",
+			"idempotency_key",
+			"request_hash",
+			"correlation_id",
+			"created_at",
+			"updated_at",
+			"settled_at",
+			"version",
+		}).AddRow(
+			existing.ID,
+			existing.TenantID,
+			existing.Reference,
+			existing.Provider,
+			existing.ProviderChargeID,
+			existing.AmountUGX,
+			existing.Currency,
+			existing.Status,
+			existing.IdempotencyKey,
+			existing.RequestHash,
+			existing.CorrelationID,
+			existing.CreatedAt,
+			existing.UpdatedAt,
+			existing.SettledAt,
+			existing.Version,
+		))
+
+	provider := &applicationTestProvider{
+		payment: model.ProviderPayment{
+			ID:        "should-not-be-called",
+			Reference: request.Reference,
+			Amount:    request.Amount,
+			Currency:  request.Currency,
+			Status:    "PENDING",
+		},
+	}
+
+	application, err := NewPaymentApplication(provider, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	payment, err := application.CreatePendingPayment(
+		context.Background(),
+		existing.TenantID,
+		request,
+	)
+	if err != nil {
+		t.Fatalf("CreatePendingPayment() error = %v", err)
+	}
+
+	if payment.ID != existing.ID {
+		t.Fatalf("expected replayed payment %s, got %s", existing.ID, payment.ID)
+	}
+
+	if provider.request.Reference != "" {
+		t.Fatal("provider must not be called for an idempotent replay")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	repo := repository.NewPaymentRepository(db)
+
+	request := CreatePaymentRequest{
+		Reference:      "KIRI-CONFLICT-0001",
+		Amount:         20000,
+		Currency:       "UGX",
+		CustomerEmail:  "tenant@example.com",
+		CustomerPhone:  "+256700000000",
+		Network:        "MTN",
+		CountryCode:    "UG",
+		IdempotencyKey: "conflict-test-001",
+		TraceID:        "trace-conflict-001",
+	}
+
+	changedRequest := request
+	changedRequest.Amount = 30000
+
+	hash, err := PaymentRequestHash(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tenantID := uuid.New()
+	existing := model.Payment{
+		ID:               uuid.New(),
+		TenantID:         tenantID,
+		Reference:        request.Reference,
+		Provider:         "FLUTTERWAVE",
+		ProviderChargeID: "flw-existing-conflict-001",
+		AmountUGX:        request.Amount,
+		Currency:         "UGX",
+		Status:           model.PaymentPending,
+		IdempotencyKey:   request.IdempotencyKey,
+		RequestHash:      hash,
+		CorrelationID:    request.TraceID,
+		CreatedAt:        time.Now().UTC(),
+		UpdatedAt:        time.Now().UTC(),
+		Version:          1,
+	}
+
+	mock.ExpectQuery("SELECT.*FROM payments.*WHERE provider = \\$1.*AND idempotency_key = \\$2").
+		WithArgs("FLUTTERWAVE", changedRequest.IdempotencyKey).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id",
+			"tenant_id",
+			"reference",
+			"provider",
+			"provider_charge_id",
+			"amount_ugx",
+			"currency",
+			"status",
+			"idempotency_key",
+			"request_hash",
+			"correlation_id",
+			"created_at",
+			"updated_at",
+			"settled_at",
+			"version",
+		}).AddRow(
+			existing.ID,
+			existing.TenantID,
+			existing.Reference,
+			existing.Provider,
+			existing.ProviderChargeID,
+			existing.AmountUGX,
+			existing.Currency,
+			existing.Status,
+			existing.IdempotencyKey,
+			existing.RequestHash,
+			existing.CorrelationID,
+			existing.CreatedAt,
+			existing.UpdatedAt,
+			existing.SettledAt,
+			existing.Version,
+		))
+
+	provider := &applicationTestProvider{}
+
+	application, err := NewPaymentApplication(provider, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = application.CreatePendingPayment(
+		context.Background(),
+		tenantID,
+		changedRequest,
+	)
+	if err == nil {
+		t.Fatal("expected idempotency conflict")
+	}
+
+	if provider.request.Reference != "" {
+		t.Fatal("provider must not be called for an idempotency conflict")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -33,3 +33,16 @@ func NewWithDatabase(db *sql.DB) (*Service, error) {
 		application: application,
 	}, nil
 }
+
+func NewApplicationWithDatabase(db *sql.DB) (*service.LockApplication, error) {
+	if db == nil {
+		return nil, errors.New("database is required")
+	}
+
+	repo, err := repository.NewSQLLockRepository(db)
+	if err != nil {
+		return nil, err
+	}
+
+	return service.NewLockApplication(repo)
+}

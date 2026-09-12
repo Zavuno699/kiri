@@ -7,21 +7,12 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/kirilock/backend/lease-service/internal/model"
-	"github.com/kirilock/backend/lease-service/internal/repository"
 )
 
-type LeaseService struct {
-	repository repository.LeaseRepository
-}
+type LeaseService struct{}
 
 func New() *LeaseService {
 	return &LeaseService{}
-}
-
-func NewWithRepository(repo repository.LeaseRepository) *LeaseService {
-	return &LeaseService{
-		repository: repo,
-	}
 }
 
 func (s *LeaseService) BuildLease(

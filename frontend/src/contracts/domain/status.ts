@@ -1,0 +1,13 @@
+export type GenericStatus =
+  | "active"
+  | "inactive"
+  | "pending"
+  | "processing"
+  | "settled"
+  | "failed"
+  | "expired"
+  | "revoked"
+  | "suspended"
+  | "frozen"
+  | "blocked"
+  | "unknown"

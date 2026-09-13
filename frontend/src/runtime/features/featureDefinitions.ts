@@ -1,0 +1,60 @@
+import type { FeatureDefinition } from "./featureDefinition"
+
+export const featureDefinitions: FeatureDefinition[] = [
+  {
+    id: "dashboard",
+    domain: "dashboard",
+    label: "Operations",
+    route: "/",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "properties",
+    domain: "property",
+    label: "Properties",
+    route: "/properties",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "leases",
+    domain: "lease",
+    label: "Leases",
+    route: "/leases",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "payments",
+    domain: "payment",
+    label: "Payments",
+    route: "/payments",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "devices",
+    domain: "device",
+    label: "Devices",
+    route: "/devices",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "locks",
+    domain: "lock",
+    label: "Locks",
+    route: "/locks",
+    enabled: false,
+    readOnly: true,
+  },
+  {
+    id: "security",
+    domain: "security",
+    label: "Security",
+    route: "/security",
+    enabled: false,
+    readOnly: true,
+  },
+]

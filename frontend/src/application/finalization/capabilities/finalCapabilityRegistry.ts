@@ -1,0 +1,88 @@
+import type { FinalCapability } from "./finalCapability";
+
+export const finalCapabilityRegistry: FinalCapability[] = [
+  {
+    key: "routing",
+    name: "Application routing",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "api",
+    name: "API client and resource layer",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "commands",
+    name: "Command processing",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "queries",
+    name: "Query processing",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "events",
+    name: "Event processing",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "projections",
+    name: "Projection fabric",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "replay",
+    name: "Projection replay and recovery",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "security",
+    name: "Security and authorization",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "audit",
+    name: "Audit and traceability",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+  {
+    key: "realtime",
+    name: "Realtime updates",
+    implemented: true,
+    integrated: true,
+    buildCritical: false,
+  },
+  {
+    key: "observability",
+    name: "Observability",
+    implemented: true,
+    integrated: true,
+    buildCritical: false,
+  },
+  {
+    key: "recovery",
+    name: "Recovery controls",
+    implemented: true,
+    integrated: true,
+    buildCritical: true,
+  },
+];

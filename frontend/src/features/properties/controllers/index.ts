@@ -1,0 +1,3 @@
+export {
+  propertyController,
+} from "./propertyController"

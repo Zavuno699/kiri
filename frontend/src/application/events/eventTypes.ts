@@ -1,0 +1,13 @@
+export type ApplicationEventType =
+  | "property.updated"
+  | "lease.updated"
+  | "payment.settled"
+  | "payment.failed"
+  | "device.connected"
+  | "device.disconnected"
+  | "device.command.completed"
+  | "device.command.failed"
+  | "lock.state.changed"
+  | "security.access.denied"
+  | "security.access.revoked"
+  | "security.freeze.applied"

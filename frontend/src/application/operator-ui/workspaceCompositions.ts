@@ -1,0 +1,70 @@
+import type {
+  OperatorWorkspaceComposition,
+} from "./workspaceComposition"
+
+export const operatorWorkspaceCompositions:
+  OperatorWorkspaceComposition[] = [
+  {
+    domain: "dashboard",
+    listEnabled: true,
+    detailEnabled: true,
+    timelineEnabled: true,
+    relationsEnabled: true,
+    actionsEnabled: true,
+    readOnly: true,
+  },
+  {
+    domain: "property",
+    listEnabled: true,
+    detailEnabled: true,
+    timelineEnabled: true,
+    relationsEnabled: true,
+    actionsEnabled: true,
+    readOnly: true,
+  },
+  {
+    domain: "lease",
+    listEnabled: true,
+    detailEnabled: true,
+    timelineEnabled: true,
+    relationsEnabled: true,
+    actionsEnabled: true,
+    readOnly: true,
+  },
+  {
+    domain: "payment",
+    listEnabled: true,
+    detailEnabled: true,
+    timelineEnabled: true,
+    relationsEnabled: true,
+    actionsEnabled: true,
+    readOnly: true,
+  },
+  {
+    domain: "device",
+    listEnabled: true,
+    detailEnabled: true,
+    timelineEnabled: true,
+    relationsEnabled: true,
+    actionsEnabled: true,
+    readOnly: true,
+  },
+  {
+    domain: "lock",
+    listEnabled: true,
+    detailEnabled: false,
+    timelineEnabled: true,
+    relationsEnabled: true,
+    actionsEnabled: false,
+    readOnly: true,
+  },
+  {
+    domain: "security",
+    listEnabled: true,
+    detailEnabled: false,
+    timelineEnabled: true,
+    relationsEnabled: true,
+    actionsEnabled: false,
+    readOnly: true,
+  },
+]

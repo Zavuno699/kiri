@@ -1,0 +1,81 @@
+import type { OperatorActionDefinition } from "../../application/operator-actions/operatorActionDefinition"
+
+export const runtimeActionDefinitions:
+  OperatorActionDefinition[] = [
+  {
+    id: "dashboard.refresh",
+    domain: "dashboard",
+    label: "Refresh operations",
+    commandType: "dashboard.refresh",
+    destructive: false,
+    confirmationRequired: false,
+    enabled: true,
+  },
+  {
+    id: "property.refresh",
+    domain: "property",
+    label: "Refresh properties",
+    commandType: "property.refresh",
+    destructive: false,
+    confirmationRequired: false,
+    enabled: true,
+  },
+  {
+    id: "lease.refresh",
+    domain: "lease",
+    label: "Refresh leases",
+    commandType: "lease.refresh",
+    destructive: false,
+    confirmationRequired: false,
+    enabled: true,
+  },
+  {
+    id: "payment.refresh",
+    domain: "payment",
+    label: "Refresh payments",
+    commandType: "payment.refresh",
+    destructive: false,
+    confirmationRequired: false,
+    enabled: true,
+  },
+  {
+    id: "device.register",
+    domain: "device",
+    label: "Register device",
+    commandType: "device.register",
+    destructive: false,
+    confirmationRequired: true,
+    enabled: true,
+  },
+  {
+    id: "device.command",
+    domain: "device",
+    label: "Send device command",
+    commandType: "device.command",
+    destructive: true,
+    confirmationRequired: true,
+    enabled: true,
+  },
+  {
+    id: "lock.command",
+    domain: "lock",
+    label: "Lock command",
+    commandType: "lock.command",
+    destructive: true,
+    confirmationRequired: true,
+    enabled: false,
+    reason:
+      "Production lock command ingress is not verified.",
+  },
+  {
+    id: "security.command",
+    domain: "security",
+    label: "Security command",
+    commandType: "security.command",
+    destructive: true,
+    confirmationRequired: true,
+    enabled: false,
+    reason:
+      "Production security command ingress is not verified.",
+  },
+]

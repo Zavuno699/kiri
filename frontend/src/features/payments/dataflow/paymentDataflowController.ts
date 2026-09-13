@@ -1,0 +1,19 @@
+export interface PaymentDataflowController {
+  start(): void
+  stop(): void
+}
+
+export function createPaymentDataflowController():
+  PaymentDataflowController {
+  let running = false
+
+  return {
+    start() {
+      running = true
+    },
+
+    stop() {
+      running = false
+    },
+  }
+}

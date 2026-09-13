@@ -1,0 +1,6 @@
+export * from "./propertyRecordCompatibility"
+export * from "./leaseRecordCompatibility"
+export * from "./paymentRecordCompatibility"
+export * from "./deviceRecordCompatibility"
+export * from "./lockRecordCompatibility"
+export * from "./securityRecordCompatibility"

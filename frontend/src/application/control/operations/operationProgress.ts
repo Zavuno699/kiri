@@ -1,0 +1,8 @@
+export function normalizeOperationProgress(
+  value: number,
+): number {
+  return Math.max(
+    0,
+    Math.min(100, value),
+  )
+}

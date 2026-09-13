@@ -1,0 +1,10 @@
+export type DataflowState =
+  | "idle"
+  | "receiving"
+  | "processing"
+  | "projecting"
+  | "synchronizing"
+  | "reconciling"
+  | "complete"
+  | "blocked"
+  | "failed"

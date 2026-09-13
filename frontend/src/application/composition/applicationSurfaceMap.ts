@@ -1,0 +1,60 @@
+import type { ApplicationSurface } from "./applicationSurface"
+
+export const applicationSurfaceMap: ApplicationSurface[] = [
+  {
+    id: "dashboard",
+    label: "Operations",
+    domain: "dashboard",
+    route: "/",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "properties",
+    label: "Properties",
+    domain: "property",
+    route: "/properties",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "leases",
+    label: "Leases",
+    domain: "lease",
+    route: "/leases",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "payments",
+    label: "Payments",
+    domain: "payment",
+    route: "/payments",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "devices",
+    label: "Devices",
+    domain: "device",
+    route: "/devices",
+    enabled: true,
+    readOnly: true,
+  },
+  {
+    id: "locks",
+    label: "Locks",
+    domain: "lock",
+    route: "/locks",
+    enabled: false,
+    readOnly: true,
+  },
+  {
+    id: "security",
+    label: "Security",
+    domain: "security",
+    route: "/security",
+    enabled: false,
+    readOnly: true,
+  },
+]

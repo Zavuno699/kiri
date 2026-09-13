@@ -1,30 +1,109 @@
-# Binaries
-/bin/
-/dist/
-/build/
+# ==============================================================================
+# 🏗️ Build & Distribution Artifacts
+# ==============================================================================
+bin/
+dist/
+build/
+/out/
+/release/
+# Ignore hidden phase backup folders completely
+**/.*-backup-*
+**/.*-repair-*
+**/.*-syntax-*
+**/.*-casing-*
+**/.*-root-*
+**/.*-retry-*
 
-# Go
+# Ignore phase build logs
+**/*.log
+
+# Frontend builds
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.next/
+frontend/.nuxt/
+frontend/out/
+
+# ==============================================================================
+# 🐹 Go Ecosystem
+# ==============================================================================
+# Executables & Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+kirilock         # If your compiled Go binary matches your project name, add it here
+
+# Testing and Coverage
 *.test
 *.out
 coverage.out
 coverage.html
 
-# Environment
+# ==============================================================================
+# 🟦 TypeScript & Frontend Ecosystem
+# ==============================================================================
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Test coverage
+frontend/coverage/
+
+# Frontend caches & logs
+.eslintcache
+.stylelintcache
+.turbo/
+package-lock.json.log
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+npm-debug.log*
+
+# ==============================================================================
+# 🔒 Environment Secrets & Local Configurations (CRITICAL)
+# ==============================================================================
 .env
 .env.*
 !.env.example
+*.local
+.secrets/
+*.pem
+*.key
+*.pub
 
-# IDE
+# ==============================================================================
+# ⚙️ Application Specific / Phase Caches
+# ==============================================================================
+# Ignores phase backups so you don't push massive archive files to GitHub
+.phase-*-backup-*
+*.backup
+
+# ==============================================================================
+# 💻 IDEs, Editors & System Files
+# ==============================================================================
+# IDEs
 .idea/
 .vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Logs
-*.log
-
-# Temporary files
+# ==============================================================================
+# 🧹 Temporary Files & Logs
+# ==============================================================================
 tmp/
 .tmp/
+*.log

@@ -1,0 +1,17 @@
+export const CANONICAL_ROUTE_LIST = [
+  "/",
+  "/properties",
+  "/leases",
+  "/payments",
+  "/devices",
+  "/locks",
+  "/security",
+  "/security/audit",
+  "/security/control",
+  "/rbac",
+  "/operator-control",
+  "/operator-control/global",
+  "/health",
+  "/integrity",
+  "/runtime",
+] as const;

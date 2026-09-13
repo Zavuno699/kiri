@@ -1,0 +1,3 @@
+export {
+  loadLocks,
+} from "./lockController"

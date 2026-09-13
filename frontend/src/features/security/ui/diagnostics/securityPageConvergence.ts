@@ -1,0 +1,31 @@
+import {
+  getSecurityPageState,
+} from "../state/securityPageState";
+
+export function getSecurityPageConvergence() {
+  const state =
+    getSecurityPageState();
+
+  return {
+    domain:
+      "security",
+
+    runtimeReady:
+      state.runtime?.status ===
+      "ready",
+
+    hasData:
+      state.data?.data !==
+      null &&
+      state.data?.data !==
+      undefined,
+
+    stale:
+      state.data?.stale ??
+      false,
+
+    error:
+      state.runtime?.error ??
+      null,
+  };
+}

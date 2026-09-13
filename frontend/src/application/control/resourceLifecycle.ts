@@ -1,0 +1,11 @@
+export type ResourceLifecycle =
+  | "idle"
+  | "initializing"
+  | "loading"
+  | "ready"
+  | "refreshing"
+  | "stale"
+  | "invalid"
+  | "degraded"
+  | "failed"
+  | "disposed"

@@ -4,11 +4,14 @@ export interface RBACPolicy {
   allows(capability?: string): boolean
 }
 
-export function runtimeRBACPolicy(capability?: string): RBACPolicy {
+export function runtimeRBACPolicy(
+  capability?: string,
+): RBACPolicy {
   return {
     allows(required = capability) {
-      if (!required) return false
-      return evaluateRuntimePolicy(required).allowed
+      return required
+        ? evaluateRuntimePolicy(required).allowed
+        : false
     },
   }
 }

@@ -7,7 +7,7 @@ export function getAuditEvents(): AuditEvent[] {
 }
 
 export function listAuditEvents(): AuditEvent[] {
-  return getAuditEvents()
+  return [...events]
 }
 
 export function recordAuditEvent(event: AuditEvent): AuditEvent {

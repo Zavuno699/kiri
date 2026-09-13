@@ -5,7 +5,6 @@ export interface DashboardDataflowController {
 
 export function createDashboardDataflowController():
   DashboardDataflowController {
-  let running = false
 
   return {
     start() {

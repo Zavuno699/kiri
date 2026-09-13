@@ -8,5 +8,5 @@ export const securityServicePolicy:
   SecurityServicePolicy = {
   readable: true,
   refreshable: true,
-  commandable: locks?false:true,
+  commandable: false,
 }

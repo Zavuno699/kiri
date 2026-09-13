@@ -3,6 +3,6 @@ import { runtimeRBACAllows } from "../../rbac/runtime/rbacRuntimeBridge"
 export function actionAllowed(
   capability = "",
 ): boolean {
-  if (!capability) return false
-  return runtimeRBACAllows(capability)
+  return capability.length > 0 &&
+    runtimeRBACAllows(capability)
 }

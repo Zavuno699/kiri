@@ -8,5 +8,5 @@ export const securityResourcePolicy:
   SecurityResourcePolicy = {
   cacheable: true,
   refreshable: true,
-  commandable: locks?false:true,
+  commandable: false,
 }

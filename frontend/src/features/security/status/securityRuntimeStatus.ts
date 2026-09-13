@@ -5,6 +5,6 @@ export interface SecurityRuntimeStatus {
 }
 
 export const securityRuntimeStatus: SecurityRuntimeStatus = {
-  available: locks?false:true,
-  degraded: locks?true:false,
+  available: false,
+  degraded: true,
 }

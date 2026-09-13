@@ -6,6 +6,8 @@ export type PropertyStatus =
   | "unknown"
 
 export interface PropertyRecord {
+  occupancy?: "occupied" | "available" | "unknown"
+  availableUnits?: number
   id: string
   name: string
   address: string

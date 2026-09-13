@@ -1,109 +1,193 @@
-# ==============================================================================
-# 🏗️ Build & Distribution Artifacts
-# ==============================================================================
-bin/
-dist/
-build/
-/out/
-/release/
-# Ignore hidden phase backup folders completely
-**/.*-backup-*
-**/.*-repair-*
-**/.*-syntax-*
-**/.*-casing-*
-**/.*-root-*
-**/.*-retry-*
+# ============================================================
+# KiriLock monorepo Git ignore
+# Keep application source, configuration, lockfiles, tests,
+# migrations, scripts, and documentation tracked.
+# ============================================================
 
-# Ignore phase build logs
-**/*.log
+# ------------------------------------------------------------
+# Node / npm
+# ------------------------------------------------------------
 
-# Frontend builds
-frontend/dist/
-frontend/build/
-frontend/.vite/
-frontend/.next/
-frontend/.nuxt/
-frontend/out/
-
-# ==============================================================================
-# 🐹 Go Ecosystem
-# ==============================================================================
-# Executables & Binaries
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-kirilock         # If your compiled Go binary matches your project name, add it here
-
-# Testing and Coverage
-*.test
-*.out
-coverage.out
-coverage.html
-
-# ==============================================================================
-# 🟦 TypeScript & Frontend Ecosystem
-# ==============================================================================
-# Dependencies
 node_modules/
-frontend/node_modules/
-
-# Test coverage
-frontend/coverage/
-
-# Frontend caches & logs
-.eslintcache
-.stylelintcache
-.turbo/
-package-lock.json.log
-pnpm-debug.log*
+.npm/
+.npmrc.local
+npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-npm-debug.log*
+pnpm-debug.log*
 
-# ==============================================================================
-# 🔒 Environment Secrets & Local Configurations (CRITICAL)
-# ==============================================================================
+# ------------------------------------------------------------
+# Build output
+# ------------------------------------------------------------
+
+dist/
+build/
+.vite/
+.parcel-cache/
+.turbo/
+.cache/
+.tmp/
+temp/
+*.tsbuildinfo
+
+# ------------------------------------------------------------
+# Test / coverage output
+# ------------------------------------------------------------
+
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+
+# Playwright local browser cache/artifacts
+playwright/.cache/
+
+# ------------------------------------------------------------
+# Environment / secrets
+# ------------------------------------------------------------
+
 .env
 .env.*
 !.env.example
-*.local
-.secrets/
+!.env.sample
+!.env.template
+
+# Local credentials / tokens
 *.pem
 *.key
-*.pub
+*.p12
+*.pfx
+*.crt
+*.cer
+credentials.json
+secrets.json
 
-# ==============================================================================
-# ⚙️ Application Specific / Phase Caches
-# ==============================================================================
-# Ignores phase backups so you don't push massive archive files to GitHub
-.phase-*-backup-*
-*.backup
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
 
-# ==============================================================================
-# 💻 IDEs, Editors & System Files
-# ==============================================================================
-# IDEs
-.idea/
-.vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.swp
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# ==============================================================================
-# 🧹 Temporary Files & Logs
-# ==============================================================================
-tmp/
-.tmp/
 *.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------------------------
+# KiriLock generated phase backups
+# These are recovery copies, not source.
+# ------------------------------------------------------------
+
+frontend/.phase-*-backup-*/
+frontend/.phase-*-build-*.log
+
+# Any phase artifacts accidentally created at repo root
+.phase-*-backup-*/
+.phase-*-build-*.log
+
+# ------------------------------------------------------------
+# Temporary patch / scratch files
+# ------------------------------------------------------------
+
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+
+# Python / shell temporary artifacts
+__pycache__/
+*.pyc
+
+# ------------------------------------------------------------
+# IDE / editor
+# ------------------------------------------------------------
+
+.vscode/
+.idea/
+*.iml
+
+# Keep shared editor configuration when explicitly committed.
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# ------------------------------------------------------------
+# Operating system
+# ------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ------------------------------------------------------------
+# Frontend tool caches
+# ------------------------------------------------------------
+
+.eslintcache
+.stylelintcache
+.tscache
+
+# ------------------------------------------------------------
+# Local development databases / browser state
+# ------------------------------------------------------------
+
+*.sqlite
+*.sqlite3
+*.db
+.playwright/
+.browser/
+.browser-data/
+
+# ------------------------------------------------------------
+# Generated screenshots / recordings
+# ------------------------------------------------------------
+
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.webm
+
+# NOTE:
+# Visual assets that are intentionally part of the product should
+# be force-added or placed under a dedicated tracked assets policy.
+# Do NOT put source assets under ignored build/test directories.
+
+# ------------------------------------------------------------
+# OS-specific local files
+# ------------------------------------------------------------
+
+.DS_Store?
+ehthumbs.db
+
+# ------------------------------------------------------------
+# Temporary frontend exports
+# ------------------------------------------------------------
+
+frontend/export/
+frontend/tmp/
+frontend/.tmp/
+
+# ------------------------------------------------------------
+# Local generated reports
+# ------------------------------------------------------------
+
+reports/
+artifacts/
+.local/
+
+# ------------------------------------------------------------
+# Local KiriLock recovery snapshots
+# ------------------------------------------------------------
+
+.gitignore.backup-*
+frontend/.phase-*
+.phase-*

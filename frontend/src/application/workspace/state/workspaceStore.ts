@@ -16,10 +16,6 @@ export function updateWorkspaceState(
     ...state,
     ...patch,
   }
-  return getWorkspaceState()
-}
 
-export function resetWorkspaceState(): WorkspaceState {
-  state = { ...initialWorkspaceState }
   return getWorkspaceState()
 }

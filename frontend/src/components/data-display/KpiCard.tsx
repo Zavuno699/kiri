@@ -3,7 +3,7 @@ interface KpiCardProps {
   label: string
   value: string
   footnote: string
-  accent?: "blue" | "green" | "amber" | "red"
+  accent?: "blue" | "green" | "amber" | "red" | "purple"
 }
 
 const accents = {

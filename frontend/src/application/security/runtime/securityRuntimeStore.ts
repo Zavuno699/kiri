@@ -16,7 +16,11 @@ const initialState: SecurityRuntimeState = {
   frozen: false,
 }
 
-let state: SecurityRuntimeState = structuredClone(initialState)
+let state: SecurityRuntimeState = {
+  ...initialState,
+  identity: { ...initialState.identity },
+  session: { ...initialState.session },
+}
 
 export function getSecurityRuntimeState(): SecurityRuntimeState {
   return {
@@ -28,24 +32,30 @@ export function getSecurityRuntimeState(): SecurityRuntimeState {
 }
 
 export function setSecurityRuntimeState(
-  next: Partial<SecurityRuntimeState>,
+  patch: Partial<SecurityRuntimeState>,
 ): SecurityRuntimeState {
   state = {
     ...state,
-    ...next,
+    ...patch,
     identity: {
       ...state.identity,
-      ...(next.identity ?? {}),
+      ...(patch.identity ?? {}),
     },
     session: {
       ...state.session,
-      ...(next.session ?? {}),
+      ...(patch.session ?? {}),
     },
   }
+
   return getSecurityRuntimeState()
 }
 
 export function resetSecurityRuntimeState(): SecurityRuntimeState {
-  state = structuredClone(initialState)
+  state = {
+    ...initialState,
+    identity: { ...initialState.identity },
+    session: { ...initialState.session },
+  }
+
   return getSecurityRuntimeState()
 }

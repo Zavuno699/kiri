@@ -5,7 +5,6 @@ export interface SecurityDataflowController {
 
 export function createSecurityDataflowController():
   SecurityDataflowController {
-  let running = false
 
   return {
     start() {

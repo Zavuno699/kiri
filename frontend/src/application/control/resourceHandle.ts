@@ -3,5 +3,10 @@ export interface ResourceHandle<T = unknown> {
   version: number
   value?: T
   active: boolean
-  lifecycle: "idle" | "loading" | "ready" | "failed" | "disposed"
+  lifecycle:
+    | "idle"
+    | "loading"
+    | "ready"
+    | "failed"
+    | "disposed"
 }

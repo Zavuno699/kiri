@@ -5,7 +5,6 @@ export interface LockDataflowController {
 
 export function createLockDataflowController():
   LockDataflowController {
-  let running = false
 
   return {
     start() {

@@ -5,7 +5,6 @@ export interface PaymentDataflowController {
 
 export function createPaymentDataflowController():
   PaymentDataflowController {
-  let running = false
 
   return {
     start() {

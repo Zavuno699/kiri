@@ -7,5 +7,7 @@ export interface PageAction {
 export function getVisiblePageActions(
   actions: PageAction[] = [],
 ): PageAction[] {
-  return actions.filter((action) => action.enabled !== false)
+  return actions.filter(
+    (action) => action.enabled !== false,
+  )
 }

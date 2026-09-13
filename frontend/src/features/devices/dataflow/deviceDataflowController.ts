@@ -5,7 +5,6 @@ export interface DeviceDataflowController {
 
 export function createDeviceDataflowController():
   DeviceDataflowController {
-  let running = false
 
   return {
     start() {

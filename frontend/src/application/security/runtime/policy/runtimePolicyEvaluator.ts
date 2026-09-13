@@ -25,7 +25,10 @@ export function evaluateRuntimePolicy(
     }
   }
 
-  if (state.session.requiresAuthentication && !state.identity.authenticated) {
+  if (
+    state.session.requiresAuthentication &&
+    !state.identity.authenticated
+  ) {
     return {
       allowed: false,
       reason: "authentication-required",
@@ -49,15 +52,11 @@ export function evaluateRuntimePolicy(
     }
   }
 
-  if (state.permissions === null) {
-    return {
-      allowed: false,
-      reason: "permissions-unavailable",
-      capability,
-    }
-  }
-
-  if (!state.permissions.includes(capability) && !state.permissions.includes("*")) {
+  if (
+    state.permissions === null ||
+    (!state.permissions.includes("*") &&
+      !state.permissions.includes(capability))
+  ) {
     return {
       allowed: false,
       reason: `capability-denied:${capability}`,

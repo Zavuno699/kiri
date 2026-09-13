@@ -10,15 +10,10 @@ export const resourceCache = {
     return cache.get(key) as ResourceCacheEntry<T> | undefined
   },
 
-  set<T>(key: string, entry: ResourceCacheEntry<T>): void {
+  set<T>(
+    key: string,
+    entry: ResourceCacheEntry<T>,
+  ): void {
     cache.set(key, entry as ResourceCacheEntry<unknown>)
-  },
-
-  remove(key: string): void {
-    cache.delete(key)
-  },
-
-  clear(): void {
-    cache.clear()
   },
 }

@@ -2,6 +2,7 @@ import { getSecurityRuntimeState } from "./securityRuntimeStore"
 
 export function isSecurityRuntimeReady(): boolean {
   const state = getSecurityRuntimeState()
+
   return (
     state.authorizationReady &&
     state.identity.authenticated &&

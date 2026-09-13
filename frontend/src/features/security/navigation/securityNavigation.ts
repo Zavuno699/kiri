@@ -7,5 +7,5 @@ export interface SecurityNavigation {
 export const securityNavigation: SecurityNavigation = {
   label: "Security",
   path: "/security",
-  enabled: locks?false:true,
+  enabled: false,
 }

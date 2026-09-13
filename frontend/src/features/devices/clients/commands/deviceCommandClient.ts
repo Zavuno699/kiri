@@ -1,32 +1,15 @@
-import type { ResourceClient } from "../../../application/resources/clients/resourceClient"
+import { applicationClient } from "../../../../application/clients/applicationClient"
 
-export interface DeviceCommandClient {
-  send(
-    payload: unknown,
-  ): Promise<unknown>
+export interface DeviceCommand {
+  type: string
+  payload?: unknown
 }
 
-export function createDeviceCommandClient(
-  client: ResourceClient,
-): DeviceCommandClient {
-  return {
-    async send(payload) {
-      const response =
-        await client.execute({
-          key: "device:command",
-          domain: "device",
-          path: "/api/v1/command",
-          method: "POST",
-          body: payload,
-        })
-
-      if (!response.ok) {
-        throw new Error(
-          "Device command request failed.",
-        )
-      }
-
-      return response.data
-    },
-  }
+export async function sendDeviceCommand(
+  command: DeviceCommand,
+): Promise<unknown> {
+  return applicationClient.post(
+    "/api/v1/devices/command",
+    command,
+  )
 }

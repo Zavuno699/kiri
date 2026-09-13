@@ -33,14 +33,10 @@ export async function loadDomainPage<T>(
 
     return data
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-
-    setPageData({
-      pageId,
-      data: null,
-      loading: false,
-      error: message,
-    })
+    const message =
+      error instanceof Error
+        ? error.message
+        : String(error)
 
     setPageRuntimeState({
       pageId,

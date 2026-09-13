@@ -13,14 +13,12 @@ export interface WorkspaceDiagnostics {
 
 export function getWorkspaceDiagnostics(): WorkspaceDiagnostics {
   const state = getWorkspaceState()
-  const domains = listWorkspaceDomains()
-  const queue = listWorkspaceQueueItems()
 
   return {
     state,
     activeDomain: state.selectedDomain,
-    domainCount: domains.length,
-    queueCount: queue.length,
+    domainCount: listWorkspaceDomains().length,
+    queueCount: listWorkspaceQueueItems().length,
     searchResultCount: 0,
     operational: state.workspaceStatus !== "failed",
   }

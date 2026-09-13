@@ -1,7 +1,7 @@
 export interface OperationRecord {
   id: string
   type: string
-  status: "pending" | "running" | "completed" | "failed" | "cancelled"
+  status: string
   createdAt: string
   updatedAt: string
   correlationId?: string

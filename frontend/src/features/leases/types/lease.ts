@@ -14,6 +14,8 @@ export interface LeaseRecord {
   entitlementUntil: string
   graceUntil: string
   complianceUntil: string
+  startDate: string
+  endDate: string
   version: number
   updatedAt: string
 }

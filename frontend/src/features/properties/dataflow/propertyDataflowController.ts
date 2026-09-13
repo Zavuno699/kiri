@@ -5,7 +5,6 @@ export interface PropertyDataflowController {
 
 export function createPropertyDataflowController():
   PropertyDataflowController {
-  let running = false
 
   return {
     start() {

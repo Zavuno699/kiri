@@ -8,11 +8,17 @@ let state: DegradedModeState = {
   reason: null,
 }
 
-export function getDegradedModeState(): DegradedModeState {
+export function getDegradedModeState() {
   return { ...state }
 }
 
-export function setDegradedModeState(next: Partial<DegradedModeState>) {
-  state = { ...state, ...next }
+export function setDegradedModeState(
+  patch: Partial<DegradedModeState>,
+) {
+  state = {
+    ...state,
+    ...patch,
+  }
+
   return getDegradedModeState()
 }

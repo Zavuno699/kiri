@@ -1,5 +1,3 @@
-export {};
-
 export * from './workspace/dashboardWorkspaceModel'
 
 export * from './commands/dashboardCommandTypes'

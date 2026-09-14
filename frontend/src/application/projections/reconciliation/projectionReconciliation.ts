@@ -52,6 +52,6 @@ export function reconcileProjection(
     versionDelta,
     ageMs,
     requiresRefresh:
-      materializedMissing || versionDelta > 0 || versionDelta < 0,
+      materializedMissing || versionDelta !== 0,
   };
 }

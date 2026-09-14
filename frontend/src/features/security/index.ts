@@ -1,5 +1,3 @@
-export {};
-
 export * from "./domain"
 
 export * from './workspace/securityWorkspaceModel'

@@ -1,4 +1,4 @@
-import type { ResourceHandle } from "../../../application/control/resourceHandle"
+import type { ResourceHandle } from "../../../../application/control/resourceHandle"
 
 export type SecurityResource =
   ResourceHandle<unknown>
@@ -12,5 +12,6 @@ export function createSecurityResource(
       : "security:list",
     lifecycle: "idle",
     version: 0,
+    active: false,
   }
 }

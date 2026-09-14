@@ -22,8 +22,13 @@ export function createPaymentsViewModel() {
       null,
 
     status:
-      state.runtime?.status ??
-      "idle",
+      state.runtime?.ready
+        ? "ready"
+        : state.runtime?.loading
+          ? "loading"
+          : state.runtime?.error
+            ? "error"
+            : "idle",
 
     error:
       state.runtime?.error ??

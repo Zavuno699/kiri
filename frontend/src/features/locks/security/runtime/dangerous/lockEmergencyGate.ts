@@ -1,12 +1,12 @@
-import { getSecurityRuntimeState } from "../../../../application/security/runtime/securityRuntimeStore";
+import { getSecurityRuntimeState } from "../../../../../application/security/runtime/securityRuntimeStore";
 
 export function lockEmergencyOperationAllowed(): boolean {
   const state = getSecurityRuntimeState();
 
-  return (
+  return Boolean(
     state.identity.authenticated &&
-    Boolean(state.session.session) &&
-    Boolean(state.permissions?.granted.includes("locks.command")) &&
+    state.session.session &&
+    state.permissions?.includes("locks.command") &&
     !state.frozen
   );
 }

@@ -61,6 +61,8 @@ const transitions = [
     domain:
       "properties",
     name:
+      "resume",
+    label:
       "Resume property",
     description:
       "Return a suspended property to active state.",

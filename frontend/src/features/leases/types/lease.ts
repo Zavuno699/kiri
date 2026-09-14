@@ -3,6 +3,10 @@ export type LeaseStatus =
   | "grace_period"
   | "locked"
   | "unknown"
+  | "pending"
+  | "expired"
+  | "delinquent"
+  | "frozen"
 
 export interface LeaseRecord {
   id: string

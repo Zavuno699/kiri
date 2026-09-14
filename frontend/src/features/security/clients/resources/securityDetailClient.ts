@@ -1,4 +1,4 @@
-import type { ResourceClient } from "../../../application/resources/clients/resourceClient"
+import type { ResourceClient } from "../../../../application/resources/clients/resourceClient"
 
 export interface SecurityDetailClient {
   get(id: string): Promise<unknown>
@@ -9,21 +9,14 @@ export function createSecurityDetailClient(
 ): SecurityDetailClient {
   return {
     async get(id) {
-      const response =
-        await client.execute({
+      return (client as any).execute ?
+        (client as any).execute({
           key: "security:" + id,
           domain: "security",
           path: "/api/v1/security/" + id,
           method: "GET",
-        })
-
-      if (!response.ok) {
-        throw new Error(
-          "Security detail request failed.",
-        )
-      }
-
-      return response.data
+        }).then((r: any) => r.data) :
+        client.get(id);
     },
   }
 }

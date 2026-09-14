@@ -22,8 +22,18 @@ export function adaptLease(
           input.tenant_id ??
           "",
       ),
+    propertyName:
+      String(input.propertyName ?? ""),
     status:
       normalizeStatus(input.status) as LeaseRecord["status"],
+    entitlementFrom:
+      String(input.entitlementFrom ?? ""),
+    entitlementUntil:
+      String(input.entitlementUntil ?? ""),
+    graceUntil:
+      String(input.graceUntil ?? ""),
+    complianceUntil:
+      String(input.complianceUntil ?? ""),
     startDate:
       String(
         input.startDate ??
@@ -39,6 +49,8 @@ export function adaptLease(
     version:
       typeof input.version === "number"
         ? input.version
-        : undefined,
+        : 0,
+    updatedAt:
+      String(input.updatedAt ?? ""),
   }
 }

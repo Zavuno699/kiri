@@ -9,3 +9,7 @@ export const dashboardRuntime: DashboardRuntime = {
   started: false,
   readOnly: true,
 }
+
+export function markDashboardReady(): void {
+  dashboardRuntime.started = true;
+}

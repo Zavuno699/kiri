@@ -1,19 +1,18 @@
 import {
   getDegradedModeState,
-} from "../../../application/degradedMode/state/degradedModeStore";
+} from "../../../../application/degradedMode/state/degradedModeStore";
 
 export function devicesReadsAvailable(): boolean {
-  return getDegradedModeState().mode !== "critical";
+  const state = getDegradedModeState();
+  return !state.active;
 }
 
 export function devicesWritesAvailable(): boolean {
-  const mode =
-    getDegradedModeState().mode;
-
-  return mode === "normal" ||
-    mode === "limited";
+  const state = getDegradedModeState();
+  return !state.active;
 }
 
 export function devicesCommandsAvailable(): boolean {
-  return getDegradedModeState().mode === "normal";
+  const state = getDegradedModeState();
+  return !state.active;
 }

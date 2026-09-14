@@ -21,8 +21,8 @@ export function recordAuthenticationAudit(input: {
       action: input.action,
       outcome: input.outcome,
       principal: input.principal,
-      sessionId: input.sessionId,
-      reason: input.reason ?? null,
+      sessionId: input.sessionId ?? undefined,
+      reason: input.reason ?? undefined,
     }),
   );
 }

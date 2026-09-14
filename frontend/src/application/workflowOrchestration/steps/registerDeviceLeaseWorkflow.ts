@@ -3,30 +3,16 @@ import type {
 } from "../contracts/workflowDefinition";
 
 export const deviceLeaseWorkflow: WorkflowDefinition = {
-  key: "lease-device-authorization",
+  id: "lease-device-authorization",
   name: "Lease device authorization",
+  label: "Device Authorization",
+  description: "Authorize device access for lease",
   domains: [
     "leases",
     "devices",
   ],
-  steps: [
-    {
-      key: "lease-authorized",
-      domain: "leases",
-      required: true,
-      reversible: true,
-    },
-    {
-      key: "device-entitlement-projected",
-      domain: "devices",
-      required: true,
-      reversible: true,
-    },
-    {
-      key: "device-command-authorized",
-      domain: "devices",
-      required: true,
-      reversible: true,
-    },
-  ],
+  risk: "medium",
+  transactional: true,
+  requiresPolicyApproval: true,
+  enabled: true,
 };

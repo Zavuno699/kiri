@@ -27,7 +27,7 @@ import {
 } from "../../operatorActions/state/actionStore";
 
 import {
-  securityRuntimeReady,
+  getSecurityRuntimeReadiness,
 } from "../../security/runtime/runtimeReadiness";
 
 export interface OperatorReadinessDecision {
@@ -67,7 +67,7 @@ export function evaluateOperatorReadiness(): OperatorReadinessDecision {
     reasons.push("rbac-not-ready");
   }
 
-  if (!securityRuntimeReady()) {
+  if (!getSecurityRuntimeReadiness().authorizationReady) {
     reasons.push("security-runtime-not-ready");
   }
 
@@ -87,7 +87,7 @@ export function evaluateOperatorReadiness(): OperatorReadinessDecision {
     reasons.push("action-plane-not-ready");
   }
 
-  if (degraded.mode === "critical") {
+  if (degraded.active) {
     reasons.push("critical-degraded-mode");
   }
 

@@ -5,7 +5,7 @@ import type {
 export function assessActionRisk(
   action: string,
   domain: string,
-  confirmed: boolean,
+  _confirmed: boolean,
 ): RiskAssessment {
   const factors: string[] = [];
 

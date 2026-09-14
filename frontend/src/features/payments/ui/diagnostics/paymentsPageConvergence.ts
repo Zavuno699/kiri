@@ -11,8 +11,8 @@ export function getPaymentsPageConvergence() {
       "payments",
 
     runtimeReady:
-      state.runtime?.status ===
-      "ready",
+      state.runtime?.ready ??
+      false,
 
     hasData:
       state.data?.data !==
@@ -21,7 +21,7 @@ export function getPaymentsPageConvergence() {
       undefined,
 
     stale:
-      state.data?.stale ??
+      state.data?.loading ??
       false,
 
     error:

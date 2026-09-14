@@ -24,8 +24,8 @@ export function createLiveResourceStore():
     new Map<string, LiveResourceState>()
 
   return {
-    get(key) {
-      return values.get(key)
+    get<T>(key: string) {
+      return values.get(key) as LiveResourceState<T> | undefined
     },
 
     set(key, value) {

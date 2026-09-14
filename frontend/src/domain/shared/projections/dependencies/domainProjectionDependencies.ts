@@ -1,7 +1,15 @@
-import type { ProjectionDependency } from "../../../../../application/projections/dependencies/projectionDependency";
+export interface DomainProjectionDependency {
+  sourceDomain: string
+  sourceProjection: string
+  targetDomain: string
+  targetProjection: string
+  relation: string
+  priority: number
+  required: boolean
+}
 
 export const domainProjectionDependencies:
-  ProjectionDependency[] = [
+  DomainProjectionDependency[] = [
     {
       sourceDomain: "properties",
       sourceProjection: "property",

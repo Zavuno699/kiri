@@ -1,10 +1,10 @@
 import {
   loadDomainPage,
-} from "../../../application/ui/runtime/loadDomainPage";
+} from "../../../../application/ui/runtime/loadDomainPage";
 
 import {
   listPaymentsApi,
-} from "../../payments/api/runtime/listPaymentsApi";
+} from "../../api/runtime/listPaymentsApi";
 
 export async function loadPaymentsPage() {
   return loadDomainPage(

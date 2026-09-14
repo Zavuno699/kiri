@@ -1,5 +1,6 @@
 import {
   flowCommand,
+  type FlowCommand,
 } from "../../commands/flowCommand";
 
 import {
@@ -15,14 +16,13 @@ export async function executeLeaseLockFlow(
 ): Promise<unknown> {
   const result =
     await flowCommand(
-      command,
-      "locks.command",
+      command as FlowCommand,
+      "locks",
     );
 
   flowProjection(
     "locks",
     "locks",
-    result,
   );
 
   await flowEvent(

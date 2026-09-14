@@ -1,6 +1,9 @@
-import type {
-  DashboardLiveProjection,
-} from "./projections/dashboardLiveProjection"
+export interface DashboardLiveProjection {
+  degradedServices: number
+  criticalEvents: number
+  recentEvents: number
+  updatedAt: string
+}
 
 export function reduceDashboardLive(
   state: DashboardLiveProjection,

@@ -19,22 +19,19 @@ export function getUiRuntimeDiagnostics() {
     ready:
       states.filter(
         (state) =>
-          state.status ===
-          "ready",
+          state.ready,
       ).length,
 
     stale:
       states.filter(
         (state) =>
-          state.status ===
-          "stale",
+          state.loading,
       ).length,
 
     errors:
       states.filter(
         (state) =>
-          state.status ===
-          "error",
+          state.error,
       ).length,
   };
 }

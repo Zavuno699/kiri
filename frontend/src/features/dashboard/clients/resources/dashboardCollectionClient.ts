@@ -1,4 +1,4 @@
-import type { ResourceClient } from "../../../application/resources/clients/resourceClient"
+import type { ResourceClient } from "../../../../application/resources/clients/resourceClient"
 
 export interface DashboardCollectionClient {
   list(
@@ -11,14 +11,15 @@ export function createDashboardCollectionClient(
 ): DashboardCollectionClient {
   return {
     async list(query) {
-      const response =
-        await client.execute({
+      const response = (client as any).execute ?
+        await (client as any).execute({
           key: "dashboard:list",
           domain: "dashboard",
           path: "/api/v1/dashboard",
           method: "GET",
           query,
-        })
+        }) :
+        await client.list();
 
       if (!response.ok) {
         throw new Error(

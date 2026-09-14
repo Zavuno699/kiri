@@ -20,6 +20,11 @@ export function capabilityAllowed(
     return false;
   }
 
-  return hasPermission(state.permissions, capability);
+  const permissionSet = state.permissions ? {
+    granted: state.permissions as any,
+    denied: [],
+  } : null;
+  
+  return hasPermission(permissionSet, capability);
 }
 

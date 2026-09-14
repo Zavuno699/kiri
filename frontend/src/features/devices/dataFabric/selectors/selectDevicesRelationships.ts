@@ -1,11 +1,12 @@
 import {
   findRelatedEntities,
-} from "../../../application/dataFabric/runtime/findRelatedEntities";
+} from "../../../../application/dataFabric/runtime/findRelatedEntities";
 
 export function selectDevicesRelationships(
   entityId: string,
 ) {
-  return findRelatedEntities(
-    entityId,
-  );
+  return findRelatedEntities({
+    type: "devices",
+    id: entityId,
+  });
 }

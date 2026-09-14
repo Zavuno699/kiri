@@ -34,15 +34,15 @@ export function resolveGlobalOperatorContext(
 
   return {
     principal:
-      authentication.principal,
+      authentication.principal ?? null,
     sessionId:
-      authentication.sessionId,
+      authentication.sessionId ?? null,
     roles:
       rbac.roles.map(String),
     capabilities:
       rbac.effectiveCapabilities,
     degradedMode:
-      degraded.mode,
+      degraded.active ? "restricted" : "normal",
     currentPath:
       currentPath ?? null,
     correlationId:

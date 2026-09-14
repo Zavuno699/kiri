@@ -1,10 +1,10 @@
 import {
   getWorkspaceState,
-} from "../../application/workspace/state/workspaceStore";
+} from "../../../application/workspace/state/workspaceStore";
 
 import {
   getAvailableWorkspaceActions,
-} from "../../application/workspace/runtime/getAvailableWorkspaceActions";
+} from "../../../application/workspace/runtime/getAvailableWorkspaceActions";
 
 export function WorkspaceActionPanel() {
   const state =
@@ -25,9 +25,9 @@ export function WorkspaceActionPanel() {
 
       <div className="mt-3 flex flex-wrap gap-2">
         {actions.map(
-          (action) => (
+          (action: { id: string; label: string }) => (
             <div
-              key={action.key}
+              key={action.id}
               className="rounded-lg border border-slate-800 px-3 py-2 text-xs text-slate-300"
             >
               {action.label}

@@ -14,7 +14,7 @@ export function evaluateCommandAuthorization(
     request.capability,
   );
 
-  if (!policy.allowed) {
+  if (!policy.allows()) {
     return {
       allowed: false,
       requiresConfirmation: false,

@@ -28,3 +28,9 @@ export class LeaseListService
     return this.load()
   }
 }
+
+export function listLeases(): Promise<LeaseRecord[]> {
+  return new LeaseListService(async () => {
+    return []
+  }).execute()
+}

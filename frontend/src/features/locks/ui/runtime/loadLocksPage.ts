@@ -1,10 +1,10 @@
 import {
   loadDomainPage,
-} from "../../../application/ui/runtime/loadDomainPage";
+} from "../../../../application/ui/runtime/loadDomainPage";
 
 import {
   listLocksApi,
-} from "../../locks/api/runtime/listLocksApi";
+} from "../../api/runtime/listLocksApi";
 
 export async function loadLocksPage() {
   return loadDomainPage(

@@ -1,14 +1,14 @@
 import {
   registerCommandHandler,
-} from "../../../../application/handlers/canonical/registry/commandHandlerRegistry";
+} from "../../../../../application/handlers/canonical/registry/commandHandlerRegistry";
 
 import {
   registerQueryHandler,
-} from "../../../../application/handlers/canonical/registry/queryHandlerRegistry";
+} from "../../../../../application/handlers/canonical/registry/queryHandlerRegistry";
 
 import {
   registerEventHandler,
-} from "../../../../application/handlers/canonical/registry/eventHandlerRegistry";
+} from "../../../../../application/handlers/canonical/registry/eventHandlerRegistry";
 
 import {
   devicesCommandHandler,

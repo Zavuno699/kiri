@@ -1,9 +1,9 @@
 import {
-  getPageDataState,
-} from "../../../application/ui/state/pageDataStore";
+  getPageData,
+} from "../../../../application/ui/state/pageDataStore";
 
 export function selectSecurityPageData<T = unknown>() {
-  return getPageDataState<T>(
+  return getPageData<T>(
     "security",
   )?.data ?? null;
 }

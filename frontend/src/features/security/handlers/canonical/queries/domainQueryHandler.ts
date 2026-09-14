@@ -1,19 +1,19 @@
 import type {
   QueryHandler,
-} from "../../../../application/handlers/canonical/contracts/queryHandler";
+} from "../../../../../application/handlers/canonical/contracts/queryHandler";
 
 export const securityQueryHandler:
   QueryHandler = {
     queryType:
       "security.query",
 
-    async execute(query) {
+    async execute(query: unknown) {
       return {
         domain: "security",
         queryType:
-          query.type,
+          (query as { type: string }).type,
         input:
-          query.input,
+          (query as { input: unknown }).input,
       };
     },
   };

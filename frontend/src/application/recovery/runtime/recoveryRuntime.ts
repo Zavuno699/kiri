@@ -15,3 +15,15 @@ export function recover(
       : "Recovery domain not specified",
   };
 }
+
+export function recoverFromFailure(
+  domain?: string,
+): RecoveryResult {
+  return {
+    recovered: Boolean(domain),
+    domain,
+    reason: domain
+      ? undefined
+      : "Recovery from failure requires domain",
+  };
+}

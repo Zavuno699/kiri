@@ -1,6 +1,6 @@
 import {
   flowEvent,
-} from "../../../application/flows/events/flowEvent";
+} from "../../../../application/flows/events/flowEvent";
 
 export async function publishSecurityFlowEvent(
   event: unknown,
@@ -8,6 +8,6 @@ export async function publishSecurityFlowEvent(
   await flowEvent(
     "security",
     "security",
-    event,
+    event as { type: string; payload: unknown },
   );
 }

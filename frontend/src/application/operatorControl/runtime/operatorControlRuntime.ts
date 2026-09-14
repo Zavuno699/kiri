@@ -27,7 +27,7 @@ import {
 } from "../../operatorActions/state/actionStore";
 
 import {
-  securityRuntimeReady,
+  getSecurityRuntimeReadiness,
 } from "../../security/runtime/runtimeReadiness";
 
 import {
@@ -76,11 +76,11 @@ export function refreshGlobalOperatorControl(): void {
     actionPlaneReady:
       actions.initialized,
     securityReady:
-      securityRuntimeReady(),
+      getSecurityRuntimeReadiness().authorizationReady,
     consistencyReady:
       consistency.initialized,
     degradedMode:
-      degraded.mode,
+      degraded.active ? "restricted" : "normal",
     domainHealthScore:
       domains.score,
     consistencyScore:

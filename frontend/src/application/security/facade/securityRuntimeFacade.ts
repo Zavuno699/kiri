@@ -1,13 +1,13 @@
-import { runtimeAuthorized } from "../runtime/authorization/runtimeAuthorization";
+import { authorizeRuntime } from "../runtime/authorization/runtimeAuthorization";
 import { authorizeRuntimeCommand } from "../runtime/authorization/runtimeCommandAuthorization";
 import { authorizeDangerousOperation } from "../runtime/authorization/runtimeDangerousAuthorization";
-import { securityRuntimeReady } from "../runtime/runtimeReadiness";
-import { securityRestrictionReason } from "../runtime/recovery/restrictionResolver";
+import { getSecurityRuntimeReadiness } from "../runtime/runtimeReadiness";
+import { resolveSecurityRestriction } from "../runtime/recovery/restrictionResolver";
 
 export const securityRuntimeFacade = {
-  ready: securityRuntimeReady,
-  authorized: runtimeAuthorized,
+  ready: () => getSecurityRuntimeReadiness().authorizationReady,
+  authorized: authorizeRuntime,
   authorizeCommand: authorizeRuntimeCommand,
   authorizeDangerous: authorizeDangerousOperation,
-  restrictionReason: securityRestrictionReason,
+  restrictionReason: resolveSecurityRestriction,
 };

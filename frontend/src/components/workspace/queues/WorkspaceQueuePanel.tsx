@@ -1,6 +1,6 @@
 import {
   listWorkspaceQueueItems,
-} from "../../application/workspace/queues/workspaceQueueStore";
+} from "../../../application/workspace/queues/workspaceQueueStore";
 
 export function WorkspaceQueuePanel() {
   const items =
@@ -20,17 +20,17 @@ export function WorkspaceQueuePanel() {
 
       <div className="mt-3 space-y-2">
         {items.map(
-          (item) => (
+          (item: { id: string; domain: string; action: string }) => (
             <div
               key={item.id}
               className="rounded-lg border border-slate-800 p-3"
             >
               <div className="text-xs font-medium text-slate-300">
-                {item.title}
+                {item.action}
               </div>
 
               <div className="mt-1 text-[11px] text-slate-500">
-                {item.domain} · {item.severity}
+                {item.domain}
               </div>
             </div>
           ),

@@ -1,6 +1,6 @@
 import {
   getWorkspaceContext,
-} from "../../application/workspace/context/getWorkspaceContext";
+} from "../../../application/workspace/context/getWorkspaceContext";
 
 export function WorkspaceChainPanel() {
   const context =

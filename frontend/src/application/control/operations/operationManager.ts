@@ -31,9 +31,10 @@ export function createOperationManager():
           `${Date.now()}-${Math.random()}`,
         domain,
         type,
-        subjectId,
+        status: "created",
         state: "created",
         progress: 0,
+        subjectId,
         createdAt: now,
         updatedAt: now,
       }

@@ -10,10 +10,12 @@ const types = new Map<
 export function registerEntityType(
   reference: EntityReference,
 ): void {
-  types.set(
-    reference.type,
-    reference,
-  );
+  if (reference.type) {
+    types.set(
+      reference.type,
+      reference,
+    );
+  }
 }
 
 export function getEntityType(

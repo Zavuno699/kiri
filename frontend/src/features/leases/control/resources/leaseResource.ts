@@ -1,4 +1,4 @@
-import type { ResourceHandle } from "../../../application/control/resourceHandle"
+import type { ResourceHandle } from "../../../../application/control/resourceHandle"
 
 export type LeaseResource =
   ResourceHandle<unknown>
@@ -12,5 +12,6 @@ export function createLeaseResource(
       : "leases:list",
     lifecycle: "idle",
     version: 0,
+    active: false,
   }
 }

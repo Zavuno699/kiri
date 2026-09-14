@@ -14,6 +14,7 @@ export function adaptProperty(
   return {
     id: String(input.id ?? ""),
     name: String(input.name ?? "Unnamed property"),
+    address: String(input.address ?? ""),
     status:
       normalizeStatus(input.status) as PropertyRecord["status"],
     occupancy:
@@ -27,6 +28,10 @@ export function adaptProperty(
     availableUnits:
       normalizeNumber(input.availableUnits) ??
       normalizeNumber(input.available_units) ??
+      0,
+    activeLeaseCount:
+      normalizeNumber(input.activeLeaseCount) ??
+      normalizeNumber(input.active_lease_count) ??
       0,
   }
 }

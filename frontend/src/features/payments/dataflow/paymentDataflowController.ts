@@ -5,14 +5,17 @@ export interface PaymentDataflowController {
 
 export function createPaymentDataflowController():
   PaymentDataflowController {
+  let running = false;
 
   return {
     start() {
-      running = true
+      running = true;
+      void running;
     },
 
     stop() {
-      running = false
+      running = false;
+      void running;
     },
   }
 }

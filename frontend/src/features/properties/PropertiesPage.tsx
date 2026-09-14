@@ -2,12 +2,20 @@ import { useEffect, useMemo, useState } from "react"
 import { FilterBar } from "../../components/navigation/FilterBar"
 import { StatusPill } from "../../components/ui/StatusPill"
 import {
-  listProperties,
+  PropertyListService,
 } from "./services/propertyService"
 import type {
   PropertyRecord,
 } from "./types/property"
 import { PropertyTable } from "./components/PropertyTable"
+
+const propertyService = new PropertyListService(
+  async () => {
+    const response = await fetch("/api/v1/properties")
+    if (!response.ok) throw new Error("Failed to fetch properties")
+    return response.json() as Promise<PropertyRecord[]>
+  },
+)
 
 export function PropertiesPage() {
   const [properties, setProperties] = useState<PropertyRecord[]>([])
@@ -18,8 +26,8 @@ export function PropertiesPage() {
   useEffect(() => {
     let cancelled = false
 
-    void listProperties()
-      .then((records) => {
+    void propertyService.execute()
+      .then((records: PropertyRecord[]) => {
         if (cancelled) return
         setProperties(records)
         setAvailable(true)

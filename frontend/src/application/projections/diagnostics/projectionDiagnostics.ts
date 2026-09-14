@@ -16,13 +16,13 @@ export function getProjectionDiagnostics() {
     projections:
       listProjections()
         .map(
-          (projection) => ({
+          (projection: any) => ({
             key:
               projection.key,
             domain:
-              projection.domain,
+              (projection as any).domain ?? "",
             resourceKey:
-              projection.resourceKey,
+              (projection as any).resourceKey ?? "",
           }),
         ),
 

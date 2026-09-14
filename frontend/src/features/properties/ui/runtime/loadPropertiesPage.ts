@@ -1,10 +1,10 @@
 import {
   loadDomainPage,
-} from "../../../application/ui/runtime/loadDomainPage";
+} from "../../../../application/ui/runtime/loadDomainPage";
 
 import {
   listPropertiesApi,
-} from "../../properties/api/runtime/listPropertiesApi";
+} from "../../api/runtime/listPropertiesApi";
 
 export async function loadPropertiesPage() {
   return loadDomainPage(

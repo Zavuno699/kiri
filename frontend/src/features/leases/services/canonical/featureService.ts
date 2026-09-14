@@ -3,23 +3,11 @@ import {
 } from "../../api/canonical/clients/client";
 
 export const leasesCanonicalService = {
-  list: (
-    context?: Parameters<
-      typeof leasesApiClient.list
-    >[0],
-  ) =>
-    leasesApiClient.list(
-      context,
-    ),
+  list: () =>
+    leasesApiClient.list(),
 
   get: (
     id: string,
-    context?: Parameters<
-      typeof leasesApiClient.get
-    >[1],
   ) =>
-    leasesApiClient.get(
-      id,
-      context,
-    ),
+    leasesApiClient.get(id),
 };

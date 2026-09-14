@@ -1,5 +1,6 @@
 import {
   flowCommand,
+  type FlowCommand,
 } from "../../commands/flowCommand";
 
 import {
@@ -15,14 +16,13 @@ export async function executeLeasePaymentFlow(
 ): Promise<unknown> {
   const result =
     await flowCommand(
-      command,
-      "payments.write",
+      command as FlowCommand,
+      "payments",
     );
 
   flowProjection(
     "leases",
     "leases",
-    result,
   );
 
   await flowEvent(

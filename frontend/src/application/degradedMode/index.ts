@@ -1,5 +1,5 @@
 export * from "./degradedModeTypes";
-export * from "./state/degradedModeState";
+export type { DegradedModeState } from "./state/degradedModeState";
 export * from "./state/degradedModeStore";
 export * from "./policies/degradedModePolicy";
 export * from "./evaluator/evaluateDegradedMode";

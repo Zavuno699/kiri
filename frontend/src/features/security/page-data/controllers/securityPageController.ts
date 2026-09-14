@@ -1,4 +1,4 @@
-import type { PageDataState } from "../../../application/page-data/core/pageDataState"
+import type { PageDataState } from "../../../../application/page-data/core/pageDataState"
 
 export interface SecurityPageController {
   load(
@@ -19,17 +19,22 @@ export function createSecurityPageController(
         const data = await load(query)
 
         return {
-          lifecycle: "ready",
+          pageId: "security",
+          loading: false,
+          stale: false,
+          error: null,
           data,
-          updatedAt: new Date().toISOString(),
         }
       } catch (error) {
         return {
-          lifecycle: "error",
+          pageId: "security",
+          loading: false,
+          stale: false,
           error:
             error instanceof Error
               ? error.message
               : "Page load failed.",
+          data: null,
         }
       }
     },
@@ -41,17 +46,22 @@ export function createSecurityPageController(
         )()
 
         return {
-          lifecycle: "ready",
+          pageId: "security",
+          loading: false,
+          stale: false,
+          error: null,
           data,
-          updatedAt: new Date().toISOString(),
         }
       } catch (error) {
         return {
-          lifecycle: "error",
+          pageId: "security",
+          loading: false,
+          stale: false,
           error:
             error instanceof Error
               ? error.message
               : "Page refresh failed.",
+          data: null,
         }
       }
     },

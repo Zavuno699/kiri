@@ -1,13 +1,14 @@
 import {
   flowQuery,
-} from "../../../application/flows/queries/flowQuery";
+} from "../../../../application/flows/queries/flowQuery";
 
 export async function readPropertiesFlow<T = unknown>(
-  query: unknown,
+  _query: unknown,
 ): Promise<T> {
-  return flowQuery<T>(
+  const result = await flowQuery<T>(
     "properties",
     "properties",
-    query,
+    undefined,
   );
+  return result as T;
 }

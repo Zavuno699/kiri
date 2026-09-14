@@ -47,15 +47,15 @@ export function resolveUnifiedRuntimeContext(): UnifiedRuntimeContext {
 
   return {
     principal:
-      authentication.principal,
+      authentication.principal ?? null,
     sessionId:
-      authentication.sessionId,
+      authentication.sessionId ?? null,
     roles:
       rbac.roles.map(String),
     capabilities:
       rbac.effectiveCapabilities,
     degradedMode:
-      degraded.mode,
+      degraded.active ? "restricted" : "normal",
     consistencyScore:
       consistency.snapshot?.score ?? 0,
     domainHealthScore:

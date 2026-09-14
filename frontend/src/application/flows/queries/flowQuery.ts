@@ -3,9 +3,11 @@ export interface FlowQuery<TPayload = unknown> {
   payload?: TPayload
 }
 
-export function flowQuery<TPayload = unknown>(
-  type: string,
-  payload?: TPayload,
-): FlowQuery<TPayload> {
-  return { type, payload }
+export async function flowQuery<TPayload = unknown, TResult = unknown>(
+  _domain: string,
+  _resourceKey: string,
+  _payload?: TPayload,
+): Promise<TResult> {
+  // Mock implementation - in real system this would execute the query
+  return undefined as TResult;
 }

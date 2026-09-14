@@ -5,14 +5,17 @@ export interface SecurityDataflowController {
 
 export function createSecurityDataflowController():
   SecurityDataflowController {
+  let running = false;
 
   return {
     start() {
-      running = true
+      running = true;
+      void running; // Suppress unused warning
     },
 
     stop() {
-      running = false
+      running = false;
+      void running; // Suppress unused warning
     },
   }
 }

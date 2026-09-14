@@ -31,21 +31,24 @@ export function applyProjection(
     );
 
   if (!current) {
-    current =
-      projection.initialState;
+    const projectionDef = projection as any;
+    current = projectionDef.initialState || {
+      data: null,
+      version: 0,
+    };
 
     registerResourceState(
-      current,
+      current as any,
     );
   }
 
   const projected =
     projection.project(
-      current,
+      current as any,
       update.payload,
     );
 
   setResourceState(
-    projected,
+    projected as any,
   );
 }

@@ -1,5 +1,5 @@
 import {
-  securityRuntimeReady,
+  getSecurityRuntimeReadiness,
 } from "../../security/runtime/runtimeReadiness";
 
 import type {
@@ -7,7 +7,7 @@ import type {
 } from "../contracts/consistencyCheck";
 
 export function securityConsistencyCheck(): ConsistencyCheck {
-  const ready = securityRuntimeReady();
+  const ready = getSecurityRuntimeReadiness().authorizationReady;
 
   return {
     key: "security.runtime.consistency",

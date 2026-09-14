@@ -13,7 +13,7 @@ export function GlobalDegradedModePanel() {
       </div>
 
       <div className="mt-2 text-xs text-slate-400">
-        {state.mode}
+        {state.active ? "Degraded" : "Normal"}
       </div>
 
       {state.reason ? (

@@ -11,7 +11,7 @@ export function LocksOperationalActions() {
       {model.actions.map(
         (action) => (
           <div
-            key={action.key}
+            key={action.id}
             className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300"
           >
             {action.label}

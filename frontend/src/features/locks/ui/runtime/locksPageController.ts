@@ -8,7 +8,7 @@ import {
 
 import {
   markDomainPageStale,
-} from "../../../application/ui/runtime/markDomainPageStale";
+} from "../../../../application/ui/runtime/markDomainPageStale";
 
 export const locksPageController = {
   load:

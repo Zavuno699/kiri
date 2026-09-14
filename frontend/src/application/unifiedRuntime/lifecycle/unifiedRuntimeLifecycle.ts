@@ -15,7 +15,7 @@ import {
 } from "../../operatorActions/state/actionStore";
 
 import {
-  securityRuntimeReady,
+  getSecurityRuntimeReadiness,
 } from "../../security/runtime/runtimeReadiness";
 
 import {
@@ -35,6 +35,7 @@ import {
 } from "../../workflowOrchestration/state/workflowStore";
 
 import {
+  getUnifiedRuntimeState,
   setUnifiedRuntimeState,
 } from "../state/unifiedRuntimeStore";
 
@@ -64,7 +65,7 @@ export function initializeUnifiedRuntimeLifecycle(): void {
     getWorkflowState();
 
   const securityReady =
-    securityRuntimeReady();
+    getSecurityRuntimeReadiness().authorizationReady;
 
   const authenticationReady =
     authentication.status === "authenticated";
@@ -87,7 +88,7 @@ export function initializeUnifiedRuntimeLifecycle(): void {
     consistencyReady &&
     healthReady &&
     orchestrationReady &&
-    degraded.mode !== "critical";
+    degraded.active;
 
   const reasons: string[] = [];
 
@@ -123,7 +124,7 @@ export function initializeUnifiedRuntimeLifecycle(): void {
     reasons.push("orchestration-not-ready");
   }
 
-  if (degraded.mode === "critical") {
+  if (degraded.active) {
     reasons.push("critical-degraded-mode");
   }
 
@@ -132,7 +133,7 @@ export function initializeUnifiedRuntimeLifecycle(): void {
     status:
       operatorReady
         ? "ready"
-        : degraded.mode === "critical"
+        : degraded.active
           ? "restricted"
           : reasons.length > 0
             ? "limited"
@@ -145,7 +146,7 @@ export function initializeUnifiedRuntimeLifecycle(): void {
     consistencyReady,
     healthReady,
     orchestrationReady,
-    degradedMode: degraded.mode,
+    degradedMode: degraded.active ? "restricted" : "normal",
     consistencyScore:
       consistency.snapshot?.score ?? 0,
     domainHealthScore:

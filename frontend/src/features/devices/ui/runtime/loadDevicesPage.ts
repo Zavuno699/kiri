@@ -1,10 +1,10 @@
 import {
   loadDomainPage,
-} from "../../../application/ui/runtime/loadDomainPage";
+} from "../../../../application/ui/runtime/loadDomainPage";
 
 import {
   listDevicesApi,
-} from "../../devices/api/runtime/listDevicesApi";
+} from "../../api/runtime/listDevicesApi";
 
 export async function loadDevicesPage() {
   return loadDomainPage(

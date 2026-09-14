@@ -1,10 +1,10 @@
 import {
   pageDataRoutes,
-} from "../../application/page-data/navigation/pageDataRoutes"
+} from "../../../application/page-data/navigation/pageDataRoutes"
 
 export function createRuntimePageActivationRegistry() {
   return new Map(
-    pageDataRoutes.map((route) => [
+    pageDataRoutes.map((route: { id: string; domain: string; path: string; enabled: boolean }) => [
       route.id,
       {
         id: route.id,

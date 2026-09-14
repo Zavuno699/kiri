@@ -1,5 +1,6 @@
 import {
   flowCommand,
+  type FlowCommand,
 } from "../../commands/flowCommand";
 
 import {
@@ -15,14 +16,13 @@ export async function executeSecurityRecoveryFlow(
 ): Promise<unknown> {
   const result =
     await flowCommand(
-      command,
-      "recovery.execute",
+      command as FlowCommand,
+      "security",
     );
 
   flowProjection(
     "security",
     "security",
-    result,
   );
 
   await flowEvent(

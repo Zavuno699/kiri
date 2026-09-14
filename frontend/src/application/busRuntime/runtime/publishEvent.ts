@@ -14,7 +14,7 @@ export async function publishApplicationEvent(
   event: ApplicationEvent,
 ): Promise<void> {
   await publishCanonicalEvent(
-    event,
+    event as unknown as { [key: string]: unknown; type?: string; eventType?: string },
   );
 
   recordOperatorAudit({

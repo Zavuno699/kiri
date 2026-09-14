@@ -1,6 +1,6 @@
 import {
   evaluateCommandAuthorization,
-} from "../../../application/commandAuthorization/evaluator/commandAuthorizationEvaluator";
+} from "../../../../application/commandAuthorization/evaluator/commandAuthorizationEvaluator";
 
 export function DevicePrivilegedCommandPanel() {
   const result = evaluateCommandAuthorization({

@@ -1,6 +1,6 @@
 import {
   listAuditEvents,
-} from "../../../application/audit/store/auditStore"
+} from "../../../../application/audit/store/auditStore"
 
 export function getSecurityAuditWorkspaceMetrics() {
   const events = listAuditEvents()
@@ -8,13 +8,13 @@ export function getSecurityAuditWorkspaceMetrics() {
   return {
     total: events.length,
     denied: events.filter(
-      (event) => event.outcome === "denied",
+      (event: { outcome: string }) => event.outcome === "denied",
     ).length,
     failed: events.filter(
-      (event) => event.outcome === "failed",
+      (event: { outcome: string }) => event.outcome === "failed",
     ).length,
     successful: events.filter(
-      (event) => event.outcome === "success",
+      (event: { outcome: string }) => event.outcome === "success",
     ).length,
   }
 }

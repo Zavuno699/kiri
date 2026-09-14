@@ -1,6 +1,6 @@
 import {
   getSecurityRuntimeState,
-} from "../../../application/security/runtime/securityRuntimeStore"
+} from "../../../../application/security/runtime/securityRuntimeStore"
 
 export function SecurityOperatorSummary() {
   const state = getSecurityRuntimeState()

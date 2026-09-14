@@ -24,3 +24,9 @@ export function registerPageRuntime(
 export function listPageRuntimeStates(): PageRuntimeState[] {
   return [...states.values()]
 }
+
+export function getPageRuntime(
+  pageId: string,
+): PageRuntimeState | undefined {
+  return states.get(pageId)
+}

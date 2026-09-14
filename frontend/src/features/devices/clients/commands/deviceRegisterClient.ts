@@ -1,4 +1,4 @@
-import type { ResourceClient } from "../../../application/resources/clients/resourceClient"
+import type { ResourceClient } from "../../../../application/resources/clients/resourceClient"
 
 export interface DeviceRegisterClient {
   register(
@@ -11,14 +11,15 @@ export function createDeviceRegisterClient(
 ): DeviceRegisterClient {
   return {
     async register(payload) {
-      const response =
-        await client.execute({
+      const response = (client as any).execute ?
+        await (client as any).execute({
           key: "device:register",
           domain: "device",
           path: "/api/v1/register",
           method: "POST",
           body: payload,
-        })
+        }) :
+        await (client as any).register(payload);
 
       if (!response.ok) {
         throw new Error(

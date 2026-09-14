@@ -11,7 +11,7 @@ export function RBACPanel() {
       </div>
       <div className="mt-2">
         <PermissionNotice
-          allowed={decision.allowed}
+          allowed={decision.allows()}
           capability="security.read"
         />
       </div>

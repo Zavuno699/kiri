@@ -17,7 +17,7 @@ export function LeasesPage() {
     let cancelled = false
 
     void listLeases()
-      .then((records) => {
+      .then((records: any[]) => {
         if (cancelled) return
         setLeases(records)
         setAvailable(true)

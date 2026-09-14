@@ -1,6 +1,5 @@
-export * from "./contracts/pageRuntimeState";
+export { type PageRuntimeState } from "./contracts/pageRuntimeState";
 export * from "./contracts/domainPageDescriptor";
-export * from "./contracts/pageAction";
 export * from "./contracts/pageDataState";
 
 export * from "./state/pageRuntimeStore";
@@ -12,7 +11,7 @@ export * from "./registry/pageActionRegistry";
 export * from "./registry/registerPageActions";
 
 export * from "./runtime/evaluatePageAction";
-export * from "./runtime/getVisiblePageActions";
+export { getVisiblePageActions, type PageAction } from "./runtime/getVisiblePageActions";
 export * from "./runtime/executePageAction";
 export * from "./runtime/loadDomainPage";
 export * from "./runtime/markDomainPageStale";

@@ -1,5 +1,5 @@
 import { evaluatePaymentsRBAC } from "../domainPermission";
 
 export function paymentsRBACAllowed(): boolean {
-  return evaluatePaymentsRBAC().allowed;
+  return evaluatePaymentsRBAC().allows();
 }

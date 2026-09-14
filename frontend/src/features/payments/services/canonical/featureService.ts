@@ -3,23 +3,11 @@ import {
 } from "../../api/canonical/clients/client";
 
 export const paymentsCanonicalService = {
-  list: (
-    context?: Parameters<
-      typeof paymentsApiClient.list
-    >[0],
-  ) =>
-    paymentsApiClient.list(
-      context,
-    ),
+  list: () =>
+    paymentsApiClient.list(),
 
   get: (
     id: string,
-    context?: Parameters<
-      typeof paymentsApiClient.get
-    >[1],
   ) =>
-    paymentsApiClient.get(
-      id,
-      context,
-    ),
+    paymentsApiClient.get(id),
 };

@@ -1,19 +1,17 @@
-import { collectSecurityDiagnostics } from "../../../application/security/runtime/diagnostics/securityDiagnostics";
+import { getSecurityDiagnostics } from "../../../application/security/runtime/diagnostics/securityDiagnostics";
 
 export function SecurityRuntimeHealth() {
-  const diagnostics = collectSecurityDiagnostics();
+  const diagnostics = getSecurityDiagnostics();
 
   return (
     <section className="rounded-xl border border-slate-700/50 bg-slate-900/40 p-4">
       <div className="text-sm font-semibold">Security runtime health</div>
       <div className="mt-2 text-xs text-slate-400">
-        Ready: {String(diagnostics.health.ready)}
+        Ready: {String(diagnostics.authorizationReady)}
       </div>
-      {diagnostics.health.reasons.length > 0 ? (
-        <div className="mt-2 text-[11px] text-slate-500">
-          {diagnostics.health.reasons.join(", ")}
-        </div>
-      ) : null}
+      <div className="mt-1 text-xs text-slate-500">
+        Authenticated: {String(diagnostics.authenticated)}
+      </div>
     </section>
   );
 }

@@ -20,11 +20,11 @@ export function EntityFabricPanel() {
               className="rounded-lg border border-slate-800 p-3"
             >
               <div className="text-xs text-slate-300">
-                {entity.label}
+                {entity.domain}
               </div>
 
               <div className="mt-1 text-[11px] text-slate-500">
-                {entity.domain}
+                {entity.id}
               </div>
             </div>
           ),

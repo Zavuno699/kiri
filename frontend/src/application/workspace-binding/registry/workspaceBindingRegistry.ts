@@ -24,8 +24,8 @@ export function createWorkspaceBindingRegistry():
       values.set(binding.id, binding)
     },
 
-    get(id) {
-      return values.get(id)
+    get<T>(id: string) {
+      return values.get(id) as WorkspaceBinding<T> | undefined
     },
 
     list(domain) {

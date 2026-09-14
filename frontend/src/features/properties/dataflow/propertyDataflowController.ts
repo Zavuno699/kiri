@@ -5,14 +5,17 @@ export interface PropertyDataflowController {
 
 export function createPropertyDataflowController():
   PropertyDataflowController {
+  let running = false;
 
   return {
     start() {
-      running = true
+      running = true;
+      void running;
     },
 
     stop() {
-      running = false
+      running = false;
+      void running;
     },
   }
 }

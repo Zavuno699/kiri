@@ -10,7 +10,7 @@ export function createDefaultPageRegistry() {
         ? "overview"
         : route.page === "workspace"
           ? "workspace"
-          : route.page
+          : route.page as "list" | "detail"
 
     registry.register({
       id: route.id,

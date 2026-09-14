@@ -20,10 +20,12 @@ export interface AuditEvent {
   category: AuditCategory
   outcome: AuditOutcome
   principal: string | null
+  sessionId?: string
   capability?: string
   resourceType?: string
   resourceId?: string
   correlationId?: string
+  causationId?: string
   command?: string
   action?: string
   reason?: string

@@ -14,7 +14,7 @@ export function recordOperatorAudit(input: {
       action: input.action,
       outcome: input.outcome,
       principal: input.principal,
-      sessionId: input.sessionId,
+      sessionId: input.sessionId ?? undefined,
       metadata: input.metadata,
     }),
   );

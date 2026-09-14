@@ -31,3 +31,15 @@ export function createProjectionRegistry() {
     },
   }
 }
+
+export function registerProjection<T>(definition: ProjectionDefinition<T>): ProjectionDefinition<T> {
+  return createProjectionRegistry().register(definition)
+}
+
+export function getProjection<T>(key: string): ProjectionDefinition<T> | undefined {
+  return createProjectionRegistry().get<T>(key)
+}
+
+export function listProjections(): ProjectionDefinition<any>[] {
+  return createProjectionRegistry().list()
+}

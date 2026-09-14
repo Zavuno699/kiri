@@ -11,16 +11,11 @@ export async function executeDashboardRefreshFlow(): Promise<unknown> {
     await flowQuery(
       "dashboard",
       "dashboard",
-      {
-        type:
-          "dashboard.refresh",
-      },
     );
 
   flowProjection(
     "dashboard",
     "dashboard",
-    result,
   );
 
   return result;

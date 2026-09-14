@@ -1,4 +1,4 @@
-import { applicationClient } from "../../../application/clients/applicationClient"
+import { applicationClient } from "../../../../application/clients/applicationClient"
 
 export interface SecurityCommand {
   type: string

@@ -11,8 +11,8 @@ export function getSecurityPageConvergence() {
       "security",
 
     runtimeReady:
-      state.runtime?.status ===
-      "ready",
+      state.runtime?.ready ??
+      false,
 
     hasData:
       state.data?.data !==
@@ -21,7 +21,7 @@ export function getSecurityPageConvergence() {
       undefined,
 
     stale:
-      state.data?.stale ??
+      state.runtime?.stale ??
       false,
 
     error:

@@ -1,4 +1,4 @@
-import type { OperationRecord } from "../../../application/control/operations/operationRecord"
+import type { OperationRecord } from "../../../../application/control/operations/operationRecord"
 
 export interface DashboardOperationController {
   start(type: string, id?: string): OperationRecord

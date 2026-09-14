@@ -1,6 +1,6 @@
 import {
   requireCapability,
-} from "../../../application/security/guards/requireCapability";
+} from "../../../../application/security/guards/requireCapability";
 
 export function requirePropertiesRead(): void {
   requireCapability(

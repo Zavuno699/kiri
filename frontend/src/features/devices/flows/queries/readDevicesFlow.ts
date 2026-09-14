@@ -1,13 +1,14 @@
 import {
   flowQuery,
-} from "../../../application/flows/queries/flowQuery";
+} from "../../../../application/flows/queries/flowQuery";
 
 export async function readDevicesFlow<T = unknown>(
-  query: unknown,
+  _query: unknown,
 ): Promise<T> {
-  return flowQuery<T>(
+  const result = await flowQuery<T>(
     "devices",
     "devices",
-    query,
+    undefined,
   );
+  return result as T;
 }

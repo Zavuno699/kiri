@@ -21,7 +21,7 @@ export function projectDeviceOperations(
         "online",
     ).length,
 
-    degraded: [].filter(
+    degraded: devices.filter(
       (device) =>
         device.connectionStatus ===
         "degraded",

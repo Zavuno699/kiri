@@ -1,5 +1,5 @@
 import {
-  securityRuntimeReady,
+  getSecurityRuntimeReadiness,
 } from "../../security/runtime/runtimeReadiness";
 
 import {
@@ -15,7 +15,7 @@ import {
 } from "../state/runtimeIntegrityStore";
 
 export function refreshRuntimeIntegrity(): void {
-  const runtimeReady = securityRuntimeReady();
+  const runtimeReady = getSecurityRuntimeReadiness().authorizationReady;
   const recovery = getRecoveryState();
   const reconciliation = getReconciliationState();
 

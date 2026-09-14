@@ -1,4 +1,4 @@
-import { evaluateRuntimePolicy } from "../../../../application/security/runtime/policy/runtimePolicyEvaluator";
+import { evaluateRuntimePolicy } from "../../../../../application/security/runtime/policy/runtimePolicyEvaluator";
 
 export function devicesRuntimeReadable(): boolean {
   return evaluateRuntimePolicy("devices.read").allowed;

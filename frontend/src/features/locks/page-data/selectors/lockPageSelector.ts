@@ -1,7 +1,7 @@
-import type { PageDataState } from "../../../application/page-data/core/pageDataState"
+import type { PageDataState } from "../../../../application/page-data/core/pageDataState"
 
 export function selectLockPageData<T>(
   state: PageDataState<T>,
-): T | undefined {
+): T | null {
   return state.data
 }

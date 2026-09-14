@@ -33,7 +33,7 @@ export function initializeWorkflowOrchestration(): void {
   setWorkflowState({
     initialized: true,
     definitions: definitions.map(
-      (definition) => definition.key,
+      (definition) => definition.id,
     ),
     executions: [],
     activeWorkflowId: null,

@@ -3,30 +3,16 @@ import type {
 } from "../contracts/workflowDefinition";
 
 export const lockLeaseWorkflow: WorkflowDefinition = {
-  key: "lease-lock-authorization",
+  id: "lease-lock-authorization",
   name: "Lease lock authorization",
+  label: "Lock Authorization",
+  description: "Authorize lock access for lease",
   domains: [
     "leases",
     "locks",
   ],
-  steps: [
-    {
-      key: "lease-valid",
-      domain: "leases",
-      required: true,
-      reversible: true,
-    },
-    {
-      key: "lock-entitlement-evaluated",
-      domain: "locks",
-      required: true,
-      reversible: true,
-    },
-    {
-      key: "lock-command-authorized",
-      domain: "locks",
-      required: true,
-      reversible: true,
-    },
-  ],
+  risk: "high",
+  transactional: true,
+  requiresPolicyApproval: true,
+  enabled: true,
 };

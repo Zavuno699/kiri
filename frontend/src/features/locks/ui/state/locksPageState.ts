@@ -1,20 +1,20 @@
 import {
-  getPageDataState,
-} from "../../../application/ui/state/pageDataStore";
+  getPageData,
+} from "../../../../application/ui/state/pageDataStore";
 
 import {
-  getPageRuntimeState,
-} from "../../../application/ui/state/pageRuntimeStore";
+  getPageRuntime,
+} from "../../../../application/ui/state/pageRuntimeStore";
 
 export function getLocksPageState() {
   return {
     data:
-      getPageDataState(
+      getPageData(
         "locks",
       ),
 
     runtime:
-      getPageRuntimeState(
+      getPageRuntime(
         "locks",
       ),
   };

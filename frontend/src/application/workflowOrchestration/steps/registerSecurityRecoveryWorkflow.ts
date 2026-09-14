@@ -3,24 +3,16 @@ import type {
 } from "../contracts/workflowDefinition";
 
 export const securityRecoveryWorkflow: WorkflowDefinition = {
-  key: "security-recovery",
+  id: "security-recovery",
   name: "Security runtime recovery",
+  label: "Security Recovery",
+  description: "Recover security runtime state",
   domains: [
     "security",
     "dashboard",
   ],
-  steps: [
-    {
-      key: "security-runtime-recovered",
-      domain: "security",
-      required: true,
-      reversible: false,
-    },
-    {
-      key: "operator-state-refreshed",
-      domain: "dashboard",
-      required: true,
-      reversible: false,
-    },
-  ],
+  risk: "critical",
+  transactional: false,
+  requiresPolicyApproval: true,
+  enabled: true,
 };

@@ -13,6 +13,10 @@ export function LeaseStatus({
     grace_period: ["Grace period", "warning"],
     locked: ["Locked", "danger"],
     unknown: ["Unknown", "default"],
+    pending: ["Pending", "info"],
+    expired: ["Expired", "danger"],
+    delinquent: ["Delinquent", "danger"],
+    frozen: ["Frozen", "danger"],
   } as const
 
   const [label, tone] = map[status]

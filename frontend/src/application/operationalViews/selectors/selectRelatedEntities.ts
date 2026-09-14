@@ -6,6 +6,6 @@ export function selectRelatedEntities(
   entityId: string,
 ) {
   return findRelatedEntities(
-    entityId,
+    { type: "unknown", id: entityId },
   );
 }

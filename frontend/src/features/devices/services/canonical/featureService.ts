@@ -3,23 +3,11 @@ import {
 } from "../../api/canonical/clients/client";
 
 export const devicesCanonicalService = {
-  list: (
-    context?: Parameters<
-      typeof devicesApiClient.list
-    >[0],
-  ) =>
-    devicesApiClient.list(
-      context,
-    ),
+  list: () =>
+    devicesApiClient.list(),
 
   get: (
     id: string,
-    context?: Parameters<
-      typeof devicesApiClient.get
-    >[1],
   ) =>
-    devicesApiClient.get(
-      id,
-      context,
-    ),
+    devicesApiClient.get(id),
 };

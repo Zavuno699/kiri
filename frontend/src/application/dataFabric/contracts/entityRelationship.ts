@@ -1,4 +1,4 @@
-export type EntityReference = { domain: string; id: string };
+export type EntityReference = { domain: string; id: string; type?: string };
 export type RelationshipType =
   | "contains"
   | "belongs-to"

@@ -1,4 +1,4 @@
-import type { ResourceClient } from "../../../application/resources/clients/resourceClient"
+import type { ResourceClient } from "../../../../application/resources/clients/resourceClient"
 
 export interface PaymentCollectionClient {
   list(
@@ -11,14 +11,15 @@ export function createPaymentCollectionClient(
 ): PaymentCollectionClient {
   return {
     async list(query) {
-      const response =
-        await client.execute({
+      const response = (client as any).execute ?
+        await (client as any).execute({
           key: "payments:list",
           domain: "payments",
           path: "/api/v1/payments",
           method: "GET",
           query,
-        })
+        }) :
+        await client.list();
 
       if (!response.ok) {
         throw new Error(

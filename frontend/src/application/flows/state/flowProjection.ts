@@ -6,6 +6,7 @@ export interface FlowProjection<TState = unknown> {
 export function flowProjection<TState>(
   key: string,
   state: TState,
+  _result?: unknown,
 ): FlowProjection<TState> {
   return { key, state }
 }

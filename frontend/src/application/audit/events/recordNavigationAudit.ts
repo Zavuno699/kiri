@@ -15,9 +15,9 @@ export function recordNavigationAudit(input: {
       action: "route-access",
       outcome: input.outcome,
       principal: input.principal,
-      sessionId: input.sessionId,
-      capability: input.capability ?? null,
-      reason: input.reason ?? null,
+      sessionId: input.sessionId ?? undefined,
+      capability: input.capability ?? undefined,
+      reason: input.reason ?? undefined,
       metadata: {
         path: input.path,
       },

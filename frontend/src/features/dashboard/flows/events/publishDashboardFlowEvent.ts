@@ -1,6 +1,6 @@
 import {
   flowEvent,
-} from "../../../application/flows/events/flowEvent";
+} from "../../../../application/flows/events/flowEvent";
 
 export async function publishDashboardFlowEvent(
   event: unknown,
@@ -8,6 +8,6 @@ export async function publishDashboardFlowEvent(
   await flowEvent(
     "dashboard",
     "dashboard",
-    event,
+    event as { type: string; payload: unknown },
   );
 }

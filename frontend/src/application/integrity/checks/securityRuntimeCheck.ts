@@ -1,15 +1,16 @@
 import {
-  securityRuntimeReady,
+  getSecurityRuntimeReadiness,
 } from "../../security/runtime/runtimeReadiness";
 
 export function securityRuntimeIntegrityCheck() {
+  const readiness = getSecurityRuntimeReadiness();
   return {
     key: "security.runtime",
     domain: "security",
-    status: securityRuntimeReady()
+    status: readiness.authorizationReady
       ? "pass"
       : "fail",
-    reason: securityRuntimeReady()
+    reason: readiness.authorizationReady
       ? "security-runtime-ready"
       : "security-runtime-not-ready",
     checkedAt: new Date().toISOString(),

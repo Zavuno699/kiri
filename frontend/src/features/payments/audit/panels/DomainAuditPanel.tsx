@@ -1,6 +1,6 @@
 import {
   listAuditEvents,
-} from "../../../application/audit/store/auditStore";
+} from "../../../../application/audit/store/auditStore";
 
 import {
   queryPaymentsAudit,

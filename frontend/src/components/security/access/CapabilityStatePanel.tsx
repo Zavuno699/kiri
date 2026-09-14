@@ -8,10 +8,7 @@ export function CapabilityStatePanel() {
     <section className="rounded-xl border border-slate-700/50 bg-slate-900/40 p-4">
       <div className="text-sm font-semibold">Capabilities</div>
       <div className="mt-3 text-xs text-slate-400">
-        Granted: {permissions?.granted.length ?? 0}
-      </div>
-      <div className="mt-1 text-xs text-slate-500">
-        Denied: {permissions?.denied.length ?? 0}
+        Total: {permissions?.length ?? 0}
       </div>
     </section>
   );

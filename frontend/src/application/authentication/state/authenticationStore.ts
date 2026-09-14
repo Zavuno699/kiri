@@ -22,6 +22,10 @@ export function getAuthenticationState(): AuthenticationState {
   return { ...state, capabilities: [...(state.capabilities ?? [])] }
 }
 
+export function isAuthenticated(): boolean {
+  return state.authenticated ?? false
+}
+
 export function setAuthenticationState(next: AuthenticationState): AuthenticationState {
   state = {
     ...state,

@@ -1,17 +1,21 @@
 import {
-  DEGRADED_MODE_POLICIES,
-} from "../../../application/degradedMode/policies/degradedModePolicy";
-
-import {
   getDegradedModeState,
 } from "../../../application/degradedMode/state/degradedModeStore";
 
 export function DegradedModePolicyPanel() {
-  const mode =
-    getDegradedModeState().mode;
+  const state = getDegradedModeState();
 
-  const policy =
-    DEGRADED_MODE_POLICIES[mode];
+  const policy = state.active ? {
+    allowReads: false,
+    allowWrites: false,
+    allowCommands: false,
+    allowSecurityAdmin: false,
+  } : {
+    allowReads: true,
+    allowWrites: true,
+    allowCommands: true,
+    allowSecurityAdmin: true,
+  };
 
   return (
     <section className="rounded-xl border border-slate-700/50 bg-slate-950/40 p-4">

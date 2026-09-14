@@ -1,4 +1,4 @@
-import type { AuditEvent } from "../../../application/audit/auditEvent";
+import type { AuditEvent } from "../../../../application/audit/auditEvent";
 
 export function selectLocksDeniedAudit(
   events: AuditEvent[],

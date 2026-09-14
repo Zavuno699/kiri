@@ -15,6 +15,10 @@ export function recordAuditEvent(event: AuditEvent): AuditEvent {
   return event
 }
 
+export function appendAuditEvent(event: AuditEvent): AuditEvent {
+  return recordAuditEvent(event)
+}
+
 export function clearAuditEvents(): void {
   events.length = 0
 }

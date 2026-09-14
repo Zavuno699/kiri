@@ -1,19 +1,18 @@
 import {
   getDegradedModeState,
-} from "../../../application/degradedMode/state/degradedModeStore";
+} from "../../../../application/degradedMode/state/degradedModeStore";
 
 export function locksReadsAvailable(): boolean {
-  return getDegradedModeState().mode !== "critical";
+  const state = getDegradedModeState();
+  return !state.active;
 }
 
 export function locksWritesAvailable(): boolean {
-  const mode =
-    getDegradedModeState().mode;
-
-  return mode === "normal" ||
-    mode === "limited";
+  const state = getDegradedModeState();
+  return !state.active;
 }
 
 export function locksCommandsAvailable(): boolean {
-  return getDegradedModeState().mode === "normal";
+  const state = getDegradedModeState();
+  return !state.active;
 }

@@ -1,6 +1,6 @@
 import {
   getDegradedModeState,
-} from "../../../application/degradedMode/state/degradedModeStore";
+} from "../../../../application/degradedMode/state/degradedModeStore";
 
 export function DegradedModePanel() {
   const state =
@@ -12,7 +12,7 @@ export function DegradedModePanel() {
         Devices availability
       </div>
       <div className="mt-2 text-xs text-slate-400">
-        Mode: {state.mode}
+        {state.active ? "Degraded" : "Normal"}
       </div>
     </section>
   );

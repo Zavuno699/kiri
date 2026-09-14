@@ -1,9 +1,7 @@
 import {
   getVisiblePageActions,
-} from "../../../application/ui/runtime/getVisiblePageActions";
+} from "../../../../application/ui/runtime/getVisiblePageActions";
 
 export function getPaymentsPageActions() {
-  return getVisiblePageActions(
-    "payments",
-  );
+  return getVisiblePageActions([]);
 }

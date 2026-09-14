@@ -11,8 +11,8 @@ export function getPropertiesPageConvergence() {
       "properties",
 
     runtimeReady:
-      state.runtime?.status ===
-      "ready",
+      state.runtime?.ready ??
+      false,
 
     hasData:
       state.data?.data !==
@@ -21,7 +21,7 @@ export function getPropertiesPageConvergence() {
       undefined,
 
     stale:
-      state.data?.stale ??
+      state.data?.loading ??
       false,
 
     error:

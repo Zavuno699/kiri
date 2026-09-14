@@ -1,19 +1,20 @@
 import type {
   QueryHandler,
-} from "../../../../application/handlers/canonical/contracts/queryHandler";
+} from "../../../../../application/handlers/canonical/contracts/queryHandler";
 
 export const devicesQueryHandler:
   QueryHandler = {
     queryType:
       "devices.query",
 
-    async execute(query) {
+    async execute(query: unknown) {
+      const q = query as { type: string; input: unknown };
       return {
         domain: "devices",
         queryType:
-          query.type,
+          q.type,
         input:
-          query.input,
+          q.input,
       };
     },
   };

@@ -1,6 +1,8 @@
 export interface ResourceCacheEntry<T = unknown> {
   value: T
   expiresAt?: number
+  createdAt?: number
+  request?: unknown
 }
 
 const cache = new Map<string, ResourceCacheEntry<unknown>>()

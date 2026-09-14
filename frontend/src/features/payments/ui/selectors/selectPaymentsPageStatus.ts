@@ -1,9 +1,12 @@
 import {
-  getPageRuntimeState,
-} from "../../../application/ui/state/pageRuntimeStore";
+  getPageRuntime,
+} from "../../../../application/ui/state/pageRuntimeStore";
 
 export function selectPaymentsPageStatus() {
-  return getPageRuntimeState(
-    "payments",
-  )?.status ?? "idle";
+  const runtime = getPageRuntime("payments");
+  if (!runtime) return "idle";
+  if (runtime.loading) return "loading";
+  if (runtime.error) return "error";
+  if (runtime.ready) return "ready";
+  return "idle";
 }

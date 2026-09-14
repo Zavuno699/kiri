@@ -33,8 +33,8 @@ export function propagateInvalidation(
       visited.add(targetKey);
 
       result.push({
-        domain: dependency.targetDomain,
-        projection: dependency.targetProjection,
+        domain: dependency.targetDomain ?? "",
+        projection: dependency.targetProjection ?? "",
         entityId: current.entityId,
         reason: "dependency-change",
         occurredAt: current.occurredAt,

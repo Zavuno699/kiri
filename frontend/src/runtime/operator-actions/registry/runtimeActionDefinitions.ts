@@ -1,4 +1,4 @@
-import type { OperatorActionDefinition } from "../../application/operator-actions/operatorActionDefinition"
+import type { OperatorActionDefinition } from "../../../application/operator-actions/operatorActionDefinition"
 
 export const runtimeActionDefinitions:
   OperatorActionDefinition[] = [

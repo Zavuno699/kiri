@@ -13,5 +13,5 @@ export function canMutate(
     return false;
   }
 
-  return state.capabilities.includes(capability);
+  return state.capabilities?.includes(capability) ?? false;
 }

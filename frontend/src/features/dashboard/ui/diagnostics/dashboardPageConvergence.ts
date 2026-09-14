@@ -11,8 +11,8 @@ export function getDashboardPageConvergence() {
       "dashboard",
 
     runtimeReady:
-      state.runtime?.status ===
-      "ready",
+      state.runtime?.ready ??
+      false,
 
     hasData:
       state.data?.data !==
@@ -21,7 +21,7 @@ export function getDashboardPageConvergence() {
       undefined,
 
     stale:
-      state.data?.stale ??
+      state.data?.loading ??
       false,
 
     error:

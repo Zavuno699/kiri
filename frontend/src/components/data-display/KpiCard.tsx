@@ -6,11 +6,12 @@ interface KpiCardProps {
   accent?: "blue" | "green" | "amber" | "red" | "purple"
 }
 
-const accents = {
+const accents: Record<"blue" | "green" | "amber" | "red" | "purple", string> = {
   blue: "text-kiri-blue-400",
   green: "text-kiri-green",
   amber: "text-kiri-amber",
   red: "text-kiri-red",
+  purple: "text-kiri-purple",
 }
 
 export function KpiCard({

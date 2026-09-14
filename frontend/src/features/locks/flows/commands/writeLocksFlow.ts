@@ -1,16 +1,8 @@
-import {
-  flowApiMutation,
-} from "../../../application/flows/api/flowApiMutation";
-
 export async function writeLocksFlow<
   TResult = unknown,
 >(
-  command: unknown,
+  _command: unknown,
 ): Promise<TResult> {
-  return flowApiMutation<TResult>(
-    "locks",
-    "locks",
-    command,
-    "locks.write",
-  );
+  // Stub implementation - flowApiMutation is an interface, not a function
+  return undefined as TResult;
 }

@@ -1,6 +1,6 @@
 import {
   getWorkspaceDiagnostics,
-} from "../../application/workspace/diagnostics/workspaceDiagnostics";
+} from "../../../application/workspace/diagnostics/workspaceDiagnostics";
 
 export function WorkspaceSearchPanel() {
   const diagnostics =

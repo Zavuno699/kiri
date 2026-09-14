@@ -36,9 +36,9 @@ export function EntityRelationshipList({
                 className="rounded-lg border border-slate-800 p-3"
               >
                 <div className="text-xs text-slate-300">
-                  {relationship.source.type}
+                  {relationship.source.domain}
                   {" → "}
-                  {relationship.target.type}
+                  {relationship.target.domain}
                 </div>
 
                 <div className="mt-1 text-[11px] text-slate-500">

@@ -11,15 +11,9 @@ export function buildCanonicalWorkspaceQueues(): void {
       "operator-security-review",
     domain:
       "security",
-    type:
-      "security",
-    title:
-      "Security state review",
-    severity:
-      "info",
+    action:
+      "security-review",
     createdAt:
       now,
-    requiresAction:
-      false,
   });
 }

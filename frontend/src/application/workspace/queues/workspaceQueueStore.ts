@@ -17,3 +17,7 @@ export function addWorkspaceQueueItem(
 export function listWorkspaceQueueItems(): WorkspaceQueueItem[] {
   return [...queue]
 }
+
+export function clearWorkspaceQueue(): void {
+  queue.length = 0
+}

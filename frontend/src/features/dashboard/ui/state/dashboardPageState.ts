@@ -1,20 +1,20 @@
 import {
-  getPageDataState,
-} from "../../../application/ui/state/pageDataStore";
+  getPageData,
+} from "../../../../application/ui/state/pageDataStore";
 
 import {
-  getPageRuntimeState,
-} from "../../../application/ui/state/pageRuntimeStore";
+  getPageRuntime,
+} from "../../../../application/ui/state/pageRuntimeStore";
 
 export function getDashboardPageState() {
   return {
     data:
-      getPageDataState(
+      getPageData(
         "dashboard",
       ),
 
     runtime:
-      getPageRuntimeState(
+      getPageRuntime(
         "dashboard",
       ),
   };

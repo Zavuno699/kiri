@@ -1,3 +1,3 @@
 export {
-  loadSecuritySummary,
+  SecurityController,
 } from "./securityController"

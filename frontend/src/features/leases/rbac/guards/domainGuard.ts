@@ -1,5 +1,5 @@
 import { evaluateLeasesRBAC } from "../domainPermission";
 
 export function leasesRBACAllowed(): boolean {
-  return evaluateLeasesRBAC().allowed;
+  return evaluateLeasesRBAC().allows();
 }

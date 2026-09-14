@@ -1,9 +1,12 @@
 import {
-  getPageRuntimeState,
-} from "../../../application/ui/state/pageRuntimeStore";
+  getPageRuntime,
+} from "../../../../application/ui/state/pageRuntimeStore";
 
 export function selectDevicesPageStatus() {
-  return getPageRuntimeState(
-    "devices",
-  )?.status ?? "idle";
+  const runtime = getPageRuntime("devices");
+  if (!runtime) return "idle";
+  if (runtime.loading) return "loading";
+  if (runtime.error) return "error";
+  if (runtime.ready) return "ready";
+  return "idle";
 }

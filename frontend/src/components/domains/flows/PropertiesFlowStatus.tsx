@@ -13,8 +13,8 @@ export function PropertiesFlowStatus() {
       </div>
 
       <div className="mt-2 text-xs text-slate-400">
-        Read capability:{" "}
-        {diagnostics.readCapability}
+        Query capability:{" "}
+        {String(diagnostics.queryCapability)}
       </div>
     </section>
   );

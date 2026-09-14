@@ -3,7 +3,7 @@ import {
 } from "../../consistency/state/consistencyStore";
 
 import {
-  securityRuntimeReady,
+  getSecurityRuntimeReadiness,
 } from "../../security/runtime/runtimeReadiness";
 
 import {
@@ -26,7 +26,7 @@ export function refreshDegradedMode(): void {
     consistencyStatus:
       snapshot?.status ?? "unknown",
     securityReady:
-      securityRuntimeReady(),
+      getSecurityRuntimeReadiness().authorizationReady,
     recoveryFailed:
       getRecoveryState().status === "failed",
   });
@@ -39,7 +39,7 @@ export function refreshDegradedMode(): void {
         : `frontend-entered-${mode}-mode`,
     enteredAt:
       mode === "normal"
-        ? null
+        ? new Date().toISOString()
         : new Date().toISOString(),
     manual: false,
   });

@@ -18,12 +18,12 @@ export function recordAuthorizationAudit(input: {
       action: input.action,
       outcome: input.outcome,
       principal: input.principal,
-      sessionId: input.sessionId,
+      sessionId: input.sessionId ?? undefined,
       capability: input.capability,
-      resourceType: input.resourceType ?? null,
-      resourceId: input.resourceId ?? null,
-      reason: input.reason ?? null,
-      correlationId: input.correlationId ?? null,
+      resourceType: input.resourceType ?? undefined,
+      resourceId: input.resourceId ?? undefined,
+      reason: input.reason ?? undefined,
+      correlationId: input.correlationId ?? undefined,
     }),
   );
 }

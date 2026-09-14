@@ -1,8 +1,8 @@
 import type { CacheEntry } from "./cacheEntry"
 
 export interface CacheStore {
-  set<T>(key: string, value: T): void
-  get<T>(key: string): CacheEntry<T> | undefined
+  set(key: string, value: unknown): void
+  get(key: string): CacheEntry<unknown> | undefined
   remove(key: string): void
   clear(): void
 }
@@ -11,7 +11,7 @@ export function createCacheStore(): CacheStore {
   const values = new Map<string, CacheEntry<unknown>>()
 
   return {
-    set<T>(key, value) {
+    set(key: string, value: unknown) {
       values.set(key, {
         key,
         value,
@@ -21,13 +21,13 @@ export function createCacheStore(): CacheStore {
       })
     },
 
-    get<T>(key) {
+    get(key: string) {
       return values.get(key) as
-        | CacheEntry<T>
+        | CacheEntry<unknown>
         | undefined
     },
 
-    remove(key) {
+    remove(key: string) {
       values.delete(key)
     },
 

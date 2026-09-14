@@ -3,23 +3,11 @@ import {
 } from "../../api/canonical/clients/client";
 
 export const locksCanonicalService = {
-  list: (
-    context?: Parameters<
-      typeof locksApiClient.list
-    >[0],
-  ) =>
-    locksApiClient.list(
-      context,
-    ),
+  list: () =>
+    locksApiClient.list(),
 
   get: (
     id: string,
-    context?: Parameters<
-      typeof locksApiClient.get
-    >[1],
   ) =>
-    locksApiClient.get(
-      id,
-      context,
-    ),
+    locksApiClient.get(id),
 };

@@ -19,9 +19,9 @@ export function createDispatchContext(): DispatchContext {
 
   return {
     principal:
-      authentication.principal,
+      authentication.principal ?? null,
     sessionId:
-      authentication.sessionId,
+      authentication.sessionId ?? null,
     correlationId:
       correlation.correlationId,
     causationId:

@@ -5,14 +5,17 @@ export interface LeaseDataflowController {
 
 export function createLeaseDataflowController():
   LeaseDataflowController {
+  let running = false;
 
   return {
     start() {
-      running = true
+      running = true;
+      void running;
     },
 
     stop() {
-      running = false
+      running = false;
+      void running;
     },
   }
 }

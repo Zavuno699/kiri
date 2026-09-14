@@ -1,4 +1,4 @@
-import type { PageDataState } from "../../../application/page-data/core/pageDataState"
+import type { PageDataState } from "../../../../application/page-data/core/pageDataState"
 
 export interface PaymentPageController {
   load(
@@ -19,17 +19,22 @@ export function createPaymentPageController(
         const data = await load(query)
 
         return {
-          lifecycle: "ready",
+          pageId: "payments",
+          loading: false,
+          stale: false,
+          error: null,
           data,
-          updatedAt: new Date().toISOString(),
         }
       } catch (error) {
         return {
-          lifecycle: "error",
+          pageId: "payments",
+          loading: false,
+          stale: false,
           error:
             error instanceof Error
               ? error.message
               : "Page load failed.",
+          data: null,
         }
       }
     },
@@ -41,17 +46,22 @@ export function createPaymentPageController(
         )()
 
         return {
-          lifecycle: "ready",
+          pageId: "payments",
+          loading: false,
+          stale: false,
+          error: null,
           data,
-          updatedAt: new Date().toISOString(),
         }
       } catch (error) {
         return {
-          lifecycle: "error",
+          pageId: "payments",
+          loading: false,
+          stale: false,
           error:
             error instanceof Error
               ? error.message
               : "Page refresh failed.",
+          data: null,
         }
       }
     },

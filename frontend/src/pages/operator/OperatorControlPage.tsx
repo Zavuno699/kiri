@@ -1,14 +1,12 @@
 import { RoleAwareNavigation } from "../../components/operator/navigation/RoleAwareNavigation";
 import { RoleAwareActionList } from "../../components/operator/actions/RoleAwareActionList";
 import { RoleCapabilitySummary } from "../../components/operator/rbac/RoleCapabilitySummary";
-import { OperatorAccessState } from "../../components/operator/access/OperatorAccessState";
 
 export function OperatorControlPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8">
       <div className="mx-auto max-w-7xl space-y-4">
         <RoleCapabilitySummary />
-        <OperatorAccessState />
 
         <section className="rounded-xl border border-slate-700/50 bg-slate-950/40 p-4">
           <div className="text-sm font-semibold">

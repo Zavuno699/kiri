@@ -16,7 +16,7 @@ export function projectOperatorActivity(
     .map((event) => ({
       id: event.id,
       principal: event.principal,
-      action: event.action,
+      action: (event.action ?? "unknown") as string,
       category: event.category,
       outcome: event.outcome,
       occurredAt: event.occurredAt,

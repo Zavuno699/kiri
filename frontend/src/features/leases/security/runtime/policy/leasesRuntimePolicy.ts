@@ -1,4 +1,4 @@
-import { evaluateRuntimePolicy } from "../../../../../../application/security/runtime/policy/runtimePolicyEvaluator"
+import { evaluateRuntimePolicy } from "../../../../../application/security/runtime/policy/runtimePolicyEvaluator"
 
 export function evaluateLeasesReadPolicy() {
   return evaluateRuntimePolicy("leases.read")

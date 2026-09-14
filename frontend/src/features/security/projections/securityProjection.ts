@@ -13,7 +13,7 @@ export function projectSecurityMetrics(
 
     expiredCredentials: 0,
 
-    restrictedAccesses:
+    restrictedAccess:
       summary?.restrictedAccesses ?? 0,
 
     frozenAccess:

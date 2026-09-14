@@ -1,4 +1,4 @@
-import { evaluateRuntimePolicy } from "../../../../application/security/runtime/policy/runtimePolicyEvaluator";
+import { evaluateRuntimePolicy } from "../../../../../application/security/runtime/policy/runtimePolicyEvaluator";
 
 export function propertiesRuntimeReadable(): boolean {
   return evaluateRuntimePolicy("properties.read").allowed;

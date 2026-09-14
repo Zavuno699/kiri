@@ -1,12 +1,11 @@
 import {
   flowProjection,
-} from "../../../application/flows/state/flowProjection";
+} from "../../../../application/flows/state/flowProjection";
 
 export function projectSecurityFlow(
   payload: unknown,
 ): void {
   flowProjection(
-    "security",
     "security",
     payload,
   );

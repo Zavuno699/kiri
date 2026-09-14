@@ -15,7 +15,7 @@ export function initializeUiRuntime(): void {
   registerCanonicalPageActions();
 
   for (
-    const domain of [
+    const _domain of [
       "dashboard",
       "properties",
       "leases",
@@ -26,15 +26,11 @@ export function initializeUiRuntime(): void {
     ]
   ) {
     registerPageRuntime({
-      domain,
-      status:
-        "idle",
-      lastLoadedAt:
-        null,
-      lastUpdatedAt:
-        null,
-      error:
-        null,
+      pageId: _domain,
+      ready: false,
+      loading: false,
+      stale: false,
+      error: null,
     });
   }
 }

@@ -6,5 +6,5 @@ export interface RBACPolicyDefinition {
 export const defaultRBACPolicy:
   RBACPolicyDefinition = {
     key: "default",
-    capabilities: ["*"],
+    capabilities: [],
   }

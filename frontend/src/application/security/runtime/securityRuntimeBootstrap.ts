@@ -5,17 +5,15 @@ export function bootstrapSecurityRuntime() {
     session: {
       initialized: true,
       requiresAuthentication: true,
-      session: {
-        id: crypto.randomUUID(),
-      },
+      session: null,
     },
     identity: {
-      authenticated: true,
-      principal: "operator",
-      tenantId: "default",
+      authenticated: false,
+      principal: null,
+      tenantId: null,
     },
-    permissions: ["*"],
-    authorizationReady: true,
+    permissions: null,
+    authorizationReady: false,
     frozen: false,
   })
 }

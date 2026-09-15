@@ -9,6 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/kirilock/backend/security-service/internal/repository"
 	security "github.com/kirilock/backend/security-service/internal/security"
 	httpsecurity "github.com/kirilock/backend/security-service/internal/security/http"
 )
@@ -26,11 +29,31 @@ func main() {
 		log.Fatal("SECURITY_TOKEN_SECRET environment variable is required")
 	}
 
-	credentialRegistry := security.NewCredentialRegistry()
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL environment variable is required")
+	}
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		log.Fatalf("failed to create database pool: %v", err)
+	}
+	defer pool.Close()
+
+	credentialRepo, err := repository.NewDBCredentialRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create credential repository: %v", err)
+	}
+
+	revocationRepo, err := repository.NewDBRevocationRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create revocation repository: %v", err)
+	}
 
 	authenticator := security.NewTokenAuthenticator(
 		tokenSecret,
-		credentialRegistry,
+		credentialRepo,
+		revocationRepo,
 	)
 
 	mux := http.NewServeMux()

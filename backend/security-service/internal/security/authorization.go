@@ -56,6 +56,19 @@ func NewDefaultAuthorizationPolicy() AuthorizationPolicy {
 				ScopeSecurityWrite,
 				ScopeAuditRead,
 			),
+			RoleSuperAdmin: NewPermissionSet(
+				ScopeLeaseRead,
+				ScopeLeaseWrite,
+				ScopePaymentRead,
+				ScopePaymentWrite,
+				ScopeDeviceRead,
+				ScopeDeviceCommand,
+				ScopeLockRead,
+				ScopeLockCommand,
+				ScopeSecurityRead,
+				ScopeSecurityWrite,
+				ScopeAuditRead,
+			),
 		},
 	}
 }

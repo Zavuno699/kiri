@@ -10,22 +10,33 @@ import (
 
 var (
 	ErrMissingAuthorizationHeader = errors.New("missing authorization header")
-	ErrInvalidTokenFormat        = errors.New("invalid token format")
-	ErrCredentialNotFound        = errors.New("credential not found")
+	ErrInvalidTokenFormat         = errors.New("invalid token format")
+	ErrCredentialNotFound         = errors.New("credential not found")
 )
 
+type CredentialRepository interface {
+	Get(context.Context, string) (Credential, bool)
+}
+
+type RevocationRepository interface {
+	IsRevoked(context.Context, string, time.Time) bool
+}
+
 type TokenAuthenticator struct {
-	secret            []byte
-	credentialRegistry *CredentialRegistry
+	secret         []byte
+	credentialRepo CredentialRepository
+	revocationRepo RevocationRepository
 }
 
 func NewTokenAuthenticator(
 	secret string,
-	credentialRegistry *CredentialRegistry,
+	credentialRepo CredentialRepository,
+	revocationRepo RevocationRepository,
 ) *TokenAuthenticator {
 	return &TokenAuthenticator{
-		secret:            []byte(secret),
-		credentialRegistry: credentialRegistry,
+		secret:         []byte(secret),
+		credentialRepo: credentialRepo,
+		revocationRepo: revocationRepo,
 	}
 }
 
@@ -39,7 +50,7 @@ func (a *TokenAuthenticator) Authenticate(
 	}
 
 	authHeader = strings.TrimSpace(authHeader)
-	
+
 	token := authHeader
 	if strings.HasPrefix(authHeader, "Bearer ") {
 		token = strings.TrimPrefix(authHeader, "Bearer ")
@@ -52,7 +63,7 @@ func (a *TokenAuthenticator) Authenticate(
 
 	fingerprint := TokenFingerprint(a.secret, []byte(token))
 
-	credential, ok := a.credentialRegistry.Get(fingerprint)
+	credential, ok := a.credentialRepo.Get(ctx, fingerprint)
 	if !ok {
 		return Principal{}, ErrCredentialNotFound
 	}
@@ -62,10 +73,16 @@ func (a *TokenAuthenticator) Authenticate(
 		return Principal{}, err
 	}
 
+	if a.revocationRepo != nil {
+		if a.revocationRepo.IsRevoked(ctx, credential.IdentityID, now) {
+			return Principal{}, ErrUnauthorized
+		}
+	}
+
 	return Principal{
-		Subject:  credential.IdentityID,
-		TenantID: "",
-		Roles:    []string{},
+		Subject:     credential.IdentityID,
+		TenantID:    "",
+		Roles:       []string{},
 		Permissions: []string{},
 	}, nil
 }

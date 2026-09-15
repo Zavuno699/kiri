@@ -9,6 +9,7 @@ const (
 	RoleDevice        Role = "device"
 	RoleOperator      Role = "operator"
 	RoleSecurityAdmin Role = "security_admin"
+	RoleSuperAdmin    Role = "super_admin"
 )
 
 type Scope string

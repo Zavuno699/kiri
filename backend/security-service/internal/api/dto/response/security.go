@@ -1,9 +1,10 @@
 package response
 
 type Authentication struct {
-	Authenticated bool   `json:"authenticated"`
-	PrincipalID   string `json:"principal_id"`
-	SessionID     string `json:"session_id"`
+	Authenticated bool     `json:"authenticated"`
+	Subject       string   `json:"subject"`
+	Roles         []string `json:"roles"`
+	Permissions   []string `json:"permissions"`
 }
 
 type Authorization struct {

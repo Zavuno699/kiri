@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kirilock/backend/security-service/internal/api/dto/request"
+	"github.com/kirilock/backend/security-service/internal/api/dto/response"
 	"github.com/kirilock/backend/security-service/internal/repository"
 	security "github.com/kirilock/backend/security-service/internal/security"
 	sharedhttp "github.com/kirilock/backend/shared/http"
@@ -107,9 +109,16 @@ func main() {
 			return
 		}
 
+		authResp := response.Authentication{
+			Authenticated: true,
+			Subject:       principal.Subject,
+			Roles:         principal.Roles,
+			Permissions:   principal.Permissions,
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"subject":"` + principal.Subject + `","authenticated":true}`))
+		json.NewEncoder(w).Encode(authResp)
 	})
 
 	mux.HandleFunc("POST /authorize", func(w http.ResponseWriter, r *http.Request) {

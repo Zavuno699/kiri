@@ -9,6 +9,7 @@ import (
 	sharedhttp "github.com/kirilock/backend/shared/http"
 	"github.com/kirilock/backend/shared/validation"
 
+	"github.com/kirilock/backend/identity-service/internal/middleware"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
 
@@ -104,6 +105,14 @@ func (h *SessionHandler) ValidateSession(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	principal, err := middleware.PrincipalFromContext(r.Context())
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
+		return
+	}
+
 	var req ValidateSessionRequest
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
 		sharedhttp.WriteValidationError(w, r, err)
@@ -121,6 +130,22 @@ func (h *SessionHandler) ValidateSession(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid session"})
 		return
+	}
+
+	if session.SubjectID != principal.Subject {
+		hasSuperAdminRole := false
+		for _, role := range principal.Roles {
+			if role == "super_admin" {
+				hasSuperAdminRole = true
+				break
+			}
+		}
+		if !hasSuperAdminRole {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "insufficient permissions"})
+			return
+		}
 	}
 
 	response := SessionResponse{
@@ -148,6 +173,14 @@ func (h *SessionHandler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	principal, err := middleware.PrincipalFromContext(r.Context())
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
+		return
+	}
+
 	var req RevokeSessionRequest
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
 		sharedhttp.WriteValidationError(w, r, err)
@@ -157,6 +190,30 @@ func (h *SessionHandler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 	if err := h.validator.Error(req); err != nil {
 		sharedhttp.WriteValidationError(w, r, err)
 		return
+	}
+
+	session, err := h.sessionService.ValidateSession(r.Context(), req.SessionID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid session"})
+		return
+	}
+
+	if session.SubjectID != principal.Subject {
+		hasSuperAdminRole := false
+		for _, role := range principal.Roles {
+			if role == "super_admin" {
+				hasSuperAdminRole = true
+				break
+			}
+		}
+		if !hasSuperAdminRole {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "insufficient permissions"})
+			return
+		}
 	}
 
 	if err := h.sessionService.RevokeSession(
@@ -180,7 +237,7 @@ func (h *SessionHandler) RevokeAllSubjectSessions(w http.ResponseWriter, r *http
 		return
 	}
 
-	principal, err := sharedhttp.PrincipalFromContext(r.Context())
+	principal, err := middleware.PrincipalFromContext(r.Context())
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -188,7 +245,7 @@ func (h *SessionHandler) RevokeAllSubjectSessions(w http.ResponseWriter, r *http
 		return
 	}
 
-	actorID := principal.TenantID.String()
+	actorID := principal.Subject
 
 	if err := h.sessionService.RevokeAllSubjectSessions(
 		r.Context(),

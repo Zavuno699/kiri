@@ -49,8 +49,10 @@ func (c *AuthClient) Authenticate(ctx context.Context, token string) (Principal,
 	}
 
 	var authResp struct {
-		Subject       string `json:"subject"`
-		Authenticated bool   `json:"authenticated"`
+		Authenticated bool     `json:"authenticated"`
+		Subject       string   `json:"subject"`
+		Roles         []string `json:"roles"`
+		Permissions   []string `json:"permissions"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&authResp); err != nil {
@@ -62,6 +64,8 @@ func (c *AuthClient) Authenticate(ctx context.Context, token string) (Principal,
 	}
 
 	return Principal{
-		Subject: authResp.Subject,
+		Subject:     authResp.Subject,
+		Roles:       authResp.Roles,
+		Permissions: authResp.Permissions,
 	}, nil
 }

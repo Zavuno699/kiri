@@ -1,25 +1,28 @@
 export interface RequestHeaderContext {
   correlationId?: string
   idempotencyKey?: string
+  authToken?: string
 }
 
 export function createRequestHeaders(
   context: RequestHeaderContext = {},
 ): Record<string, string> {
-  return {
+  const headers: Record<string, string> = {
     Accept: "application/json",
     "Content-Type": "application/json",
-    ...(context.correlationId
-      ? {
-          "X-Correlation-ID":
-            context.correlationId,
-        }
-      : {}),
-    ...(context.idempotencyKey
-      ? {
-          "Idempotency-Key":
-            context.idempotencyKey,
-        }
-      : {}),
   }
+
+  if (context.correlationId) {
+    headers["X-Correlation-ID"] = context.correlationId
+  }
+
+  if (context.idempotencyKey) {
+    headers["Idempotency-Key"] = context.idempotencyKey
+  }
+
+  if (context.authToken) {
+    headers["Authorization"] = `Bearer ${context.authToken}`
+  }
+
+  return headers
 }

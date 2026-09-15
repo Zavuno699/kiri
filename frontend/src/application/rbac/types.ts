@@ -1,9 +1,13 @@
+// Frontend RoleKey now matches authoritative backend roles from backend/security-service/internal/security/role.go
+// Backend roles: tenant, landlord, service, device, operator, security_admin, super_admin
 export type RoleKey =
-  | "viewer"
+  | "tenant"
+  | "landlord"
+  | "service"
+  | "device"
   | "operator"
-  | "manager"
-  | "administrator"
-  | "security-admin";
+  | "security_admin"
+  | "super_admin";
 
 export type PermissionEffect =
   | "allow"

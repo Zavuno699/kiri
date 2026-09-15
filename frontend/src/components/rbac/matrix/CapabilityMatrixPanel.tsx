@@ -4,11 +4,11 @@ import {
 
 export function CapabilityMatrixPanel() {
   const matrix = buildCapabilityMatrix([
-    "viewer",
+    "tenant",
+    "landlord",
     "operator",
-    "manager",
-    "administrator",
-    "security-admin",
+    "security_admin",
+    "super_admin",
   ]);
 
   const granted = matrix.filter((item) => item.allowed).length;

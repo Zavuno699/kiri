@@ -10,6 +10,9 @@ import {
 import {
   HttpApplicationError,
 } from "./httpError"
+import {
+  getAuthenticationState,
+} from "../../application/authentication/state/authenticationStore"
 
 export interface HttpRequestOptions {
   method?: string
@@ -17,6 +20,7 @@ export interface HttpRequestOptions {
   correlationId?: string
   idempotencyKey?: string
   signal?: AbortSignal
+  useAuth?: boolean
 }
 
 export async function requestJson<T>(
@@ -31,6 +35,9 @@ export async function requestJson<T>(
       method,
     )
 
+  const authState = getAuthenticationState()
+  const authToken = options.useAuth && authState.sessionId ? authState.sessionId : undefined
+
   const response = await fetch(endpoint, {
     method,
     headers: createRequestHeaders({
@@ -39,6 +46,7 @@ export async function requestJson<T>(
         lifecycle.requestId,
       idempotencyKey:
         options.idempotencyKey,
+      authToken,
     }),
     body:
       options.body == null

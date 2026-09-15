@@ -30,21 +30,21 @@ type DBSubjectRepository struct {
 	db DB
 }
 
-type DB interface {
-	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
-	QueryRow(context.Context, string, ...any) pgx.Row
-}
-
-type TxDB interface {
-	Begin(context.Context) (pgx.Tx, error)
-}
-
 func NewDBSubjectRepository(db DB) (*DBSubjectRepository, error) {
 	if db == nil {
 		return nil, errors.New("database is required")
 	}
 
 	return &DBSubjectRepository{db: db}, nil
+}
+
+func (r *DBSubjectRepository) Begin(ctx context.Context) (pgx.Tx, error) {
+	txdb, ok := r.db.(TxDB)
+	if !ok {
+		return nil, errors.New("database does not support transactions")
+	}
+
+	return txdb.Begin(ctx)
 }
 
 func (r *DBSubjectRepository) Create(

@@ -39,6 +39,15 @@ func NewDBSessionRepository(db DB) (*DBSessionRepository, error) {
 	return &DBSessionRepository{db: db}, nil
 }
 
+func (r *DBSessionRepository) Begin(ctx context.Context) (pgx.Tx, error) {
+	txdb, ok := r.db.(TxDB)
+	if !ok {
+		return nil, errors.New("database does not support transactions")
+	}
+
+	return txdb.Begin(ctx)
+}
+
 func (r *DBSessionRepository) Create(
 	ctx context.Context,
 	session Session,

@@ -37,6 +37,15 @@ func NewDBCredentialRepository(db DB) (*DBCredentialRepository, error) {
 	return &DBCredentialRepository{db: db}, nil
 }
 
+func (r *DBCredentialRepository) Begin(ctx context.Context) (pgx.Tx, error) {
+	txdb, ok := r.db.(TxDB)
+	if !ok {
+		return nil, errors.New("database does not support transactions")
+	}
+
+	return txdb.Begin(ctx)
+}
+
 func (r *DBCredentialRepository) Create(
 	ctx context.Context,
 	credential Credential,

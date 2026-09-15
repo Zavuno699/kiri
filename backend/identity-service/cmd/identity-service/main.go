@@ -64,6 +64,7 @@ func main() {
 	tenancyRepo := repository.NewTenancyRepository(pool)
 	paymentAccountRepo := repository.NewPaymentAccountRepository(pool)
 	paymentResponsibilityRepo := repository.NewPaymentResponsibilityRepository(pool)
+	landlordApplicationRepo := repository.NewLandlordApplicationRepository(pool)
 
 	subjectService, err := service.NewSubjectService(subjectRepo)
 	if err != nil {
@@ -81,6 +82,7 @@ func main() {
 	unitService := service.NewUnitService(unitRepo, propertyRepo, landlordProfileRepo, landlordService)
 	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, pool)
 	paymentService := service.NewPaymentService(paymentAccountRepo, paymentResponsibilityRepo, landlordProfileRepo, landlordService)
+	landlordApplicationService := service.NewLandlordApplicationService(landlordApplicationRepo, subjectRepo)
 
 	subjectHandler, err := handler.NewSubjectHandler(subjectService)
 	if err != nil {
@@ -118,6 +120,11 @@ func main() {
 		log.Fatalf("failed to create payment handler: %v", err)
 	}
 
+	landlordApplicationHandler, err := handler.NewLandlordApplicationHandler(landlordApplicationService)
+	if err != nil {
+		log.Fatalf("failed to create landlord application handler: %v", err)
+	}
+
 	authClient := client.NewAuthClient(securityServiceURL)
 	authMiddleware := middleware.NewAuthMiddleware(authClient)
 
@@ -130,6 +137,9 @@ func main() {
 
 	mux.HandleFunc("POST /subjects", subjectHandler.CreateSubject)
 	mux.HandleFunc("POST /authenticate", subjectHandler.Authenticate)
+
+	// Public landlord registration (no auth required)
+	mux.HandleFunc("POST /landlords/register", landlordApplicationHandler.PublicLandlordRegistration)
 
 	mux.Handle("POST /sessions", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.CreateSession)))
 	mux.Handle("POST /sessions/validate", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.ValidateSession)))
@@ -171,6 +181,13 @@ func main() {
 	mux.Handle("POST /payments/accounts/activate", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.ActivatePaymentAccount)))
 	mux.Handle("POST /payments/responsibilities", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.CreatePaymentResponsibility)))
 	mux.Handle("GET /payments/responsibility", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetTenantPaymentResponsibility)))
+
+	// Landlord application routes
+	mux.Handle("GET /landlords/application/status", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.GetApplicationStatus)))
+	mux.Handle("POST /landlords/application/submit", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.SubmitVerification)))
+	mux.Handle("GET /landlords/applications", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.AdminListApplications)))
+	mux.Handle("GET /landlords/application", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.AdminGetApplication)))
+	mux.Handle("POST /landlords/application/review", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.AdminReview)))
 
 	server := &http.Server{
 		Addr:         ":8081",

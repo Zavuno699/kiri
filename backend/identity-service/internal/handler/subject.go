@@ -19,11 +19,8 @@ var (
 )
 
 type CreateSubjectRequest struct {
-	Email        string   `json:"email" validate:"required,email"`
-	Password     string   `json:"password" validate:"required,min=8"`
-	Roles        []string `json:"roles,omitempty"`
-	IsAdmin      bool     `json:"is_admin,omitempty"`
-	IsSuperAdmin bool     `json:"is_super_admin,omitempty"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
 }
 
 type SubjectResponse struct {
@@ -72,9 +69,9 @@ func (h *SubjectHandler) CreateSubject(w http.ResponseWriter, r *http.Request) {
 		r.Context(),
 		req.Email,
 		req.Password,
-		req.Roles,
-		req.IsAdmin,
-		req.IsSuperAdmin,
+		nil,   // No roles allowed in public registration
+		false, // No admin flag allowed
+		false, // No super admin flag allowed
 	)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")

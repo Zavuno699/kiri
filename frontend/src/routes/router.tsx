@@ -24,6 +24,15 @@ import { OperationalIntegrityPage } from "../pages/integrity/OperationalIntegrit
 import { UnifiedRuntimePage } from "../pages/runtime/UnifiedRuntimePage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
+// Public pages
+import { AboutPage } from "../pages/public/AboutPage";
+import { HowItWorksPage } from "../pages/public/HowItWorksPage";
+import { TermsPage } from "../pages/public/TermsPage";
+import { PrivacyPage } from "../pages/public/PrivacyPage";
+import { HelpPage } from "../pages/public/HelpPage";
+import { LandlordRegistrationPage } from "../pages/public/LandlordRegistrationPage";
+import { LandlordApplicationStatusPage } from "../pages/public/LandlordApplicationStatusPage";
+
 export const router = createBrowserRouter([
   {
     path: "/signin",
@@ -35,6 +44,43 @@ export const router = createBrowserRouter([
     element: <UnauthorizedPage />,
     errorElement: <RouteErrorBoundary />,
   },
+  // Public routes (no authentication required)
+  {
+    path: "/about",
+    element: <AboutPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/how-it-works",
+    element: <HowItWorksPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/terms",
+    element: <TermsPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/privacy",
+    element: <PrivacyPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/help",
+    element: <HelpPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/register-landlord",
+    element: <LandlordRegistrationPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/landlord-application-status",
+    element: <LandlordApplicationStatusPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  // Protected routes (authentication required)
   {
     path: "/",
     element: (

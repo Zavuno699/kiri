@@ -4,7 +4,7 @@ export interface PaymentsAccessState {
   reason: string | null
 }
 
-export function resolvePaymentsAccess(): PaymentsAccessState {
+export function getPaymentsAccessState(): PaymentsAccessState {
   return {
     readable: true,
     writable: false,

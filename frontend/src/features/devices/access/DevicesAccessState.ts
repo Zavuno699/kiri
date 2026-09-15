@@ -4,7 +4,7 @@ export interface DevicesAccessState {
   reason: string | null
 }
 
-export function resolveDevicesAccess(): DevicesAccessState {
+export function getDevicesAccessState(): DevicesAccessState {
   return {
     readable: true,
     writable: false,

@@ -4,7 +4,7 @@ export interface LocksAccessState {
   reason: string | null
 }
 
-export function resolveLocksAccess(): LocksAccessState {
+export function getLocksAccessState(): LocksAccessState {
   return {
     readable: true,
     writable: false,

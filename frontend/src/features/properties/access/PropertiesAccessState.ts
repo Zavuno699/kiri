@@ -4,7 +4,7 @@ export interface PropertiesAccessState {
   reason: string | null
 }
 
-export function resolvePropertiesAccess(): PropertiesAccessState {
+export function getPropertiesAccessState(): PropertiesAccessState {
   return {
     readable: true,
     writable: false,

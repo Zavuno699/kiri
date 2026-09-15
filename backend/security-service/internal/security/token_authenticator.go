@@ -22,21 +22,37 @@ type RevocationRepository interface {
 	IsRevoked(context.Context, string, time.Time) bool
 }
 
+type SubjectRepository interface {
+	GetBySubjectID(context.Context, string) (Subject, error)
+}
+
+type Subject struct {
+	ID           string
+	SubjectID    string
+	Email        string
+	Roles        []string
+	IsAdmin      bool
+	IsSuperAdmin bool
+}
+
 type TokenAuthenticator struct {
 	secret         []byte
 	credentialRepo CredentialRepository
 	revocationRepo RevocationRepository
+	subjectRepo    SubjectRepository
 }
 
 func NewTokenAuthenticator(
 	secret string,
 	credentialRepo CredentialRepository,
 	revocationRepo RevocationRepository,
+	subjectRepo SubjectRepository,
 ) *TokenAuthenticator {
 	return &TokenAuthenticator{
 		secret:         []byte(secret),
 		credentialRepo: credentialRepo,
 		revocationRepo: revocationRepo,
+		subjectRepo:    subjectRepo,
 	}
 }
 
@@ -79,10 +95,21 @@ func (a *TokenAuthenticator) Authenticate(
 		}
 	}
 
+	roles := []string{}
+	if a.subjectRepo != nil {
+		subject, err := a.subjectRepo.GetBySubjectID(ctx, credential.IdentityID)
+		if err == nil {
+			roles = subject.Roles
+			if subject.IsSuperAdmin {
+				roles = append(roles, string(RoleSuperAdmin))
+			}
+		}
+	}
+
 	return Principal{
 		Subject:     credential.IdentityID,
 		TenantID:    "",
-		Roles:       []string{},
+		Roles:       roles,
 		Permissions: []string{},
 	}, nil
 }

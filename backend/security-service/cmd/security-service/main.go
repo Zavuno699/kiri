@@ -50,41 +50,64 @@ func main() {
 		log.Fatalf("failed to create revocation repository: %v", err)
 	}
 
+	subjectRepo, err := repository.NewDBSubjectRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create subject repository: %v", err)
+	}
+
 	authenticator := security.NewTokenAuthenticator(
 		tokenSecret,
 		credentialRepo,
 		revocationRepo,
+		subjectRepo,
 	)
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 
 	mux.HandleFunc("POST /authenticate", func(w http.ResponseWriter, r *http.Request) {
-		principal, err := authenticator.Authenticate(r.Context(), r)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(err.Error()))
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
+		principal, err := authenticator.Authenticate(r.Context(), r)
+		if err != nil {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("unauthorized"))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("authenticated: " + principal.Subject))
+		w.Write([]byte(`{"subject":"` + principal.Subject + `","authenticated":true}`))
 	})
 
 	mux.Handle("GET /authorize", httpsecurity.Authenticate(authenticator, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		principal, err := security.RequirePrincipal(r.Context())
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(err.Error()))
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
+		principal, err := security.RequirePrincipal(r.Context())
+		if err != nil {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("unauthorized"))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("authorized: " + principal.Subject))
+		w.Write([]byte(`{"subject":"` + principal.Subject + `","authorized":true}`))
 	})))
 
 	server := &http.Server{

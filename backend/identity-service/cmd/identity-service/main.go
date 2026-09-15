@@ -8,6 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/kirilock/backend/identity-service/internal/repository"
+	"github.com/kirilock/backend/identity-service/internal/service"
 )
 
 func main() {
@@ -17,6 +22,42 @@ func main() {
 		syscall.SIGTERM,
 	)
 	defer cancel()
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL environment variable is required")
+	}
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		log.Fatalf("failed to create database pool: %v", err)
+	}
+	defer pool.Close()
+
+	subjectRepo, err := repository.NewDBSubjectRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create subject repository: %v", err)
+	}
+
+	credentialRepo, err := repository.NewDBCredentialRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create credential repository: %v", err)
+	}
+
+	sessionRepo, err := repository.NewDBSessionRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create session repository: %v", err)
+	}
+
+	subjectService, err := service.NewSubjectService(subjectRepo)
+	if err != nil {
+		log.Fatalf("failed to create subject service: %v", err)
+	}
+
+	sessionService, err := service.NewSessionService(sessionRepo, credentialRepo)
+	if err != nil {
+		log.Fatalf("failed to create session service: %v", err)
+	}
 
 	mux := http.NewServeMux()
 
@@ -51,4 +92,7 @@ func main() {
 	}
 
 	log.Printf("identity-service shutdown complete")
+
+	_ = subjectService
+	_ = sessionService
 }

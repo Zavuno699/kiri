@@ -50,9 +50,11 @@ async function parseResponse<T>(response: Response): Promise<T> {
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
+  options?: { useIdentityService?: boolean },
 ): Promise<T> {
+  const baseUrl = options?.useIdentityService ? env.identityServiceUrl : env.apiBaseUrl
   const response = await fetch(
-    `${env.apiBaseUrl}${path.startsWith("/") ? path : `/${path}`}`,
+    `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`,
     {
       ...init,
       headers: {

@@ -6,6 +6,9 @@ export interface AuthenticationState {
   status?: "anonymous" | "authenticated" | "expired" | "locked"
   authenticated?: boolean
   capabilities?: string[]
+  roles?: string[]
+  isAdmin?: boolean
+  isSuperAdmin?: boolean
 }
 
 let state: AuthenticationState = {
@@ -16,6 +19,9 @@ let state: AuthenticationState = {
   status: "anonymous",
   authenticated: false,
   capabilities: [],
+  roles: [],
+  isAdmin: false,
+  isSuperAdmin: false,
 }
 
 export function getAuthenticationState(): AuthenticationState {

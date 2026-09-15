@@ -1,6 +1,15 @@
-import { NavLink, Outlet, useLocation } from "react-router"
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router"
+import { getAuthenticationState } from "../../application/authentication/state/authenticationStore"
 
-const navigation = [
+interface NavItem {
+  to: string
+  label: string
+  short: string
+  end?: boolean
+  requiredRoles?: string[]
+}
+
+const allNavigation: NavItem[] = [
   {
     to: "/",
     label: "Overview",
@@ -11,31 +20,49 @@ const navigation = [
     to: "/properties",
     label: "Properties",
     short: "PR",
+    requiredRoles: ["landlord", "operator", "security_admin", "super_admin"],
   },
   {
     to: "/leases",
     label: "Leases",
     short: "LE",
+    requiredRoles: ["landlord", "tenant", "operator", "security_admin", "super_admin"],
   },
   {
     to: "/payments",
     label: "Payments",
     short: "PY",
+    requiredRoles: ["landlord", "tenant", "operator", "security_admin", "super_admin"],
   },
   {
     to: "/devices",
     label: "Devices",
     short: "DV",
+    requiredRoles: ["landlord", "operator", "security_admin", "super_admin"],
   },
   {
     to: "/locks",
     label: "Locks",
     short: "LK",
+    requiredRoles: ["landlord", "tenant", "operator", "security_admin", "super_admin"],
   },
   {
     to: "/security",
     label: "Security",
     short: "SC",
+    requiredRoles: ["security_admin", "super_admin"],
+  },
+  {
+    to: "/rbac",
+    label: "RBAC",
+    short: "RB",
+    requiredRoles: ["security_admin", "super_admin"],
+  },
+  {
+    to: "/operator-control",
+    label: "Operations",
+    short: "OP",
+    requiredRoles: ["operator", "security_admin", "super_admin"],
   },
   {
     to: "/health",
@@ -44,18 +71,43 @@ const navigation = [
   },
 ]
 
+function getNavigationForRoles(userRoles: string[] = []): NavItem[] {
+  return allNavigation.filter(item => {
+    if (!item.requiredRoles || item.requiredRoles.length === 0) return true
+    return item.requiredRoles.some(role => userRoles.includes(role))
+  })
+}
+
 function pageTitle(pathname: string) {
   if (pathname === "/") return "Operational overview"
 
-  const item = navigation.find(
+  const item = allNavigation.find(
     (entry) => entry.to !== "/" && pathname.startsWith(entry.to),
   )
 
   return item?.label ?? "KiriLock"
 }
 
+function getRoleBadge(isAdmin: boolean, isSuperAdmin: boolean, roles: string[] = []) {
+  if (isSuperAdmin) return { label: "Super Admin", color: "bg-purple-500" }
+  if (isAdmin) return { label: "Admin", color: "bg-blue-500" }
+  if (roles.includes("landlord")) return { label: "Landlord", color: "bg-green-500" }
+  if (roles.includes("tenant")) return { label: "Tenant", color: "bg-orange-500" }
+  if (roles.includes("operator")) return { label: "Operator", color: "bg-cyan-500" }
+  return { label: "User", color: "bg-gray-500" }
+}
+
 export function AppShell() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const authState = getAuthenticationState()
+  const navigation = getNavigationForRoles(authState.roles)
+  const roleBadge = getRoleBadge(!!authState.isAdmin, !!authState.isSuperAdmin, authState.roles)
+
+  const handleSignOut = () => {
+    // TODO: Clear auth state
+    navigate("/signin")
+  }
 
   return (
     <div className="min-h-screen bg-kiri-950 text-kiri-text">
@@ -145,9 +197,25 @@ export function AppShell() {
                   System ready
                 </div>
 
-                <div className="grid size-10 place-items-center rounded-xl border border-white/8 bg-kiri-900 text-xs font-bold text-kiri-text-soft">
-                  KL
+                <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.025] px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`size-2 rounded-full ${roleBadge.color}`} />
+                    <span className="text-xs font-medium text-kiri-text-soft">
+                      {roleBadge.label}
+                    </span>
+                  </div>
+                  <div className="h-4 w-px bg-white/8" />
+                  <span className="text-xs text-kiri-text-muted">
+                    {authState.principal || "User"}
+                  </span>
                 </div>
+
+                <button
+                  onClick={handleSignOut}
+                  className="rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2 text-xs font-medium text-kiri-text-soft transition hover:bg-white/[0.05] hover:text-kiri-text"
+                >
+                  Sign out
+                </button>
               </div>
             </div>
           </header>

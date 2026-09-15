@@ -57,6 +57,14 @@ func main() {
 		log.Fatalf("failed to create session repository: %v", err)
 	}
 
+	// New repositories for landlord/property/unit/tenant/payment
+	landlordProfileRepo := repository.NewLandlordProfileRepository(pool)
+	propertyRepo := repository.NewPropertyRepository(pool)
+	unitRepo := repository.NewUnitRepository(pool)
+	tenancyRepo := repository.NewTenancyRepository(pool)
+	paymentAccountRepo := repository.NewPaymentAccountRepository(pool)
+	paymentResponsibilityRepo := repository.NewPaymentResponsibilityRepository(pool)
+
 	subjectService, err := service.NewSubjectService(subjectRepo)
 	if err != nil {
 		log.Fatalf("failed to create subject service: %v", err)
@@ -67,6 +75,13 @@ func main() {
 		log.Fatalf("failed to create session service: %v", err)
 	}
 
+	// New services for landlord/property/unit/tenant/payment
+	landlordService := service.NewLandlordService(landlordProfileRepo, propertyRepo)
+	propertyService := service.NewPropertyService(propertyRepo, landlordProfileRepo, landlordService)
+	unitService := service.NewUnitService(unitRepo, propertyRepo, landlordProfileRepo, landlordService)
+	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, pool)
+	paymentService := service.NewPaymentService(paymentAccountRepo, paymentResponsibilityRepo, landlordProfileRepo, landlordService)
+
 	subjectHandler, err := handler.NewSubjectHandler(subjectService)
 	if err != nil {
 		log.Fatalf("failed to create subject handler: %v", err)
@@ -75,6 +90,32 @@ func main() {
 	sessionHandler, err := handler.NewSessionHandler(sessionService)
 	if err != nil {
 		log.Fatalf("failed to create session handler: %v", err)
+	}
+
+	// New handlers for landlord/property/unit/tenant/payment
+	landlordHandler, err := handler.NewLandlordHandler(landlordService)
+	if err != nil {
+		log.Fatalf("failed to create landlord handler: %v", err)
+	}
+
+	propertyHandler, err := handler.NewPropertyHandler(propertyService)
+	if err != nil {
+		log.Fatalf("failed to create property handler: %v", err)
+	}
+
+	unitHandler, err := handler.NewUnitHandler(unitService)
+	if err != nil {
+		log.Fatalf("failed to create unit handler: %v", err)
+	}
+
+	tenantHandler, err := handler.NewTenantHandler(tenantService)
+	if err != nil {
+		log.Fatalf("failed to create tenant handler: %v", err)
+	}
+
+	paymentHandler, err := handler.NewPaymentHandler(paymentService)
+	if err != nil {
+		log.Fatalf("failed to create payment handler: %v", err)
 	}
 
 	authClient := client.NewAuthClient(securityServiceURL)
@@ -97,6 +138,39 @@ func main() {
 
 	mux.Handle("POST /subjects/admin", authMiddleware.Authenticate(http.HandlerFunc(subjectHandler.SetAdmin)))
 	mux.Handle("POST /subjects/super-admin", authMiddleware.Authenticate(http.HandlerFunc(subjectHandler.SetSuperAdmin)))
+
+	// New routes for landlord/property/unit/tenant/payment
+	mux.Handle("POST /landlords/profile", authMiddleware.Authenticate(http.HandlerFunc(landlordHandler.CreateProfile)))
+	mux.Handle("POST /landlords/submit-verification", authMiddleware.Authenticate(http.HandlerFunc(landlordHandler.SubmitVerification)))
+	mux.Handle("POST /landlords/approve-verification", authMiddleware.Authenticate(http.HandlerFunc(landlordHandler.ApproveVerification)))
+	mux.Handle("POST /landlords/reject-verification", authMiddleware.Authenticate(http.HandlerFunc(landlordHandler.RejectVerification)))
+	mux.Handle("GET /landlords/profile", authMiddleware.Authenticate(http.HandlerFunc(landlordHandler.GetProfile)))
+
+	mux.Handle("POST /properties", authMiddleware.Authenticate(http.HandlerFunc(propertyHandler.CreateProperty)))
+	mux.Handle("GET /properties", authMiddleware.Authenticate(http.HandlerFunc(propertyHandler.GetLandlordProperties)))
+	mux.Handle("GET /properties/property", authMiddleware.Authenticate(http.HandlerFunc(propertyHandler.GetProperty)))
+	mux.Handle("PUT /properties/property", authMiddleware.Authenticate(http.HandlerFunc(propertyHandler.UpdateProperty)))
+	mux.Handle("POST /properties/activate", authMiddleware.Authenticate(http.HandlerFunc(propertyHandler.ActivateProperty)))
+
+	mux.Handle("POST /units", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.CreateUnit)))
+	mux.Handle("GET /units/unit", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.GetUnit)))
+	mux.Handle("GET /units/property", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.GetPropertyUnits)))
+	mux.Handle("GET /units/available", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.GetAvailableUnits)))
+	mux.Handle("PUT /units/unit", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.UpdateUnit)))
+	mux.Handle("POST /units/lifecycle", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.UpdateUnitLifecycle)))
+
+	mux.Handle("POST /tenancies/invite", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.CreateTenantInvitation)))
+	mux.Handle("POST /tenancies/accept", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.AcceptInvitation)))
+	mux.Handle("GET /tenancies/tenant", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.GetTenantTenancy)))
+	mux.Handle("GET /tenancies/landlord", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.GetLandlordTenancies)))
+	mux.Handle("POST /tenancies/terminate", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.TerminateTenancy)))
+
+	mux.Handle("POST /payments/accounts", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.CreatePaymentAccount)))
+	mux.Handle("GET /payments/accounts", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetLandlordPaymentAccounts)))
+	mux.Handle("GET /payments/account", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetPaymentAccount)))
+	mux.Handle("POST /payments/accounts/activate", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.ActivatePaymentAccount)))
+	mux.Handle("POST /payments/responsibilities", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.CreatePaymentResponsibility)))
+	mux.Handle("GET /payments/responsibility", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetTenantPaymentResponsibility)))
 
 	server := &http.Server{
 		Addr:         ":8081",

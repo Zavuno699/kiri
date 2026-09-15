@@ -1,0 +1,1381 @@
+
+> kirilock-frontend@0.0.0 lint
+> oxlint
+
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/live/deviceLiveState.ts:14:13]
+ 13 |   stale: false,
+ 14 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 15 | }
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/workspace/state/deviceWorkspaceState.ts:13:13]
+ 12 |   refreshing: false,
+ 13 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 14 |   error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/workspace/state/deviceWorkspaceState.ts:15:5]
+ 14 |   error:
+ 15 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 16 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/workspace/controllers/deviceWorkspaceController.ts:21:15]
+ 20 |     refreshing: false,
+ 21 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 22 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/workspace/controllers/deviceWorkspaceController.ts:23:7]
+ 22 |     error:
+ 23 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 24 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/workspace/controllers/deviceWorkspaceController.ts:30:11]
+ 29 |     async load(query) {
+ 30 |       if (!true) {
+    :           ^^|^^
+    :             `-- this expression will always evaluate to the same value
+ 31 |         return current
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/workspace/bindings/deviceWorkspaceBinding.ts:11:15]
+ 10 |     refreshing: false,
+ 11 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 12 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/workspace/bindings/deviceWorkspaceBinding.ts:13:7]
+ 12 |     error:
+ 13 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 14 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/payments/api/canonical/resources/resource.ts:4:5]
+ 3 |   basePath:
+ 4 |     false
+   :     ^^|^^
+   :       `-- this expression will always evaluate to the same value
+ 5 |       ? "/api/v1/dashboard"
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/devices/workflows/actions/deviceActionWorkflow.ts:7:7]
+ 6 | ): Promise<ActionWorkflowContext> {
+ 7 |   if (!true) {
+   :       ^^|^^
+   :         `-- this expression will always evaluate to the same value
+ 8 |     return {
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/actions/validation/deviceActionValidation.ts:15:7]
+ 14 | 
+ 15 |   if (!true) {
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 16 |     errors.push(
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/actions/policy/deviceActionPolicy.ts:12:5]
+ 11 |   reason:
+ 12 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 13 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/actions/confirmation/deviceConfirmation.ts:16:7]
+ 15 |     reason:
+ 16 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/leases/api/canonical/resources/resource.ts:4:5]
+ 3 |   basePath:
+ 4 |     false
+   :     ^^|^^
+   :       `-- this expression will always evaluate to the same value
+ 5 |       ? "/api/v1/dashboard"
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/leases/activation/pages/leasePageActivation.ts:7:10]
+ 6 |   page: leasePageDefinition,
+ 7 |   state: true ? "active" : "blocked",
+   :          ^^|^
+   :            `-- this expression will always evaluate to the same value
+ 8 |   activatedAt:
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/activation/pages/leasePageActivation.ts:9:5]
+  8 |   activatedAt:
+  9 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 10 |       ? new Date().toISOString()
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/activation/pages/leasePageActivation.ts:13:5]
+ 12 |   reason:
+ 13 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 14 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/actions/validation/leaseActionValidation.ts:15:7]
+ 14 | 
+ 15 |   if (!false) {
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 16 |     errors.push(
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/actions/policy/leaseActionPolicy.ts:12:5]
+ 11 |   reason:
+ 12 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 13 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/actions/confirmation/leaseConfirmation.ts:16:7]
+ 15 |     reason:
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/navigation/devicesNavigationAdapter.ts:16:7]
+ 15 |     startRoute(
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? "/"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/properties/api/canonical/resources/resource.ts:4:5]
+ 3 |   basePath:
+ 4 |     false
+   :     ^^|^^
+   :       `-- this expression will always evaluate to the same value
+ 5 |       ? "/api/v1/dashboard"
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/navigation/propertiesNavigationAdapter.ts:16:7]
+ 15 |     startRoute(
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? "/"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/live/synchronization/propertyLiveSync.ts:14:10]
+ 13 |   key: "properties:live",
+ 14 |   state: true ? "synced" : "failed",
+    :          ^^|^
+    :            `-- this expression will always evaluate to the same value
+ 15 |   version: 0,
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/workspace/state/leaseWorkspaceState.ts:13:13]
+ 12 |   refreshing: false,
+ 13 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 14 |   error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/workspace/state/leaseWorkspaceState.ts:15:5]
+ 14 |   error:
+ 15 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 16 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/live/status/propertyLiveStatus.ts:11:7]
+ 10 |     status:
+ 11 |       !true
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 12 |         ? "offline"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/live/propertyLiveState.ts:14:13]
+ 13 |   stale: false,
+ 14 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 15 | }
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/workspace/controllers/leaseWorkspaceController.ts:21:15]
+ 20 |     refreshing: false,
+ 21 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 22 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/workspace/controllers/leaseWorkspaceController.ts:23:7]
+ 22 |     error:
+ 23 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 24 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/workspace/controllers/leaseWorkspaceController.ts:30:11]
+ 29 |     async load(query) {
+ 30 |       if (!true) {
+    :           ^^|^^
+    :             `-- this expression will always evaluate to the same value
+ 31 |         return current
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/workspace/bindings/leaseWorkspaceBinding.ts:11:15]
+ 10 |     refreshing: false,
+ 11 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 12 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/workspace/bindings/leaseWorkspaceBinding.ts:13:7]
+ 12 |     error:
+ 13 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 14 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/dashboard/api/canonical/resources/resource.ts:4:5]
+ 3 |   basePath:
+ 4 |     true
+   :     ^^|^
+   :       `-- this expression will always evaluate to the same value
+ 5 |       ? "/api/v1/dashboard"
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/dashboard/activation/pages/dashboardPageActivation.ts:7:10]
+ 6 |   page: dashboardPageDefinition,
+ 7 |   state: true ? "active" : "blocked",
+   :          ^^|^
+   :            `-- this expression will always evaluate to the same value
+ 8 |   activatedAt:
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/activation/pages/dashboardPageActivation.ts:9:5]
+  8 |   activatedAt:
+  9 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 10 |       ? new Date().toISOString()
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/activation/pages/dashboardPageActivation.ts:13:5]
+ 12 |   reason:
+ 13 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 14 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/leases/workflows/actions/leaseActionWorkflow.ts:7:7]
+ 6 | ): Promise<ActionWorkflowContext> {
+ 7 |   if (!false) {
+   :       ^^^|^^
+   :          `-- this expression will always evaluate to the same value
+ 8 |     return {
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/actions/validation/dashboardActionValidation.ts:15:7]
+ 14 | 
+ 15 |   if (!false) {
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 16 |     errors.push(
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/actions/policy/dashboardActionPolicy.ts:12:5]
+ 11 |   reason:
+ 12 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 13 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/actions/confirmation/dashboardConfirmation.ts:16:7]
+ 15 |     reason:
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/navigation/locksNavigationAdapter.ts:16:7]
+ 15 |     startRoute(
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? "/"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/live/dashboardLiveState.ts:14:13]
+ 13 |   stale: false,
+ 14 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 15 | }
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/live/synchronization/lockLiveSync.ts:14:10]
+ 13 |   key: "locks:live",
+ 14 |   state: false ? "synced" : "failed",
+    :          ^^|^^
+    :            `-- this expression will always evaluate to the same value
+ 15 |   version: 0,
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/live/status/lockLiveStatus.ts:11:7]
+ 10 |     status:
+ 11 |       !false
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 12 |         ? "offline"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/security/api/canonical/resources/resource.ts:4:5]
+ 3 |   basePath:
+ 4 |     false
+   :     ^^|^^
+   :       `-- this expression will always evaluate to the same value
+ 5 |       ? "/api/v1/dashboard"
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/live/synchronization/securityLiveSync.ts:14:10]
+ 13 |   key: "security:live",
+ 14 |   state: false ? "synced" : "failed",
+    :          ^^|^^
+    :            `-- this expression will always evaluate to the same value
+ 15 |   version: 0,
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/live/status/securityLiveStatus.ts:11:7]
+ 10 |     status:
+ 11 |       !false
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 12 |         ? "offline"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/live/securityLiveState.ts:14:13]
+ 13 |   stale: false,
+ 14 |   degraded: false ? false : true,
+    :             ^^|^^
+    :               `-- this expression will always evaluate to the same value
+ 15 | }
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/devices/api/canonical/resources/resource.ts:4:5]
+ 3 |   basePath:
+ 4 |     false
+   :     ^^|^^
+   :       `-- this expression will always evaluate to the same value
+ 5 |       ? "/api/v1/dashboard"
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/live/synchronization/deviceLiveSync.ts:14:10]
+ 13 |   key: "devices:live",
+ 14 |   state: true ? "synced" : "failed",
+    :          ^^|^
+    :            `-- this expression will always evaluate to the same value
+ 15 |   version: 0,
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/live/status/deviceLiveStatus.ts:11:7]
+ 10 |     status:
+ 11 |       !true
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 12 |         ? "offline"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/navigation/securityNavigationAdapter.ts:16:7]
+ 15 |     startRoute(
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? "/"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/properties/activation/pages/propertyPageActivation.ts:7:10]
+ 6 |   page: propertyPageDefinition,
+ 7 |   state: true ? "active" : "blocked",
+   :          ^^|^
+   :            `-- this expression will always evaluate to the same value
+ 8 |   activatedAt:
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/activation/pages/propertyPageActivation.ts:9:5]
+  8 |   activatedAt:
+  9 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 10 |       ? new Date().toISOString()
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/activation/pages/propertyPageActivation.ts:13:5]
+ 12 |   reason:
+ 13 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 14 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/actions/validation/propertyActionValidation.ts:15:7]
+ 14 | 
+ 15 |   if (!false) {
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 16 |     errors.push(
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/actions/policy/propertyActionPolicy.ts:12:5]
+ 11 |   reason:
+ 12 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 13 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/actions/confirmation/propertyConfirmation.ts:16:7]
+ 15 |     reason:
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/workspace/state/paymentWorkspaceState.ts:13:13]
+ 12 |   refreshing: false,
+ 13 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 14 |   error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/workspace/state/paymentWorkspaceState.ts:15:5]
+ 14 |   error:
+ 15 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 16 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/workspace/controllers/paymentWorkspaceController.ts:21:15]
+ 20 |     refreshing: false,
+ 21 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 22 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/workspace/controllers/paymentWorkspaceController.ts:23:7]
+ 22 |     error:
+ 23 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 24 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/workspace/controllers/paymentWorkspaceController.ts:30:11]
+ 29 |     async load(query) {
+ 30 |       if (!true) {
+    :           ^^|^^
+    :             `-- this expression will always evaluate to the same value
+ 31 |         return current
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/workspace/bindings/paymentWorkspaceBinding.ts:11:15]
+ 10 |     refreshing: false,
+ 11 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 12 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/workspace/bindings/paymentWorkspaceBinding.ts:13:7]
+ 12 |     error:
+ 13 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 14 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  x react-hooks(rules-of-hooks): React Hook "useCase" is called in function "executeUseCase" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use".
+    ,-[src/application/usecases/registry/usecaseRegistry.ts:31:5]
+ 14 | 
+ 15 | export function executeUseCase<
+    :                 ^^^^^^^|^^^^^^
+    :                        `-- Outer function
+ 16 |   TInput = unknown,
+ 17 |   TResult = unknown,
+ 18 | >(
+ 19 |   key: string,
+ 20 |   input: TInput,
+ 21 | ): Promise<TResult> {
+ 22 |   const useCase = registry.get(key)
+ 23 | 
+ 24 |   if (!useCase) {
+ 25 |     throw new Error(
+ 26 |       `Use case not registered: ${key}`,
+ 27 |     )
+ 28 |   }
+ 29 | 
+ 30 |   return Promise.resolve(
+ 31 |     useCase(input),
+    :     ^^^|^^^
+    :        `-- Hook is called here
+ 32 |   ) as Promise<TResult>
+    `----
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/payments/workflows/actions/paymentActionWorkflow.ts:7:7]
+ 6 | ): Promise<ActionWorkflowContext> {
+ 7 |   if (!false) {
+   :       ^^^|^^
+   :          `-- this expression will always evaluate to the same value
+ 8 |     return {
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/navigation/leasesNavigationAdapter.ts:16:7]
+ 15 |     startRoute(
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? "/"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/live/synchronization/leaseLiveSync.ts:14:10]
+ 13 |   key: "leases:live",
+ 14 |   state: true ? "synced" : "failed",
+    :          ^^|^
+    :            `-- this expression will always evaluate to the same value
+ 15 |   version: 0,
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/live/status/leaseLiveStatus.ts:11:7]
+ 10 |     status:
+ 11 |       !true
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 12 |         ? "offline"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/leases/live/leaseLiveState.ts:14:13]
+ 13 |   stale: false,
+ 14 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 15 | }
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/live/lockLiveState.ts:14:13]
+ 13 |   stale: false,
+ 14 |   degraded: false ? false : true,
+    :             ^^|^^
+    :               `-- this expression will always evaluate to the same value
+ 15 | }
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/live/synchronization/dashboardLiveSync.ts:14:10]
+ 13 |   key: "dashboard:live",
+ 14 |   state: true ? "synced" : "failed",
+    :          ^^|^
+    :            `-- this expression will always evaluate to the same value
+ 15 |   version: 0,
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/live/status/dashboardLiveStatus.ts:11:7]
+ 10 |     status:
+ 11 |       !true
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 12 |         ? "offline"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-binary-expression): Unexpected constant truthiness on the left-hand side of a "||" expression
+    ,-[src/application/transactionFabric/sagas/sagaStepStore.ts:55:14]
+ 54 |     
+ 55 | ,->       return false ||
+ 56 | |           steps.has(
+ 57 | |             `${transactionId}:${state.stepId}`,
+ 58 | |           ) &&
+ 59 | |           key(
+ 60 | |             transactionId,
+ 61 | |             state.stepId,
+ 62 | |           ).startsWith(
+ 63 | |             prefix,
+ 64 | `->         );
+ 65 |         },
+    `----
+  help: This expression always evaluates to the constant on the left-hand side
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/payments/activation/pages/paymentPageActivation.ts:7:10]
+ 6 |   page: paymentPageDefinition,
+ 7 |   state: true ? "active" : "blocked",
+   :          ^^|^
+   :            `-- this expression will always evaluate to the same value
+ 8 |   activatedAt:
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/activation/pages/paymentPageActivation.ts:9:5]
+  8 |   activatedAt:
+  9 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 10 |       ? new Date().toISOString()
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/activation/pages/paymentPageActivation.ts:13:5]
+ 12 |   reason:
+ 13 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 14 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/workspace/controllers/dashboardWorkspaceController.ts:21:15]
+ 20 |     refreshing: false,
+ 21 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 22 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/workspace/controllers/dashboardWorkspaceController.ts:23:7]
+ 22 |     error:
+ 23 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 24 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/workspace/controllers/dashboardWorkspaceController.ts:30:11]
+ 29 |     async load(query) {
+ 30 |       if (!true) {
+    :           ^^|^^
+    :             `-- this expression will always evaluate to the same value
+ 31 |         return current
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/workspace/bindings/dashboardWorkspaceBinding.ts:11:15]
+ 10 |     refreshing: false,
+ 11 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 12 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/workspace/bindings/dashboardWorkspaceBinding.ts:13:7]
+ 12 |     error:
+ 13 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 14 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/actions/validation/paymentActionValidation.ts:15:7]
+ 14 | 
+ 15 |   if (!false) {
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 16 |     errors.push(
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/actions/policy/paymentActionPolicy.ts:12:5]
+ 11 |   reason:
+ 12 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 13 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/actions/confirmation/paymentConfirmation.ts:16:7]
+ 15 |     reason:
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/dashboard/workflows/actions/dashboardActionWorkflow.ts:7:7]
+ 6 | ): Promise<ActionWorkflowContext> {
+ 7 |   if (!false) {
+   :       ^^^|^^
+   :          `-- this expression will always evaluate to the same value
+ 8 |     return {
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/workspace/state/dashboardWorkspaceState.ts:13:13]
+ 12 |   refreshing: false,
+ 13 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 14 |   error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/workspace/state/dashboardWorkspaceState.ts:15:5]
+ 14 |   error:
+ 15 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 16 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/navigation/paymentsNavigationAdapter.ts:16:7]
+ 15 |     startRoute(
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? "/"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/live/synchronization/paymentLiveSync.ts:14:10]
+ 13 |   key: "payments:live",
+ 14 |   state: true ? "synced" : "failed",
+    :          ^^|^
+    :            `-- this expression will always evaluate to the same value
+ 15 |   version: 0,
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/live/status/paymentLiveStatus.ts:11:7]
+ 10 |     status:
+ 11 |       !true
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 12 |         ? "offline"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/security/activation/pages/securityPageActivation.ts:7:10]
+ 6 |   page: securityPageDefinition,
+ 7 |   state: false ? "active" : "blocked",
+   :          ^^|^^
+   :            `-- this expression will always evaluate to the same value
+ 8 |   activatedAt:
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/activation/pages/securityPageActivation.ts:9:5]
+  8 |   activatedAt:
+  9 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 10 |       ? new Date().toISOString()
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/activation/pages/securityPageActivation.ts:13:5]
+ 12 |   reason:
+ 13 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 14 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/actions/validation/securityActionValidation.ts:15:7]
+ 14 | 
+ 15 |   if (!false) {
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 16 |     errors.push(
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/actions/policy/securityActionPolicy.ts:12:5]
+ 11 |   reason:
+ 12 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 13 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/actions/confirmation/securityConfirmation.ts:16:7]
+ 15 |     reason:
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/payments/live/paymentLiveState.ts:14:13]
+ 13 |   stale: false,
+ 14 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 15 | }
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/workspace/state/securityWorkspaceState.ts:13:13]
+ 12 |   refreshing: false,
+ 13 |   degraded: false ? false : true,
+    :             ^^|^^
+    :               `-- this expression will always evaluate to the same value
+ 14 |   error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/workspace/state/securityWorkspaceState.ts:15:5]
+ 14 |   error:
+ 15 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 16 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/locks/api/canonical/resources/resource.ts:4:5]
+ 3 |   basePath:
+ 4 |     false
+   :     ^^|^^
+   :       `-- this expression will always evaluate to the same value
+ 5 |       ? "/api/v1/dashboard"
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/workspace/state/lockWorkspaceState.ts:13:13]
+ 12 |   refreshing: false,
+ 13 |   degraded: false ? false : true,
+    :             ^^|^^
+    :               `-- this expression will always evaluate to the same value
+ 14 |   error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/workspace/state/lockWorkspaceState.ts:15:5]
+ 14 |   error:
+ 15 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 16 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/workspace/controllers/securityWorkspaceController.ts:21:15]
+ 20 |     refreshing: false,
+ 21 |     degraded: false ? false : true,
+    :               ^^|^^
+    :                 `-- this expression will always evaluate to the same value
+ 22 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/workspace/controllers/securityWorkspaceController.ts:23:7]
+ 22 |     error:
+ 23 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 24 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/workspace/controllers/securityWorkspaceController.ts:30:11]
+ 29 |     async load(query) {
+ 30 |       if (!false) {
+    :           ^^^|^^
+    :              `-- this expression will always evaluate to the same value
+ 31 |         return current
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/workspace/bindings/securityWorkspaceBinding.ts:11:15]
+ 10 |     refreshing: false,
+ 11 |     degraded: false ? false : true,
+    :               ^^|^^
+    :                 `-- this expression will always evaluate to the same value
+ 12 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/security/workspace/bindings/securityWorkspaceBinding.ts:13:7]
+ 12 |     error:
+ 13 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 14 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/locks/activation/pages/lockPageActivation.ts:7:10]
+ 6 |   page: lockPageDefinition,
+ 7 |   state: false ? "active" : "blocked",
+   :          ^^|^^
+   :            `-- this expression will always evaluate to the same value
+ 8 |   activatedAt:
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/activation/pages/lockPageActivation.ts:9:5]
+  8 |   activatedAt:
+  9 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 10 |       ? new Date().toISOString()
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/activation/pages/lockPageActivation.ts:13:5]
+ 12 |   reason:
+ 13 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 14 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/workspace/controllers/lockWorkspaceController.ts:21:15]
+ 20 |     refreshing: false,
+ 21 |     degraded: false ? false : true,
+    :               ^^|^^
+    :                 `-- this expression will always evaluate to the same value
+ 22 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/workspace/controllers/lockWorkspaceController.ts:23:7]
+ 22 |     error:
+ 23 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 24 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/workspace/controllers/lockWorkspaceController.ts:30:11]
+ 29 |     async load(query) {
+ 30 |       if (!false) {
+    :           ^^^|^^
+    :              `-- this expression will always evaluate to the same value
+ 31 |         return current
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/workspace/bindings/lockWorkspaceBinding.ts:11:15]
+ 10 |     refreshing: false,
+ 11 |     degraded: false ? false : true,
+    :               ^^|^^
+    :                 `-- this expression will always evaluate to the same value
+ 12 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/workspace/bindings/lockWorkspaceBinding.ts:13:7]
+ 12 |     error:
+ 13 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 14 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/actions/validation/lockActionValidation.ts:15:7]
+ 14 | 
+ 15 |   if (!false) {
+    :       ^^^|^^
+    :          `-- this expression will always evaluate to the same value
+ 16 |     errors.push(
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/actions/policy/lockActionPolicy.ts:12:5]
+ 11 |   reason:
+ 12 |     false
+    :     ^^|^^
+    :       `-- this expression will always evaluate to the same value
+ 13 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/locks/actions/confirmation/lockConfirmation.ts:16:7]
+ 15 |     reason:
+ 16 |       false
+    :       ^^|^^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/security/workflows/actions/securityActionWorkflow.ts:7:7]
+ 6 | ): Promise<ActionWorkflowContext> {
+ 7 |   if (!false) {
+   :       ^^^|^^
+   :          `-- this expression will always evaluate to the same value
+ 8 |     return {
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/locks/workflows/actions/lockActionWorkflow.ts:7:7]
+ 6 | ): Promise<ActionWorkflowContext> {
+ 7 |   if (!false) {
+   :       ^^^|^^
+   :          `-- this expression will always evaluate to the same value
+ 8 |     return {
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/workspace/state/propertyWorkspaceState.ts:13:13]
+ 12 |   refreshing: false,
+ 13 |   degraded: true ? false : true,
+    :             ^^|^
+    :               `-- this expression will always evaluate to the same value
+ 14 |   error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/workspace/state/propertyWorkspaceState.ts:15:5]
+ 14 |   error:
+ 15 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 16 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/workspace/controllers/propertyWorkspaceController.ts:21:15]
+ 20 |     refreshing: false,
+ 21 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 22 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/workspace/controllers/propertyWorkspaceController.ts:23:7]
+ 22 |     error:
+ 23 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 24 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/workspace/controllers/propertyWorkspaceController.ts:30:11]
+ 29 |     async load(query) {
+ 30 |       if (!true) {
+    :           ^^|^^
+    :             `-- this expression will always evaluate to the same value
+ 31 |         return current
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/workspace/bindings/propertyWorkspaceBinding.ts:11:15]
+ 10 |     refreshing: false,
+ 11 |     degraded: true ? false : true,
+    :               ^^|^
+    :                 `-- this expression will always evaluate to the same value
+ 12 |     error:
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/properties/workspace/bindings/propertyWorkspaceBinding.ts:13:7]
+ 12 |     error:
+ 13 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 14 |         ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/properties/workflows/actions/propertyActionWorkflow.ts:7:7]
+ 6 | ): Promise<ActionWorkflowContext> {
+ 7 |   if (!false) {
+   :       ^^^|^^
+   :          `-- this expression will always evaluate to the same value
+ 8 |     return {
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+   ,-[src/features/devices/activation/pages/devicePageActivation.ts:7:10]
+ 6 |   page: devicePageDefinition,
+ 7 |   state: true ? "active" : "blocked",
+   :          ^^|^
+   :            `-- this expression will always evaluate to the same value
+ 8 |   activatedAt:
+   `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/activation/pages/devicePageActivation.ts:9:5]
+  8 |   activatedAt:
+  9 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 10 |       ? new Date().toISOString()
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/devices/activation/pages/devicePageActivation.ts:13:5]
+ 12 |   reason:
+ 13 |     true
+    :     ^^|^
+    :       `-- this expression will always evaluate to the same value
+ 14 |       ? undefined
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+  ! eslint(no-constant-condition): Unexpected constant condition
+    ,-[src/features/dashboard/navigation/dashboardNavigationAdapter.ts:16:7]
+ 15 |     startRoute(
+ 16 |       true
+    :       ^^|^
+    :         `-- this expression will always evaluate to the same value
+ 17 |         ? "/"
+    `----
+  help: Update the condition to not be constant, or remove the condition entirely
+
+Found 134 warnings and 1 error.
+Finished in 1.5s on 6163 files with 116 rules using 8 threads.

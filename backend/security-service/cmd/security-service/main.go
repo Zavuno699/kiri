@@ -11,9 +11,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/kirilock/backend/security-service/internal/api/dto/request"
 	"github.com/kirilock/backend/security-service/internal/repository"
 	security "github.com/kirilock/backend/security-service/internal/security"
-	httpsecurity "github.com/kirilock/backend/security-service/internal/security/http"
+	sharedhttp "github.com/kirilock/backend/shared/http"
+	sharedvalidation "github.com/kirilock/backend/shared/validation"
 )
 
 func main() {
@@ -60,7 +62,10 @@ func main() {
 		credentialRepo,
 		revocationRepo,
 		subjectRepo,
+		nil,
 	)
+
+	validator := sharedvalidation.New()
 
 	mux := http.NewServeMux()
 
@@ -76,13 +81,22 @@ func main() {
 			return
 		}
 
-		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+		var req request.Authenticate
+		if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
+			sharedhttp.WriteValidationError(w, r, err)
+			return
+		}
+
+		if err := validator.Error(req); err != nil {
+			sharedhttp.WriteValidationError(w, r, err)
+			return
+		}
 
 		principal, err := authenticator.Authenticate(r.Context(), r)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("unauthorized"))
+			w.Write([]byte(`{"error":"unauthorized"}`))
 			return
 		}
 
@@ -91,24 +105,50 @@ func main() {
 		w.Write([]byte(`{"subject":"` + principal.Subject + `","authenticated":true}`))
 	})
 
-	mux.Handle("GET /authorize", httpsecurity.Authenticate(authenticator, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
+	mux.HandleFunc("POST /authorize", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		principal, err := security.RequirePrincipal(r.Context())
+		principal, err := authenticator.Authenticate(r.Context(), r)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("unauthorized"))
+			w.Write([]byte(`{"error":"unauthorized"}`))
+			return
+		}
+
+		var req request.Authorize
+		if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
+			sharedhttp.WriteValidationError(w, r, err)
+			return
+		}
+
+		if err := validator.Error(req); err != nil {
+			sharedhttp.WriteValidationError(w, r, err)
+			return
+		}
+
+		scope := security.Scope(req.Resource + ":" + req.Action)
+		policy := security.NewDefaultAuthorizationPolicy()
+
+		roles := make([]security.Role, len(principal.Roles))
+		for i, r := range principal.Roles {
+			roles[i] = security.Role(r)
+		}
+
+		if !policy.Allows(roles, scope) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"error":"forbidden"}`))
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"subject":"` + principal.Subject + `","authorized":true}`))
-	})))
+	})
 
 	server := &http.Server{
 		Addr:         ":8080",

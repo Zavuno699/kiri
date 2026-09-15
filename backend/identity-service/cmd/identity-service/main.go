@@ -9,8 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	sharedhttp "github.com/kirilock/backend/shared/http"
 
+	"github.com/kirilock/backend/identity-service/internal/handler"
 	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
@@ -59,11 +62,41 @@ func main() {
 		log.Fatalf("failed to create session service: %v", err)
 	}
 
+	subjectHandler, err := handler.NewSubjectHandler(subjectService)
+	if err != nil {
+		log.Fatalf("failed to create subject handler: %v", err)
+	}
+
+	sessionHandler, err := handler.NewSessionHandler(sessionService)
+	if err != nil {
+		log.Fatalf("failed to create session handler: %v", err)
+	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
+	})
+
+	mux.HandleFunc("POST /subjects", subjectHandler.CreateSubject)
+	mux.HandleFunc("POST /authenticate", subjectHandler.Authenticate)
+
+	mux.HandleFunc("POST /sessions", sessionHandler.CreateSession)
+	mux.HandleFunc("POST /sessions/validate", sessionHandler.ValidateSession)
+	mux.HandleFunc("POST /sessions/revoke", sessionHandler.RevokeSession)
+	mux.HandleFunc("POST /sessions/revoke-all", sessionHandler.RevokeAllSubjectSessions)
+
+	mux.HandleFunc("POST /subjects/admin", func(w http.ResponseWriter, r *http.Request) {
+		principal := sharedhttp.Principal{TenantID: uuid.New()}
+		ctx := sharedhttp.WithPrincipal(r.Context(), principal)
+		subjectHandler.SetAdmin(w, r.WithContext(ctx))
+	})
+
+	mux.HandleFunc("POST /subjects/super-admin", func(w http.ResponseWriter, r *http.Request) {
+		principal := sharedhttp.Principal{TenantID: uuid.New()}
+		ctx := sharedhttp.WithPrincipal(r.Context(), principal)
+		subjectHandler.SetSuperAdmin(w, r.WithContext(ctx))
 	})
 
 	server := &http.Server{
@@ -92,7 +125,4 @@ func main() {
 	}
 
 	log.Printf("identity-service shutdown complete")
-
-	_ = subjectService
-	_ = sessionService
 }

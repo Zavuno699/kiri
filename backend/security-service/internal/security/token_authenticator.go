@@ -26,6 +26,20 @@ type SubjectRepository interface {
 	GetBySubjectID(context.Context, string) (Subject, error)
 }
 
+type SessionRepository interface {
+	GetBySessionID(context.Context, string) (Session, error)
+}
+
+type Session struct {
+	ID           string
+	SubjectID    string
+	CredentialID string
+	SessionID    string
+	RevocationID string
+	IssuedAt     time.Time
+	ExpiresAt    time.Time
+}
+
 type Subject struct {
 	ID           string
 	SubjectID    string
@@ -40,6 +54,7 @@ type TokenAuthenticator struct {
 	credentialRepo CredentialRepository
 	revocationRepo RevocationRepository
 	subjectRepo    SubjectRepository
+	sessionRepo    SessionRepository
 }
 
 func NewTokenAuthenticator(
@@ -47,12 +62,14 @@ func NewTokenAuthenticator(
 	credentialRepo CredentialRepository,
 	revocationRepo RevocationRepository,
 	subjectRepo SubjectRepository,
+	sessionRepo SessionRepository,
 ) *TokenAuthenticator {
 	return &TokenAuthenticator{
 		secret:         []byte(secret),
 		credentialRepo: credentialRepo,
 		revocationRepo: revocationRepo,
 		subjectRepo:    subjectRepo,
+		sessionRepo:    sessionRepo,
 	}
 }
 
@@ -92,6 +109,20 @@ func (a *TokenAuthenticator) Authenticate(
 	if a.revocationRepo != nil {
 		if a.revocationRepo.IsRevoked(ctx, credential.IdentityID, now) {
 			return Principal{}, ErrUnauthorized
+		}
+	}
+
+	if a.sessionRepo != nil {
+		session, err := a.sessionRepo.GetBySessionID(ctx, token)
+		if err == nil {
+			if now.After(session.ExpiresAt) {
+				return Principal{}, ErrUnauthorized
+			}
+			if a.revocationRepo != nil {
+				if a.revocationRepo.IsRevoked(ctx, session.RevocationID, now) {
+					return Principal{}, ErrUnauthorized
+				}
+			}
 		}
 	}
 

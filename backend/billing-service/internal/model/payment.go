@@ -22,8 +22,8 @@ type Payment struct {
 	Reference        string
 	Provider         string
 	ProviderChargeID string
-	AmountUGX        int64
-	Currency         string
+	AmountMinor      int64  // Amount in minor units (cents)
+	Currency         string // ISO 4217 currency code
 	Status           PaymentStatus
 	IdempotencyKey   string
 	RequestHash      string
@@ -51,12 +51,17 @@ func (p Payment) Validate() error {
 		return errors.New("payment provider is required")
 	}
 
-	if p.AmountUGX <= 0 {
+	if p.AmountMinor <= 0 {
 		return errors.New("payment amount must be positive")
 	}
 
-	if p.Currency != "UGX" {
-		return errors.New("payment currency must be UGX")
+	if p.Currency == "" {
+		return errors.New("payment currency is required")
+	}
+
+	// Currency validation: must be ISO 4217 format (3 uppercase letters)
+	if len(p.Currency) != 3 {
+		return errors.New("payment currency must be 3-character ISO 4217 code")
 	}
 
 	if p.IdempotencyKey == "" {

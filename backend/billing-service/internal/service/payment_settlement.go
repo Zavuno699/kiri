@@ -24,7 +24,7 @@ type SettlementRequest struct {
 	Provider         string
 	ProviderChargeID string
 	Reference        string
-	AmountUGX        int64
+	AmountMinor      int64
 	Currency         string
 	ProviderEventID  string
 	CorrelationID    string
@@ -78,7 +78,7 @@ func (l *InMemoryPaymentLedger) Settle(
 	if req.Provider != payment.Provider ||
 		req.ProviderChargeID != payment.ProviderChargeID ||
 		req.Reference != payment.Reference ||
-		req.AmountUGX != payment.AmountUGX ||
+		req.AmountMinor != payment.AmountMinor ||
 		req.Currency != payment.Currency {
 		return model.Payment{}, ErrPaymentSettlementDenied
 	}

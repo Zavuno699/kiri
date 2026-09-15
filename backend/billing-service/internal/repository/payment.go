@@ -48,12 +48,12 @@ func (r *PaymentRepository) CreatePending(
 		return errors.New("payment provider is required")
 	}
 
-	if payment.AmountUGX <= 0 {
+	if payment.AmountMinor <= 0 {
 		return errors.New("payment amount must be positive")
 	}
 
-	if payment.Currency != "UGX" {
-		return errors.New("payment currency must be UGX")
+	if payment.Currency == "" {
+		return errors.New("payment currency is required")
 	}
 
 	_, err := r.db.ExecContext(
@@ -99,7 +99,7 @@ func (r *PaymentRepository) CreatePending(
 		payment.Reference,
 		payment.Provider,
 		payment.ProviderChargeID,
-		payment.AmountUGX,
+		payment.AmountMinor,
 		payment.Currency,
 		payment.Status,
 		payment.IdempotencyKey,
@@ -184,7 +184,7 @@ func (r *PaymentRepository) FailPayment(
 			reference,
 			provider,
 			provider_charge_id,
-			amount_ugx,
+			amount_minor,
 			currency,
 			status,
 			idempotency_key,
@@ -204,7 +204,7 @@ func (r *PaymentRepository) FailPayment(
 		&payment.Reference,
 		&payment.Provider,
 		&payment.ProviderChargeID,
-		&payment.AmountUGX,
+		&payment.AmountMinor,
 		&payment.Currency,
 		&currentStatus,
 		&payment.IdempotencyKey,
@@ -283,7 +283,7 @@ func (r *PaymentRepository) ListPendingPayments(
 			reference,
 			provider,
 			provider_charge_id,
-			amount_ugx,
+			amount_minor,
 			currency,
 			status,
 			idempotency_key,
@@ -317,7 +317,7 @@ func (r *PaymentRepository) ListPendingPayments(
 			&payment.Reference,
 			&payment.Provider,
 			&payment.ProviderChargeID,
-			&payment.AmountUGX,
+			&payment.AmountMinor,
 			&payment.Currency,
 			&payment.Status,
 			&payment.IdempotencyKey,
@@ -399,7 +399,7 @@ func (r *PaymentRepository) SettlePaymentFromReconciliation(
 		return model.Payment{}, err
 	}
 
-	if payment.AmountUGX != amountUGX {
+	if payment.AmountMinor != amountUGX {
 		return model.Payment{}, errors.New(
 			"settlement amount mismatch during reconciliation",
 		)
@@ -508,8 +508,8 @@ func (r *PaymentRepository) SettlePayment(
 		return errors.New("settlement amount must be positive")
 	}
 
-	if currency != "UGX" {
-		return errors.New("settlement currency must be UGX")
+	if currency == "" {
+		return errors.New("settlement currency is required")
 	}
 
 	if webhookEventID == "" {
@@ -554,7 +554,7 @@ func (r *PaymentRepository) SettlePayment(
 			provider,
 			reference,
 			provider_charge_id,
-			amount_ugx,
+			amount_minor,
 			currency,
 			status,
 			version
@@ -700,7 +700,7 @@ SELECT
 	reference,
 	provider,
 	provider_charge_id,
-	amount_ugx,
+	amount_minor,
 	currency,
 	status,
 	idempotency_key,
@@ -726,7 +726,7 @@ func scanPayment(row rowScanner) (model.Payment, error) {
 		&payment.Reference,
 		&payment.Provider,
 		&payment.ProviderChargeID,
-		&payment.AmountUGX,
+		&payment.AmountMinor,
 		&payment.Currency,
 		&payment.Status,
 		&payment.IdempotencyKey,

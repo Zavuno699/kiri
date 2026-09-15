@@ -85,7 +85,7 @@ func (r *PaymentReconciler) ReconcilePayment(
 	}
 
 	if providerPayment.Amount != 0 &&
-		providerPayment.Amount != payment.AmountUGX {
+		providerPayment.Amount != payment.AmountMinor {
 		return payment, fmt.Errorf(
 			"provider amount mismatch during reconciliation",
 		)
@@ -117,7 +117,7 @@ func (r *PaymentReconciler) ReconcilePayment(
 			payment.Provider,
 			payment.Reference,
 			providerPayment.ID,
-			payment.AmountUGX,
+			payment.AmountMinor,
 			payment.Currency,
 			now,
 		)

@@ -53,7 +53,7 @@ func BuildPendingPayment(
 		ProviderChargeID: providerPayment.ID,
 		Reference:        request.Reference,
 		CorrelationID:    request.TraceID,
-		AmountUGX:        request.Amount,
+		AmountMinor:      request.Amount,
 		Currency:         strings.ToUpper(request.Currency),
 		Status:           model.PaymentPending,
 		IdempotencyKey:   request.IdempotencyKey,

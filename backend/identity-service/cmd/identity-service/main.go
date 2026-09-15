@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	sharedhttp "github.com/kirilock/backend/shared/http"
 
+	"github.com/kirilock/backend/identity-service/internal/client"
 	"github.com/kirilock/backend/identity-service/internal/handler"
+	"github.com/kirilock/backend/identity-service/internal/middleware"
 	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
@@ -29,6 +29,11 @@ func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		log.Fatal("DATABASE_URL environment variable is required")
+	}
+
+	securityServiceURL := os.Getenv("SECURITY_SERVICE_URL")
+	if securityServiceURL == "" {
+		securityServiceURL = "http://localhost:8080"
 	}
 
 	pool, err := pgxpool.New(ctx, databaseURL)
@@ -72,6 +77,9 @@ func main() {
 		log.Fatalf("failed to create session handler: %v", err)
 	}
 
+	authClient := client.NewAuthClient(securityServiceURL)
+	authMiddleware := middleware.NewAuthMiddleware(authClient)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -82,22 +90,13 @@ func main() {
 	mux.HandleFunc("POST /subjects", subjectHandler.CreateSubject)
 	mux.HandleFunc("POST /authenticate", subjectHandler.Authenticate)
 
-	mux.HandleFunc("POST /sessions", sessionHandler.CreateSession)
-	mux.HandleFunc("POST /sessions/validate", sessionHandler.ValidateSession)
-	mux.HandleFunc("POST /sessions/revoke", sessionHandler.RevokeSession)
-	mux.HandleFunc("POST /sessions/revoke-all", sessionHandler.RevokeAllSubjectSessions)
+	mux.Handle("POST /sessions", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.CreateSession)))
+	mux.Handle("POST /sessions/validate", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.ValidateSession)))
+	mux.Handle("POST /sessions/revoke", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.RevokeSession)))
+	mux.Handle("POST /sessions/revoke-all", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.RevokeAllSubjectSessions)))
 
-	mux.HandleFunc("POST /subjects/admin", func(w http.ResponseWriter, r *http.Request) {
-		principal := sharedhttp.Principal{TenantID: uuid.New()}
-		ctx := sharedhttp.WithPrincipal(r.Context(), principal)
-		subjectHandler.SetAdmin(w, r.WithContext(ctx))
-	})
-
-	mux.HandleFunc("POST /subjects/super-admin", func(w http.ResponseWriter, r *http.Request) {
-		principal := sharedhttp.Principal{TenantID: uuid.New()}
-		ctx := sharedhttp.WithPrincipal(r.Context(), principal)
-		subjectHandler.SetSuperAdmin(w, r.WithContext(ctx))
-	})
+	mux.Handle("POST /subjects/admin", authMiddleware.Authenticate(http.HandlerFunc(subjectHandler.SetAdmin)))
+	mux.Handle("POST /subjects/super-admin", authMiddleware.Authenticate(http.HandlerFunc(subjectHandler.SetSuperAdmin)))
 
 	server := &http.Server{
 		Addr:         ":8081",

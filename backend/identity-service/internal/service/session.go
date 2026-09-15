@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrSessionExpired = errors.New("session expired")
+	ErrSessionExpired  = errors.New("session expired")
 	ErrSessionNotFound = errors.New("session not found")
 )
 

@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	ErrInvalidPassword      = errors.New("invalid password")
-	ErrPasswordMismatch     = errors.New("password does not match")
-	ErrAdminSelfDemotion    = errors.New("cannot demote self from admin")
+	ErrInvalidPassword        = errors.New("invalid password")
+	ErrPasswordMismatch       = errors.New("password does not match")
+	ErrAdminSelfDemotion      = errors.New("cannot demote self from admin")
 	ErrSuperAdminSelfDemotion = errors.New("cannot demote self from super admin")
 )
 

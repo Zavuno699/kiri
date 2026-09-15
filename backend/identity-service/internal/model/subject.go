@@ -8,16 +8,16 @@ import (
 )
 
 type Subject struct {
-	ID            uuid.UUID
-	SubjectID     string
-	Email         string
-	PasswordHash  string
-	Roles         []string
-	IsAdmin       bool
-	IsSuperAdmin  bool
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	Version       int
+	ID           uuid.UUID
+	SubjectID    string
+	Email        string
+	PasswordHash string
+	Roles        []string
+	IsAdmin      bool
+	IsSuperAdmin bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	Version      int
 }
 
 func (s Subject) Validate() error {

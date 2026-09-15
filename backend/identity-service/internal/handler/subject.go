@@ -9,6 +9,7 @@ import (
 	sharedhttp "github.com/kirilock/backend/shared/http"
 	"github.com/kirilock/backend/shared/validation"
 
+	"github.com/kirilock/backend/identity-service/internal/middleware"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
 
@@ -162,7 +163,7 @@ func (h *SubjectHandler) SetAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	principal, err := sharedhttp.PrincipalFromContext(r.Context())
+	principal, err := middleware.PrincipalFromContext(r.Context())
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -181,7 +182,22 @@ func (h *SubjectHandler) SetAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	actorID := principal.TenantID
+	actorID := uuid.MustParse(principal.Subject)
+
+	hasAdminRole := false
+	for _, role := range principal.Roles {
+		if role == "super_admin" {
+			hasAdminRole = true
+			break
+		}
+	}
+
+	if !hasAdminRole {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "insufficient permissions"})
+		return
+	}
 
 	if err := h.subjectService.SetAdmin(
 		r.Context(),
@@ -218,7 +234,7 @@ func (h *SubjectHandler) SetSuperAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	principal, err := sharedhttp.PrincipalFromContext(r.Context())
+	principal, err := middleware.PrincipalFromContext(r.Context())
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -237,7 +253,22 @@ func (h *SubjectHandler) SetSuperAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	actorID := principal.TenantID
+	actorID := uuid.MustParse(principal.Subject)
+
+	hasSuperAdminRole := false
+	for _, role := range principal.Roles {
+		if role == "super_admin" {
+			hasSuperAdminRole = true
+			break
+		}
+	}
+
+	if !hasSuperAdminRole {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "insufficient permissions"})
+		return
+	}
 
 	if err := h.subjectService.SetSuperAdmin(
 		r.Context(),

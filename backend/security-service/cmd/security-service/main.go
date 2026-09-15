@@ -81,6 +81,13 @@ func main() {
 			return
 		}
 
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "unsupported media type", http.StatusUnsupportedMediaType)
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
 		var req request.Authenticate
 		if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
 			sharedhttp.WriteValidationError(w, r, err)
@@ -110,6 +117,13 @@ func main() {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
+
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "unsupported media type", http.StatusUnsupportedMediaType)
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 		principal, err := authenticator.Authenticate(r.Context(), r)
 		if err != nil {

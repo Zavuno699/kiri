@@ -14,7 +14,8 @@ import { SecurityPage } from "../features/security/SecurityPage";
 import { SignInPage } from "../pages/auth/SignInPage";
 import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
 import { ActivatePage } from "../pages/auth/ActivatePage";
-import { UnauthorizedPage } from "../pages/UnauthorizedPage";
+import { UnauthorizedPage } from "../pages/UnauthorizedPage"
+import { TenantsPage } from "../pages/tenants/TenantsPage";
 
 import { SecurityAuditPage } from "../pages/security/SecurityAuditPage";
 import { SecurityControlPage } from "../pages/security/SecurityControlPage";
@@ -114,6 +115,14 @@ export const router = createBrowserRouter([
       {
         path: "properties",
         element: <PropertiesPage />,
+      },
+      {
+        path: "tenants",
+        element: (
+          <ProtectedRoute requiredRoles={["landlord", "super_admin"]}>
+            <TenantsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "leases",

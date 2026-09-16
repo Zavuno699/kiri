@@ -23,6 +23,12 @@ const allNavigation: NavItem[] = [
     requiredRoles: ["landlord", "operator", "security_admin", "super_admin"],
   },
   {
+    to: "/tenants",
+    label: "Tenants",
+    short: "TN",
+    requiredRoles: ["landlord", "super_admin"],
+  },
+  {
     to: "/leases",
     label: "Leases",
     short: "LE",

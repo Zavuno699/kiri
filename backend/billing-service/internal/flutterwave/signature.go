@@ -32,3 +32,12 @@ func VerifySignature(
 		[]byte(signature),
 	)
 }
+
+// ExtractSignature extracts the Flutterwave signature from headers
+func ExtractSignature(headers map[string]string) string {
+	// Flutterwave sends signature in X-Flutterwave-Signature header
+	if sig, exists := headers["X-Flutterwave-Signature"]; exists {
+		return sig
+	}
+	return ""
+}

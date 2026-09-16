@@ -90,7 +90,7 @@ func (a *ProvisioningApplication) Provision(
 		SerialNumber:      strings.TrimSpace(request.SerialNumber),
 		Model:             strings.TrimSpace(request.Model),
 		FirmwareVersion:   strings.TrimSpace(request.FirmwareVersion),
-		LifecycleState:    model.DeviceProvisioning,
+		LifecycleState:    model.DeviceUnregistered,
 		ConnectivityState: model.ConnectivityUnknown,
 		GatewayID:         request.GatewayID,
 		Capabilities:      request.Capabilities,

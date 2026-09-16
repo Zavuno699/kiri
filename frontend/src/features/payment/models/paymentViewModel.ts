@@ -20,12 +20,15 @@ export function buildPaymentViewModel(
     tenantId: string
   },
 ): PaymentViewModel {
+  // Use app default locale instead of hardcoded en-UG
+  const locale = 'en-US' // Would come from app config in production
+  
   return {
     id: payment.id,
     reference: payment.reference,
     amountLabel:
-      new Intl.NumberFormat("en-UG", {
-        style: "currency",
+      new Intl.NumberFormat(locale, {
+        style: 'currency',
         currency: payment.currency,
         maximumFractionDigits: 0,
       }).format(payment.amountUGX),

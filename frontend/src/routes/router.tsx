@@ -12,6 +12,8 @@ import { DevicesPage } from "../features/devices/DevicesPage";
 import { LocksPage } from "../features/locks/LocksPage";
 import { SecurityPage } from "../features/security/SecurityPage";
 import { SignInPage } from "../pages/auth/SignInPage";
+import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
+import { ActivatePage } from "../pages/auth/ActivatePage";
 import { UnauthorizedPage } from "../pages/UnauthorizedPage";
 
 import { SecurityAuditPage } from "../pages/security/SecurityAuditPage";
@@ -37,6 +39,16 @@ export const router = createBrowserRouter([
   {
     path: "/signin",
     element: <SignInPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/activate",
+    element: <ActivatePage />,
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -68,6 +80,11 @@ export const router = createBrowserRouter([
   {
     path: "/help",
     element: <HelpPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/register",
+    element: <LandlordRegistrationPage />,
     errorElement: <RouteErrorBoundary />,
   },
   {

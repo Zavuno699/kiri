@@ -1,7 +1,10 @@
 import { useState } from "react"
-import { useNavigate } from "react-router"
+import { useNavigate, useSearchParams } from "react-router"
 import { authenticate } from "../../application/authentication/commands/authenticate"
+import { resolvePostLoginRoute } from "../../application/authentication/navigation/resolvePostLoginRoute"
 import { ApiClientError } from "../../api/client"
+import { SecondaryButton } from "../../components/ui/operator/SecondaryButton"
+import { FieldLabel } from "../../components/forms/FieldLabel"
 
 interface SignInFormData {
   email: string
@@ -10,6 +13,8 @@ interface SignInFormData {
 
 export function SignInPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get("returnTo") || undefined
   const [formData, setFormData] = useState<SignInFormData>({
     email: "",
     password: "",
@@ -30,17 +35,8 @@ export function SignInPage() {
       })
 
       // Navigate to role-specific landing page based on backend roles
-      if (response.is_super_admin) {
-        navigate("/") // Super admin gets full command center
-      } else if (response.is_admin) {
-        navigate("/") // Admin gets command center
-      } else if (response.roles.includes("landlord")) {
-        navigate("/") // Landlord gets property-focused dashboard
-      } else if (response.roles.includes("tenant")) {
-        navigate("/") // Tenant gets simplified experience
-      } else {
-        navigate("/") // Default to dashboard
-      }
+      const targetRoute = resolvePostLoginRoute(response, returnTo)
+      navigate(targetRoute)
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.status === 401) {
@@ -64,19 +60,25 @@ export function SignInPage() {
             K
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-kiri-text">
-            KiriLock
+            KIRILOCK
           </h1>
           <p className="mt-2 text-sm text-kiri-text-muted">
-            Sign in to access your control center
+            Secure Property & Access Management
           </p>
         </div>
 
         <div className="rounded-2xl border border-white/8 bg-kiri-925 p-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-kiri-text">
+              Welcome back
+            </h2>
+            <p className="mt-1 text-sm text-kiri-text-muted">
+              Sign in to manage your property or account
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-kiri-text-soft">
-                Email address
-              </label>
+            <FieldLabel label="Email address">
               <input
                 id="email"
                 type="email"
@@ -88,12 +90,9 @@ export function SignInPage() {
                 placeholder="you@example.com"
                 disabled={isLoading}
               />
-            </div>
+            </FieldLabel>
 
-            <div>
-              <label htmlFor="password" className="mb-2 block text-sm font-medium text-kiri-text-soft">
-                Password
-              </label>
+            <FieldLabel label="Password">
               <div className="relative">
                 <input
                   id="password"
@@ -115,6 +114,17 @@ export function SignInPage() {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
+            </FieldLabel>
+
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                className="text-xs font-medium text-kiri-blue-400 hover:text-kiri-blue-300 transition"
+                disabled={isLoading}
+              >
+                Forgot Password?
+              </button>
             </div>
 
             {error && (
@@ -128,15 +138,67 @@ export function SignInPage() {
               disabled={isLoading}
               className="w-full rounded-xl bg-kiri-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(47,107,255,0.3)] transition hover:bg-kiri-blue-500 hover:shadow-[0_0_30px_rgba(47,107,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Signing in..." : "SIGN IN"}
             </button>
           </form>
+
+          <div className="mt-6 flex items-center">
+            <div className="flex-1 border-t border-white/8"></div>
+            <span className="px-4 text-xs font-medium text-kiri-text-muted">OR</span>
+            <div className="flex-1 border-t border-white/8"></div>
+          </div>
+
+          <div className="mt-6 space-y-3">
+            <SecondaryButton
+              type="button"
+              onClick={() => navigate("/register")}
+              disabled={isLoading}
+              className="w-full"
+            >
+              REGISTER AS LANDLORD
+            </SecondaryButton>
+            <SecondaryButton
+              type="button"
+              onClick={() => navigate("/activate")}
+              disabled={isLoading}
+              className="w-full"
+            >
+              ACTIVATE INVITATION
+            </SecondaryButton>
+          </div>
         </div>
 
-        <div className="mt-6 text-center text-sm text-kiri-text-muted">
-          <p>
-            Contact your administrator if you need access to KiriLock.
-          </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-4 text-xs text-kiri-text-muted">
+          <button
+            onClick={() => navigate("/about")}
+            className="hover:text-kiri-text-soft transition"
+          >
+            About KiriLock
+          </button>
+          <button
+            onClick={() => navigate("/how-it-works")}
+            className="hover:text-kiri-text-soft transition"
+          >
+            How It Works
+          </button>
+          <button
+            onClick={() => navigate("/terms")}
+            className="hover:text-kiri-text-soft transition"
+          >
+            Terms & Conditions
+          </button>
+          <button
+            onClick={() => navigate("/privacy")}
+            className="hover:text-kiri-text-soft transition"
+          >
+            Privacy Policy
+          </button>
+          <button
+            onClick={() => navigate("/help")}
+            className="hover:text-kiri-text-soft transition"
+          >
+            Help & Support
+          </button>
         </div>
       </div>
     </div>

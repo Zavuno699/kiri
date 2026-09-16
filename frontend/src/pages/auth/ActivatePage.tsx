@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useSearchParams } from "react-router"
 import { FieldLabel } from "../../components/forms/FieldLabel"
+import { apiFetch } from "../../api/client"
 
 interface ActivateFormData {
   token: string
@@ -8,15 +9,14 @@ interface ActivateFormData {
   confirmPassword: string
 }
 
-// BACKEND CONTRACT GAP: POST /tenancies/accept requires authentication and reads subject from context.
-// An unauthenticated invitee cannot use it directly.
-// Required backend adjustment: Either (a) a public token-based activation endpoint, or (b) a two-step flow
-// where the invitee first authenticates (sets password) then accepts the invitation.
-// 
-// Current endpoint: POST /tenancies/accept (authenticated, in tenant_handler.go AcceptInvitation)
-// Required: Public endpoint or modified flow for unauthenticated invitation activation
-// Expected request: { token: string, password: string }
-// Expected response: { success: boolean, property_info: {...}, payment_info: {...} }
+interface InvitationPreview {
+  property_name: string
+  property_type: string
+  unit_number: string
+  lease_start_date: string
+  lease_end_date: string
+  expires_at: string
+}
 
 export function ActivatePage() {
   const navigate = useNavigate()
@@ -39,26 +39,19 @@ export function ActivatePage() {
     setError(null)
 
     try {
-      // TODO: Integrate with backend token verification endpoint
-      // const response = await apiFetch("/invitations/verify", {
-      //   method: "POST",
-      //   body: JSON.stringify({ token: formData.token }),
-      // })
-      // setInvitationDetails(response)
+      const preview = await apiFetch<InvitationPreview>("/tenancies/invitation/preview", {
+        method: "POST",
+        body: JSON.stringify({ token: formData.token }),
+      }, { useIdentityService: true })
       
-      // Placeholder: simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setInvitationDetails({
-        property_name: "Sample Property",
-        unit_number: "A-101",
-        landlord_name: "John Doe",
-        rent_amount: 1500,
-        payment_due_day: 1,
-      })
-      
+      setInvitationDetails(preview)
       setStep("create-password")
-    } catch (_err) {
-      setError("Invalid or expired invitation token. Please contact your landlord.")
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "Invalid or expired invitation token. Please contact your landlord.")
+      } else {
+        setError("Invalid or expired invitation token. Please contact your landlord.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -81,21 +74,21 @@ export function ActivatePage() {
     setError(null)
 
     try {
-      // TODO: Integrate with backend activation endpoint
-      // const response = await apiFetch("/invitations/activate", {
-      //   method: "POST",
-      //   body: JSON.stringify({ 
-      //     token: formData.token,
-      //     password: formData.password 
-      //   }),
-      // })
-      
-      // Placeholder: simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await apiFetch("/tenancies/activate", {
+        method: "POST",
+        body: JSON.stringify({ 
+          token: formData.token,
+          password: formData.password 
+        }),
+      }, { useIdentityService: true })
       
       setStep("success")
-    } catch (_err) {
-      setError("Failed to activate account. Please try again or contact support.")
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "Failed to activate account. Please try again or contact support.")
+      } else {
+        setError("Failed to activate account. Please try again or contact support.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -121,10 +114,12 @@ export function ActivatePage() {
                 <h3 className="text-sm font-semibold text-kiri-text mb-3">Your Property Details</h3>
                 <div className="space-y-2 text-xs text-kiri-text-muted">
                   <p><span className="font-medium text-kiri-text-soft">Property:</span> {invitationDetails.property_name}</p>
+                  <p><span className="font-medium text-kiri-text-soft">Type:</span> {invitationDetails.property_type}</p>
                   <p><span className="font-medium text-kiri-text-soft">Unit:</span> {invitationDetails.unit_number}</p>
-                  <p><span className="font-medium text-kiri-text-soft">Landlord:</span> {invitationDetails.landlord_name}</p>
-                  <p><span className="font-medium text-kiri-text-soft">Monthly Rent:</span> ${invitationDetails.rent_amount}</p>
-                  <p><span className="font-medium text-kiri-text-soft">Payment Due:</span> Day {invitationDetails.payment_due_day} of each month</p>
+                  <p><span className="font-medium text-kiri-text-soft">Lease Start:</span> {invitationDetails.lease_start_date}</p>
+                  {invitationDetails.lease_end_date && (
+                    <p><span className="font-medium text-kiri-text-soft">Lease End:</span> {invitationDetails.lease_end_date}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -215,7 +210,12 @@ export function ActivatePage() {
                   <h3 className="text-sm font-semibold text-kiri-text mb-3">Invitation Details</h3>
                   <div className="space-y-2 text-xs text-kiri-text-muted">
                     <p><span className="font-medium text-kiri-text-soft">Property:</span> {invitationDetails.property_name}</p>
+                    <p><span className="font-medium text-kiri-text-soft">Type:</span> {invitationDetails.property_type}</p>
                     <p><span className="font-medium text-kiri-text-soft">Unit:</span> {invitationDetails.unit_number}</p>
+                    <p><span className="font-medium text-kiri-text-soft">Lease Start:</span> {invitationDetails.lease_start_date}</p>
+                    {invitationDetails.lease_end_date && (
+                      <p><span className="font-medium text-kiri-text-soft">Lease End:</span> {invitationDetails.lease_end_date}</p>
+                    )}
                   </div>
                 </div>
               )}

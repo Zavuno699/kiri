@@ -21,6 +21,7 @@ type SubjectRepository interface {
 	GetByID(context.Context, uuid.UUID) (model.Subject, error)
 	GetBySubjectID(context.Context, string) (model.Subject, error)
 	GetByEmail(context.Context, string) (model.Subject, error)
+	Update(context.Context, model.Subject) error
 	UpdateRoles(context.Context, uuid.UUID, []string) error
 	SetAdmin(context.Context, uuid.UUID, bool) error
 	SetSuperAdmin(context.Context, uuid.UUID, bool) error
@@ -91,6 +92,47 @@ func (r *DBSubjectRepository) Create(
 			}
 		}
 		return err
+	}
+
+	return nil
+}
+
+func (r *DBSubjectRepository) Update(
+	ctx context.Context,
+	subject model.Subject,
+) error {
+	if err := subject.Validate(); err != nil {
+		return err
+	}
+
+	result, err := r.db.Exec(ctx, `
+		UPDATE identity_subjects
+		SET
+			email = $2,
+			password_hash = $3,
+			roles = $4,
+			is_admin = $5,
+			is_super_admin = $6,
+			updated_at = $7,
+			version = version + 1
+		WHERE id = $1 AND version = $8
+	`,
+		subject.ID,
+		subject.Email,
+		subject.PasswordHash,
+		subject.Roles,
+		subject.IsAdmin,
+		subject.IsSuperAdmin,
+		subject.UpdatedAt,
+		subject.Version,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrSubjectNotFound
 	}
 
 	return nil

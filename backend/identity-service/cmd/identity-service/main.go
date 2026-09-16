@@ -81,7 +81,7 @@ func main() {
 	landlordService := service.NewLandlordService(landlordProfileRepo, propertyRepo)
 	propertyService := service.NewPropertyService(propertyRepo, landlordProfileRepo, landlordService)
 	unitService := service.NewUnitService(unitRepo, propertyRepo, landlordProfileRepo, landlordService)
-	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, pool)
+	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, subjectRepo, pool)
 	paymentService := service.NewPaymentService(paymentAccountRepo, paymentResponsibilityRepo, landlordProfileRepo, landlordService)
 	landlordApplicationService := service.NewLandlordApplicationService(landlordApplicationRepo, subjectRepo)
 	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)
@@ -148,6 +148,10 @@ func main() {
 	// Public landlord registration (no auth required)
 	mux.HandleFunc("POST /landlords/register", landlordApplicationHandler.PublicLandlordRegistration)
 
+	// Public tenant activation (no auth required)
+	mux.HandleFunc("POST /tenancies/invitation/preview", tenantHandler.PreviewInvitation)
+	mux.HandleFunc("POST /tenancies/activate", tenantHandler.ActivateTenant)
+
 	mux.Handle("POST /sessions", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.CreateSession)))
 	mux.Handle("POST /sessions/validate", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.ValidateSession)))
 	mux.Handle("POST /sessions/revoke", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.RevokeSession)))
@@ -188,6 +192,8 @@ func main() {
 	mux.Handle("GET /tenancies/tenant", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.GetTenantTenancy)))
 	mux.Handle("GET /tenancies/landlord", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.GetLandlordTenancies)))
 	mux.Handle("POST /tenancies/terminate", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.TerminateTenancy)))
+	mux.Handle("POST /tenancies/revoke", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.RevokeInvitation)))
+	mux.Handle("POST /tenancies/resend", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.ResendInvitation)))
 
 	mux.Handle("POST /payments/accounts", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.CreatePaymentAccount)))
 	mux.Handle("GET /payments/accounts", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetLandlordPaymentAccounts)))

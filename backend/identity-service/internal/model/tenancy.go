@@ -15,24 +15,26 @@ const (
 	TenancySuspended  TenancyStatus = "SUSPENDED"
 	TenancyTerminated TenancyStatus = "TERMINATED"
 	TenancyExpired    TenancyStatus = "EXPIRED"
+	TenancyRevoked    TenancyStatus = "REVOKED"
 )
 
 type Tenancy struct {
-	ID                          uuid.UUID
-	TenantSubjectID             uuid.UUID
-	UnitID                      uuid.UUID
-	Status                      TenancyStatus
+	ID                         uuid.UUID
+	TenantSubjectID            uuid.UUID
+	UnitID                     uuid.UUID
+	Status                     TenancyStatus
 	LeaseStartDate             time.Time
 	LeaseEndDate               *time.Time
 	InvitedByLandlordProfileID *uuid.UUID
 	InvitationToken            string
+	InvitationTokenHash        string
 	InvitationExpiresAt        *time.Time
 	InvitationAcceptedAt       *time.Time
 	TerminatedAt               *time.Time
 	TerminationReason          string
-	CreatedAt                   time.Time
-	UpdatedAt                   time.Time
-	Version                     int
+	CreatedAt                  time.Time
+	UpdatedAt                  time.Time
+	Version                    int
 }
 
 func (t Tenancy) Validate() error {
@@ -47,7 +49,7 @@ func (t Tenancy) Validate() error {
 	}
 
 	switch t.Status {
-	case TenancyInvited, TenancyActive, TenancySuspended, TenancyTerminated, TenancyExpired:
+	case TenancyInvited, TenancyActive, TenancySuspended, TenancyTerminated, TenancyExpired, TenancyRevoked:
 		// Valid
 	default:
 		return errors.New("invalid tenancy status")

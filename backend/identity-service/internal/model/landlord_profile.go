@@ -22,36 +22,37 @@ const (
 type LandlordAuthorizationState string
 
 const (
-	AuthorizationAccountCreated       LandlordAuthorizationState = "ACCOUNT_CREATED"
-	AuthorizationIdentityVerified     LandlordAuthorizationState = "IDENTITY_VERIFIED"
-	AuthorizationOwnershipVerified    LandlordAuthorizationState = "OWNERSHIP_VERIFIED"
-	AuthorizationPaymentVerified      LandlordAuthorizationState = "PAYMENT_VERIFIED"
-	AuthorizationOperationalAccess   LandlordAuthorizationState = "OPERATIONAL_ACCESS_ENABLED"
+	AuthorizationAccountCreated    LandlordAuthorizationState = "ACCOUNT_CREATED"
+	AuthorizationIdentityVerified  LandlordAuthorizationState = "IDENTITY_VERIFIED"
+	AuthorizationOwnershipVerified LandlordAuthorizationState = "OWNERSHIP_VERIFIED"
+	AuthorizationPaymentVerified   LandlordAuthorizationState = "PAYMENT_VERIFIED"
+	AuthorizationOperationalAccess LandlordAuthorizationState = "OPERATIONAL_ACCESS_ENABLED"
 )
 
 type LandlordProfile struct {
-	ID                   uuid.UUID
-	SubjectID            uuid.UUID
-	VerificationStatus   LandlordVerificationStatus
-	AuthorizationState   LandlordAuthorizationState
-	LegalName            string
-	BusinessName         string
-	TaxID                string
-	Phone                string
-	AddressLine1         string
-	AddressLine2         string
-	City                 string
-	State                string
-	PostalCode           string
-	Country              string
-	SubmittedAt          *time.Time
-	ReviewedAt           *time.Time
-	VerifiedAt           *time.Time
-	RejectionReason      string
-	Notes                string
-	CreatedAt            time.Time
-	UpdatedAt            time.Time
-	Version              int
+	ID                 uuid.UUID
+	SubjectID          uuid.UUID
+	VerificationStatus LandlordVerificationStatus
+	AuthorizationState LandlordAuthorizationState
+	LegalName          string
+	BusinessName       string
+	LegalEntityType    string // INDIVIDUAL, REGISTERED_BUSINESS, PROPERTY_MANAGEMENT_ORG
+	TaxID              string
+	Phone              string
+	AddressLine1       string
+	AddressLine2       string
+	City               string
+	State              string
+	PostalCode         string
+	Country            string
+	SubmittedAt        *time.Time
+	ReviewedAt         *time.Time
+	VerifiedAt         *time.Time
+	RejectionReason    string
+	Notes              string
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+	Version            int
 }
 
 func (l LandlordProfile) Validate() error {

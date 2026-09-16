@@ -71,8 +71,15 @@ func (h *LandlordApplicationHandler) PublicLandlordRegistration(w http.ResponseW
 	app, err := h.service.CreatePublicRegistration(r.Context(), req.Email, req.Password, req.TermsVersion)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
+		// Account enumeration protection: return generic error
+		if errors.Is(err, service.ErrLandlordApplicationAlreadyExists) ||
+			err.Error() == "registration failed" {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"message": "registration failed"})
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create landlord application"})
+		json.NewEncoder(w).Encode(map[string]string{"message": "failed to create landlord application"})
 		return
 	}
 

@@ -66,7 +66,7 @@ func (r *PaymentRepository) CreatePending(
                         reference,
                         provider,
                         provider_charge_id,
-                        amount_ugx,
+                        amount_minor,
                         currency,
                         status,
                         idempotency_key,

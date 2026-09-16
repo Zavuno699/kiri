@@ -32,10 +32,11 @@ func TestCreatePendingPayment(t *testing.T) {
 			reference,
 			provider,
 			provider_charge_id,
-			amount_ugx,
+			amount_minor,
 			currency,
 			status,
 			idempotency_key,
+			request_hash,
 			correlation_id,
 			created_at,
 			updated_at,
@@ -54,7 +55,8 @@ func TestCreatePendingPayment(t *testing.T) {
 			$10,
 			$11,
 			$12,
-			$13
+			$13,
+			$14
 		)
 	`)).
 		WithArgs(
@@ -67,6 +69,7 @@ func TestCreatePendingPayment(t *testing.T) {
 			"UGX",
 			model.PaymentPending,
 			"01JTEST-IDEMPOTENCY",
+			"",
 			"corr-test",
 			now,
 			now,
@@ -79,7 +82,7 @@ func TestCreatePendingPayment(t *testing.T) {
 		TenantID:       tenantID,
 		Reference:      "KIRI-TEST-001",
 		Provider:       "flutterwave",
-		AmountUGX:      50000,
+		AmountMinor:    50000,
 		Currency:       "UGX",
 		Status:         model.PaymentPending,
 		IdempotencyKey: "01JTEST-IDEMPOTENCY",
@@ -108,13 +111,13 @@ func TestCreatePendingRejectsInvalidAmount(t *testing.T) {
 	repo := NewPaymentRepository(db)
 
 	err = repo.CreatePending(context.Background(), model.Payment{
-		ID:        uuid.New(),
-		TenantID:  uuid.New(),
-		Reference: "KIRI-INVALID",
-		Provider:  "flutterwave",
-		AmountUGX: 0,
-		Currency:  "UGX",
-		Status:    model.PaymentPending,
+		ID:          uuid.New(),
+		TenantID:    uuid.New(),
+		Reference:   "KIRI-INVALID",
+		Provider:    "flutterwave",
+		AmountMinor: 0,
+		Currency:    "UGX",
+		Status:      model.PaymentPending,
 	})
 
 	if err == nil {
@@ -147,11 +150,11 @@ func TestGetByReference(t *testing.T) {
 				"reference",
 				"provider",
 				"provider_charge_id",
-				"amount_ugx",
+				"amount_minor",
 				"currency",
 				"status",
 				"idempotency_key",
-                            "request_hash",
+				"request_hash",
 				"correlation_id",
 				"created_at",
 				"updated_at",
@@ -168,7 +171,7 @@ func TestGetByReference(t *testing.T) {
 					"UGX",
 					model.PaymentPending,
 					"idem-001",
-                                    "hash-001",
+					"hash-001",
 					"corr-001",
 					created,
 					updated,
@@ -190,8 +193,8 @@ func TestGetByReference(t *testing.T) {
 		t.Fatalf("unexpected payment ID: %v", payment.ID)
 	}
 
-	if payment.AmountUGX != 75000 {
-		t.Fatalf("unexpected amount: %d", payment.AmountUGX)
+	if payment.AmountMinor != 75000 {
+		t.Fatalf("unexpected amount: %d", payment.AmountMinor)
 	}
 
 	if payment.Status != model.PaymentPending {

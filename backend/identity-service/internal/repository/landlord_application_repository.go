@@ -30,10 +30,15 @@ type LandlordApplicationRepository interface {
 
 type DBLandlordApplicationRepository struct {
 	pool *pgxpool.Pool
+	db   DB
 }
 
 func NewLandlordApplicationRepository(pool *pgxpool.Pool) LandlordApplicationRepository {
-	return &DBLandlordApplicationRepository{pool: pool}
+	return &DBLandlordApplicationRepository{pool: pool, db: pool}
+}
+
+func NewDBLandlordApplicationRepository(db DB) LandlordApplicationRepository {
+	return &DBLandlordApplicationRepository{db: db}
 }
 
 func (r *DBLandlordApplicationRepository) Create(ctx context.Context, app *model.LandlordApplication) error {
@@ -46,18 +51,34 @@ func (r *DBLandlordApplicationRepository) Create(ctx context.Context, app *model
 		RETURNING id
 	`
 
-	err := r.pool.QueryRow(ctx, query,
-		app.ID,
-		app.ApplicationReference,
-		app.SubjectID,
-		app.Status,
-		app.SubmittedAt,
-		app.TermsVersion,
-		app.ConsentTimestamp,
-		app.CreatedAt,
-		app.UpdatedAt,
-		app.Version,
-	).Scan(&app.ID)
+	var err error
+	if r.pool != nil {
+		err = r.pool.QueryRow(ctx, query,
+			app.ID,
+			app.ApplicationReference,
+			app.SubjectID,
+			app.Status,
+			app.SubmittedAt,
+			app.TermsVersion,
+			app.ConsentTimestamp,
+			app.CreatedAt,
+			app.UpdatedAt,
+			app.Version,
+		).Scan(&app.ID)
+	} else {
+		err = r.db.QueryRow(ctx, query,
+			app.ID,
+			app.ApplicationReference,
+			app.SubjectID,
+			app.Status,
+			app.SubmittedAt,
+			app.TermsVersion,
+			app.ConsentTimestamp,
+			app.CreatedAt,
+			app.UpdatedAt,
+			app.Version,
+		).Scan(&app.ID)
+	}
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -83,27 +104,52 @@ func (r *DBLandlordApplicationRepository) GetByID(ctx context.Context, id uuid.U
 	app := &model.LandlordApplication{}
 	var verificationResult []byte
 
-	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&app.ID,
-		&app.ApplicationReference,
-		&app.SubjectID,
-		&app.Status,
-		&app.SubmittedAt,
-		&app.ReviewStartedAt,
-		&app.ReviewedAt,
-		&app.VerificationUpdatedAt,
-		&app.VerificationSource,
-		&verificationResult,
-		&app.ReviewerID,
-		&app.Decision,
-		&app.DecisionReason,
-		&app.DecisionCategory,
-		&app.TermsVersion,
-		&app.ConsentTimestamp,
-		&app.CreatedAt,
-		&app.UpdatedAt,
-		&app.Version,
-	)
+	var err error
+	if r.pool != nil {
+		err = r.pool.QueryRow(ctx, query, id).Scan(
+			&app.ID,
+			&app.ApplicationReference,
+			&app.SubjectID,
+			&app.Status,
+			&app.SubmittedAt,
+			&app.ReviewStartedAt,
+			&app.ReviewedAt,
+			&app.VerificationUpdatedAt,
+			&app.VerificationSource,
+			&verificationResult,
+			&app.ReviewerID,
+			&app.Decision,
+			&app.DecisionReason,
+			&app.DecisionCategory,
+			&app.TermsVersion,
+			&app.ConsentTimestamp,
+			&app.CreatedAt,
+			&app.UpdatedAt,
+			&app.Version,
+		)
+	} else {
+		err = r.db.QueryRow(ctx, query, id).Scan(
+			&app.ID,
+			&app.ApplicationReference,
+			&app.SubjectID,
+			&app.Status,
+			&app.SubmittedAt,
+			&app.ReviewStartedAt,
+			&app.ReviewedAt,
+			&app.VerificationUpdatedAt,
+			&app.VerificationSource,
+			&verificationResult,
+			&app.ReviewerID,
+			&app.Decision,
+			&app.DecisionReason,
+			&app.DecisionCategory,
+			&app.TermsVersion,
+			&app.ConsentTimestamp,
+			&app.CreatedAt,
+			&app.UpdatedAt,
+			&app.Version,
+		)
+	}
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

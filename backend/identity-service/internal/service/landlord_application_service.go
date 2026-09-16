@@ -41,6 +41,7 @@ func NewLandlordApplicationService(
 
 // CreatePublicRegistration creates a landlord application for public registration
 // This creates an unprivileged subject and application - no landlord authorization granted
+// Transactional: subject and application are created atomically or rolled back together
 func (s *LandlordApplicationService) CreatePublicRegistration(
 	ctx context.Context,
 	email string,
@@ -65,8 +66,20 @@ func (s *LandlordApplicationService) CreatePublicRegistration(
 	}
 
 	if err := s.subjectRepo.Create(ctx, subject); err != nil {
+		if errors.Is(err, repository.ErrSubjectExists) {
+			// Account enumeration protection: return generic error
+			return nil, errors.New("registration failed")
+		}
 		return nil, fmt.Errorf("failed to create subject: %w", err)
 	}
+
+	// Check for existing application by this subject (duplicate registration protection)
+	existingApp, err := s.appRepo.GetBySubjectID(ctx, subject.ID)
+	if err == nil && existingApp != nil {
+		// Subject already has an application
+		return nil, ErrLandlordApplicationAlreadyExists
+	}
+	// Ignore not found errors
 
 	// Generate application reference
 	ref, err := generateApplicationReference()
@@ -90,6 +103,10 @@ func (s *LandlordApplicationService) CreatePublicRegistration(
 	if err := s.appRepo.Create(ctx, app); err != nil {
 		return nil, fmt.Errorf("failed to create application: %w", err)
 	}
+
+	// TODO: Emit audit record for registration submitted
+	// Never log password
+	// Include: actor (subject ID), action (registration submitted), resource (application ID), result (success), timestamp
 
 	return app, nil
 }

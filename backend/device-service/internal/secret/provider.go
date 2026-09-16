@@ -3,7 +3,8 @@ package secret
 import (
 	"context"
 	"fmt"
-	"uuid"
+
+	"github.com/google/uuid"
 )
 
 // SecretProvider defines the interface for storing and retrieving device credentials

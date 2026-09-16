@@ -1,4 +1,4 @@
-import { httpRequest } from "../../api/services/httpService"
+import { requestJson } from "../../infrastructure/http/httpClientBoundary"
 
 export interface ApplicationClient {
   get<T>(url: string): Promise<T>
@@ -10,16 +10,20 @@ export interface ApplicationClient {
 
 export const applicationClient: ApplicationClient = {
   get<T>(url: string) {
-    return httpRequest<T>(url)
+    return requestJson<T>(url, {
+      method: "GET",
+      useAuth: true,
+    })
   },
 
   post<T>(
     url: string,
     body: unknown,
   ) {
-    return httpRequest<T>(url, {
+    return requestJson<T>(url, {
       method: "POST",
       body,
+      useAuth: true,
     })
   },
 }

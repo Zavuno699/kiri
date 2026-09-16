@@ -56,7 +56,7 @@ export function SignInPage() {
     <div className="min-h-screen bg-kiri-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-kiri-blue-600 text-2xl font-black shadow-[0_0_40px_rgba(47,107,255,0.35)]">
+          <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-kiri-blue-600 text-2xl font-black shadow-[0_0_40px_rgba(47,107,255,0.35)]" aria-hidden="true">
             K
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-kiri-text">
@@ -77,13 +77,16 @@ export function SignInPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <FieldLabel label="Email address">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <FieldLabel label="Email address" htmlFor="email">
               <input
                 id="email"
                 type="email"
                 autoComplete="email"
                 required
+                aria-required="true"
+                aria-invalid={error !== null}
+                aria-describedby={error ? "error-message" : undefined}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full rounded-xl border border-white/8 bg-white/[0.025] px-4 py-3 text-sm text-kiri-text placeholder:text-kiri-text-muted/50 focus:border-kiri-blue-500/50 focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/20 transition"
@@ -92,13 +95,15 @@ export function SignInPage() {
               />
             </FieldLabel>
 
-            <FieldLabel label="Password">
+            <FieldLabel label="Password" htmlFor="password">
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
+                  aria-required="true"
+                  aria-invalid={error !== null}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="w-full rounded-xl border border-white/8 bg-white/[0.025] px-4 py-3 pr-12 text-sm text-kiri-text placeholder:text-kiri-text-muted/50 focus:border-kiri-blue-500/50 focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/20 transition"
@@ -108,6 +113,8 @@ export function SignInPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-kiri-text-muted hover:text-kiri-text-soft transition"
                   disabled={isLoading}
                 >
@@ -120,7 +127,7 @@ export function SignInPage() {
               <button
                 type="button"
                 onClick={() => navigate("/forgot-password")}
-                className="text-xs font-medium text-kiri-blue-400 hover:text-kiri-blue-300 transition"
+                className="text-xs font-medium text-kiri-blue-400 hover:text-kiri-blue-300 transition focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/50 rounded"
                 disabled={isLoading}
               >
                 Forgot Password?
@@ -128,7 +135,12 @@ export function SignInPage() {
             </div>
 
             {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-sm text-red-400">
+              <div 
+                id="error-message"
+                className="rounded-lg border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-sm text-red-400"
+                role="alert"
+                aria-live="polite"
+              >
                 {error}
               </div>
             )}
@@ -136,16 +148,17 @@ export function SignInPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-xl bg-kiri-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(47,107,255,0.3)] transition hover:bg-kiri-blue-500 hover:shadow-[0_0_30px_rgba(47,107,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              aria-busy={isLoading}
+              className="w-full rounded-xl bg-kiri-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(47,107,255,0.3)] transition hover:bg-kiri-blue-500 hover:shadow-[0_0_30px_rgba(47,107,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/50"
             >
               {isLoading ? "Signing in..." : "SIGN IN"}
             </button>
           </form>
 
           <div className="mt-6 flex items-center">
-            <div className="flex-1 border-t border-white/8"></div>
+            <div className="flex-1 border-t border-white/8" aria-hidden="true"></div>
             <span className="px-4 text-xs font-medium text-kiri-text-muted">OR</span>
-            <div className="flex-1 border-t border-white/8"></div>
+            <div className="flex-1 border-t border-white/8" aria-hidden="true"></div>
           </div>
 
           <div className="mt-6 space-y-3">
@@ -168,38 +181,38 @@ export function SignInPage() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-4 text-xs text-kiri-text-muted">
+        <nav className="mt-8 flex flex-wrap justify-center gap-4 text-xs text-kiri-text-muted" aria-label="Site navigation">
           <button
             onClick={() => navigate("/about")}
-            className="hover:text-kiri-text-soft transition"
+            className="hover:text-kiri-text-soft transition focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/50 rounded px-2 py-1"
           >
             About KiriLock
           </button>
           <button
             onClick={() => navigate("/how-it-works")}
-            className="hover:text-kiri-text-soft transition"
+            className="hover:text-kiri-text-soft transition focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/50 rounded px-2 py-1"
           >
             How It Works
           </button>
           <button
             onClick={() => navigate("/terms")}
-            className="hover:text-kiri-text-soft transition"
+            className="hover:text-kiri-text-soft transition focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/50 rounded px-2 py-1"
           >
             Terms & Conditions
           </button>
           <button
             onClick={() => navigate("/privacy")}
-            className="hover:text-kiri-text-soft transition"
+            className="hover:text-kiri-text-soft transition focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/50 rounded px-2 py-1"
           >
             Privacy Policy
           </button>
           <button
             onClick={() => navigate("/help")}
-            className="hover:text-kiri-text-soft transition"
+            className="hover:text-kiri-text-soft transition focus:outline-none focus:ring-2 focus:ring-kiri-blue-500/50 rounded px-2 py-1"
           >
             Help & Support
           </button>
-        </div>
+        </nav>
       </div>
     </div>
   )

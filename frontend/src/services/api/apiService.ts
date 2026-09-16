@@ -1,19 +1,23 @@
 import {
-  httpRequest,
-} from "../../api/services/httpService"
+  requestJson,
+} from "../../infrastructure/http/httpClientBoundary"
 
 export const apiService = {
   get<T>(url: string) {
-    return httpRequest<T>(url)
+    return requestJson<T>(url, {
+      method: "GET",
+      useAuth: true,
+    })
   },
 
   post<T>(
     url: string,
     body: unknown,
   ) {
-    return httpRequest<T>(url, {
+    return requestJson<T>(url, {
       method: "POST",
       body,
+      useAuth: true,
     })
   },
 }

@@ -10,29 +10,30 @@ import (
 type PropertyStatus string
 
 const (
-	PropertyActive            PropertyStatus = "ACTIVE"
-	PropertyInactive          PropertyStatus = "INACTIVE"
-	PropertySuspended         PropertyStatus = "SUSPENDED"
+	PropertyActive              PropertyStatus = "ACTIVE"
+	PropertyInactive            PropertyStatus = "INACTIVE"
+	PropertySuspended           PropertyStatus = "SUSPENDED"
 	PropertyPendingVerification PropertyStatus = "PENDING_VERIFICATION"
 )
 
 type Property struct {
-	ID              uuid.UUID
+	ID                uuid.UUID
 	LandlordProfileID uuid.UUID
-	PropertyName     string
-	PropertyType     string
-	AddressLine1     string
-	AddressLine2     string
-	City             string
-	State            string
-	PostalCode       string
-	Country          string
-	Status           PropertyStatus
-	TotalUnits       int
-	Description      string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	Version          int
+	PropertyName      string
+	PropertyType      string
+	AddressLine1      string
+	AddressLine2      string
+	City              string
+	State             string
+	PostalCode        string
+	Country           string
+	Timezone          string
+	Status            PropertyStatus
+	TotalUnits        int
+	Description       string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Version           int
 }
 
 func (p Property) Validate() error {

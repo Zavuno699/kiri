@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { FilterBar } from "../../components/navigation/FilterBar"
 import { StatusPill } from "../../components/ui/StatusPill"
+import { apiFetch } from "../../api/client"
 import {
   PropertyListService,
 } from "./services/propertyService"
@@ -11,9 +12,7 @@ import { PropertyTable } from "./components/PropertyTable"
 
 const propertyService = new PropertyListService(
   async () => {
-    const response = await fetch("/api/v1/properties")
-    if (!response.ok) throw new Error("Failed to fetch properties")
-    return response.json() as Promise<PropertyRecord[]>
+    return apiFetch<PropertyRecord[]>("/properties", undefined, { useIdentityService: true })
   },
 )
 

@@ -35,15 +35,15 @@ func (r *DBPropertyRepository) Create(ctx context.Context, property model.Proper
 	query := `
 		INSERT INTO properties (
 			id, landlord_profile_id, property_name, property_type,
-			address_line1, address_line2, city, state, postal_code, country,
+			address_line1, address_line2, city, state, postal_code, country, timezone,
 			status, total_units, description,
 			created_at, updated_at, version
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`
 
 	_, err := r.db.Exec(ctx, query,
 		property.ID, property.LandlordProfileID, property.PropertyName, property.PropertyType,
-		property.AddressLine1, property.AddressLine2, property.City, property.State, property.PostalCode, property.Country,
+		property.AddressLine1, property.AddressLine2, property.City, property.State, property.PostalCode, property.Country, property.Timezone,
 		property.Status, property.TotalUnits, property.Description,
 		property.CreatedAt, property.UpdatedAt, property.Version,
 	)
@@ -54,7 +54,7 @@ func (r *DBPropertyRepository) Create(ctx context.Context, property model.Proper
 func (r *DBPropertyRepository) GetByID(ctx context.Context, id uuid.UUID) (model.Property, error) {
 	query := `
 		SELECT id, landlord_profile_id, property_name, property_type,
-			address_line1, address_line2, city, state, postal_code, country,
+			address_line1, address_line2, city, state, postal_code, country, timezone,
 			status, total_units, description,
 			created_at, updated_at, version
 		FROM properties
@@ -64,7 +64,7 @@ func (r *DBPropertyRepository) GetByID(ctx context.Context, id uuid.UUID) (model
 	var property model.Property
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&property.ID, &property.LandlordProfileID, &property.PropertyName, &property.PropertyType,
-		&property.AddressLine1, &property.AddressLine2, &property.City, &property.State, &property.PostalCode, &property.Country,
+		&property.AddressLine1, &property.AddressLine2, &property.City, &property.State, &property.PostalCode, &property.Country, &property.Timezone,
 		&property.Status, &property.TotalUnits, &property.Description,
 		&property.CreatedAt, &property.UpdatedAt, &property.Version,
 	)
@@ -79,7 +79,7 @@ func (r *DBPropertyRepository) GetByID(ctx context.Context, id uuid.UUID) (model
 func (r *DBPropertyRepository) GetByLandlordProfileID(ctx context.Context, landlordProfileID uuid.UUID) ([]model.Property, error) {
 	query := `
 		SELECT id, landlord_profile_id, property_name, property_type,
-			address_line1, address_line2, city, state, postal_code, country,
+			address_line1, address_line2, city, state, postal_code, country, timezone,
 			status, total_units, description,
 			created_at, updated_at, version
 		FROM properties
@@ -98,7 +98,7 @@ func (r *DBPropertyRepository) GetByLandlordProfileID(ctx context.Context, landl
 		var property model.Property
 		err := rows.Scan(
 			&property.ID, &property.LandlordProfileID, &property.PropertyName, &property.PropertyType,
-			&property.AddressLine1, &property.AddressLine2, &property.City, &property.State, &property.PostalCode, &property.Country,
+			&property.AddressLine1, &property.AddressLine2, &property.City, &property.State, &property.PostalCode, &property.Country, &property.Timezone,
 			&property.Status, &property.TotalUnits, &property.Description,
 			&property.CreatedAt, &property.UpdatedAt, &property.Version,
 		)
@@ -115,15 +115,15 @@ func (r *DBPropertyRepository) Update(ctx context.Context, property model.Proper
 	query := `
 		UPDATE properties
 		SET property_name = $2, property_type = $3,
-			address_line1 = $4, address_line2 = $5, city = $6, state = $7, postal_code = $8, country = $9,
-			status = $10, total_units = $11, description = $12,
-			updated_at = $13, version = version + 1
-		WHERE id = $1 AND version = $14
+			address_line1 = $4, address_line2 = $5, city = $6, state = $7, postal_code = $8, country = $9, timezone = $10,
+			status = $11, total_units = $12, description = $13,
+			updated_at = $14, version = version + 1
+		WHERE id = $1 AND version = $15
 	`
 
 	result, err := r.db.Exec(ctx, query,
 		property.ID, property.PropertyName, property.PropertyType,
-		property.AddressLine1, property.AddressLine2, property.City, property.State, property.PostalCode, property.Country,
+		property.AddressLine1, property.AddressLine2, property.City, property.State, property.PostalCode, property.Country, property.Timezone,
 		property.Status, property.TotalUnits, property.Description,
 		property.UpdatedAt, property.Version,
 	)

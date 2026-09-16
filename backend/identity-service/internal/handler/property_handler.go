@@ -29,6 +29,7 @@ type CreatePropertyRequest struct {
 	State        string `json:"state" validate:"required"`
 	PostalCode   string `json:"postal_code" validate:"required"`
 	Country      string `json:"country"`
+	Timezone     string `json:"timezone"`
 	Description  string `json:"description"`
 }
 
@@ -41,25 +42,27 @@ type UpdatePropertyRequest struct {
 	State        string `json:"state" validate:"required"`
 	PostalCode   string `json:"postal_code" validate:"required"`
 	Country      string `json:"country"`
+	Timezone     string `json:"timezone"`
 	Description  string `json:"description"`
 }
 
 type PropertyResponse struct {
-	ID              uuid.UUID        `json:"id"`
-	LandlordProfileID uuid.UUID      `json:"landlord_profile_id"`
-	PropertyName     string          `json:"property_name"`
-	PropertyType     string          `json:"property_type"`
-	AddressLine1     string          `json:"address_line1"`
-	AddressLine2     string          `json:"address_line2"`
-	City             string          `json:"city"`
-	State            string          `json:"state"`
-	PostalCode       string          `json:"postal_code"`
-	Country          string          `json:"country"`
-	Status           model.PropertyStatus `json:"status"`
-	TotalUnits       int             `json:"total_units"`
-	Description      string          `json:"description"`
-	CreatedAt        time.Time       `json:"created_at"`
-	UpdatedAt        time.Time       `json:"updated_at"`
+	ID                uuid.UUID            `json:"id"`
+	LandlordProfileID uuid.UUID            `json:"landlord_profile_id"`
+	PropertyName      string               `json:"property_name"`
+	PropertyType      string               `json:"property_type"`
+	AddressLine1      string               `json:"address_line1"`
+	AddressLine2      string               `json:"address_line2"`
+	City              string               `json:"city"`
+	State             string               `json:"state"`
+	PostalCode        string               `json:"postal_code"`
+	Country           string               `json:"country"`
+	Timezone          string               `json:"timezone"`
+	Status            model.PropertyStatus `json:"status"`
+	TotalUnits        int                  `json:"total_units"`
+	Description       string               `json:"description"`
+	CreatedAt         time.Time            `json:"created_at"`
+	UpdatedAt         time.Time            `json:"updated_at"`
 }
 
 func NewPropertyHandler(propertyService *service.PropertyService) (*PropertyHandler, error) {
@@ -111,6 +114,7 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 		State:        req.State,
 		PostalCode:   req.PostalCode,
 		Country:      req.Country,
+		Timezone:     req.Timezone,
 		Description:  req.Description,
 	}
 
@@ -125,21 +129,22 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 	}
 
 	response := PropertyResponse{
-		ID:              created.ID,
+		ID:                created.ID,
 		LandlordProfileID: created.LandlordProfileID,
-		PropertyName:     created.PropertyName,
-		PropertyType:     created.PropertyType,
-		AddressLine1:     created.AddressLine1,
-		AddressLine2:     created.AddressLine2,
-		City:             created.City,
-		State:            created.State,
-		PostalCode:       created.PostalCode,
-		Country:          created.Country,
-		Status:           created.Status,
-		TotalUnits:       created.TotalUnits,
-		Description:      created.Description,
-		CreatedAt:        created.CreatedAt,
-		UpdatedAt:        created.UpdatedAt,
+		PropertyName:      created.PropertyName,
+		PropertyType:      created.PropertyType,
+		AddressLine1:      created.AddressLine1,
+		AddressLine2:      created.AddressLine2,
+		City:              created.City,
+		State:             created.State,
+		PostalCode:        created.PostalCode,
+		Country:           created.Country,
+		Timezone:          created.Timezone,
+		Status:            created.Status,
+		TotalUnits:        created.TotalUnits,
+		Description:       created.Description,
+		CreatedAt:         created.CreatedAt,
+		UpdatedAt:         created.UpdatedAt,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -187,21 +192,22 @@ func (h *PropertyHandler) GetProperty(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := PropertyResponse{
-		ID:              property.ID,
+		ID:                property.ID,
 		LandlordProfileID: property.LandlordProfileID,
-		PropertyName:     property.PropertyName,
-		PropertyType:     property.PropertyType,
-		AddressLine1:     property.AddressLine1,
-		AddressLine2:     property.AddressLine2,
-		City:             property.City,
-		State:            property.State,
-		PostalCode:       property.PostalCode,
-		Country:          property.Country,
-		Status:           property.Status,
-		TotalUnits:       property.TotalUnits,
-		Description:      property.Description,
-		CreatedAt:        property.CreatedAt,
-		UpdatedAt:        property.UpdatedAt,
+		PropertyName:      property.PropertyName,
+		PropertyType:      property.PropertyType,
+		AddressLine1:      property.AddressLine1,
+		AddressLine2:      property.AddressLine2,
+		City:              property.City,
+		State:             property.State,
+		PostalCode:        property.PostalCode,
+		Country:           property.Country,
+		Timezone:          property.Timezone,
+		Status:            property.Status,
+		TotalUnits:        property.TotalUnits,
+		Description:       property.Description,
+		CreatedAt:         property.CreatedAt,
+		UpdatedAt:         property.UpdatedAt,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -235,21 +241,22 @@ func (h *PropertyHandler) GetLandlordProperties(w http.ResponseWriter, r *http.R
 	var responses []PropertyResponse
 	for _, property := range properties {
 		responses = append(responses, PropertyResponse{
-			ID:              property.ID,
+			ID:                property.ID,
 			LandlordProfileID: property.LandlordProfileID,
-			PropertyName:     property.PropertyName,
-			PropertyType:     property.PropertyType,
-			AddressLine1:     property.AddressLine1,
-			AddressLine2:     property.AddressLine2,
-			City:             property.City,
-			State:            property.State,
-			PostalCode:       property.PostalCode,
-			Country:          property.Country,
-			Status:           property.Status,
-			TotalUnits:       property.TotalUnits,
-			Description:      property.Description,
-			CreatedAt:        property.CreatedAt,
-			UpdatedAt:        property.UpdatedAt,
+			PropertyName:      property.PropertyName,
+			PropertyType:      property.PropertyType,
+			AddressLine1:      property.AddressLine1,
+			AddressLine2:      property.AddressLine2,
+			City:              property.City,
+			State:             property.State,
+			PostalCode:        property.PostalCode,
+			Country:           property.Country,
+			Timezone:          property.Timezone,
+			Status:            property.Status,
+			TotalUnits:        property.TotalUnits,
+			Description:       property.Description,
+			CreatedAt:         property.CreatedAt,
+			UpdatedAt:         property.UpdatedAt,
 		})
 	}
 
@@ -299,7 +306,7 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 	}
 
 	property := model.Property{
-		ID:          id,
+		ID:           id,
 		PropertyName: req.PropertyName,
 		PropertyType: req.PropertyType,
 		AddressLine1: req.AddressLine1,
@@ -308,6 +315,7 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 		State:        req.State,
 		PostalCode:   req.PostalCode,
 		Country:      req.Country,
+		Timezone:     req.Timezone,
 		Description:  req.Description,
 	}
 

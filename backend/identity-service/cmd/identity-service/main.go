@@ -65,6 +65,7 @@ func main() {
 	paymentAccountRepo := repository.NewPaymentAccountRepository(pool)
 	paymentResponsibilityRepo := repository.NewPaymentResponsibilityRepository(pool)
 	landlordApplicationRepo := repository.NewLandlordApplicationRepository(pool)
+	lockAssignmentRepo := repository.NewLockAssignmentRepository(pool)
 
 	subjectService, err := service.NewSubjectService(subjectRepo)
 	if err != nil {
@@ -83,6 +84,7 @@ func main() {
 	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, pool)
 	paymentService := service.NewPaymentService(paymentAccountRepo, paymentResponsibilityRepo, landlordProfileRepo, landlordService)
 	landlordApplicationService := service.NewLandlordApplicationService(landlordApplicationRepo, subjectRepo)
+	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)
 
 	subjectHandler, err := handler.NewSubjectHandler(subjectService)
 	if err != nil {
@@ -123,6 +125,11 @@ func main() {
 	landlordApplicationHandler, err := handler.NewLandlordApplicationHandler(landlordApplicationService)
 	if err != nil {
 		log.Fatalf("failed to create landlord application handler: %v", err)
+	}
+
+	assignmentHandler, err := handler.NewAssignmentHandler(assignmentService)
+	if err != nil {
+		log.Fatalf("failed to create assignment handler: %v", err)
 	}
 
 	authClient := client.NewAuthClient(securityServiceURL)
@@ -168,6 +175,13 @@ func main() {
 	mux.Handle("GET /units/available", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.GetAvailableUnits)))
 	mux.Handle("PUT /units/unit", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.UpdateUnit)))
 	mux.Handle("POST /units/lifecycle", authMiddleware.Authenticate(http.HandlerFunc(unitHandler.UpdateUnitLifecycle)))
+
+	// Lock assignment routes
+	mux.Handle("POST /assignments/assign", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.AssignLock)))
+	mux.Handle("POST /assignments/unassign", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.UnassignLock)))
+	mux.Handle("POST /assignments/reassign", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.ReassignLock)))
+	mux.Handle("GET /assignments/lock", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.GetLockAssignments)))
+	mux.Handle("GET /assignments/unit", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.GetUnitAssignments)))
 
 	mux.Handle("POST /tenancies/invite", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.CreateTenantInvitation)))
 	mux.Handle("POST /tenancies/accept", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.AcceptInvitation)))

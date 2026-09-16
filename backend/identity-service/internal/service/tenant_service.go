@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/kirilock/backend/identity-service/internal/model"
+	"github.com/kirilock/backend/identity-service/internal/notification"
 	"github.com/kirilock/backend/identity-service/internal/repository"
 )
 
@@ -33,6 +34,8 @@ type TenantService struct {
 	landlordRepo    repository.LandlordProfileRepository
 	landlordService *LandlordService
 	subjectRepo     repository.SubjectRepository
+	auditRepo       repository.AuditRepository
+	notificationSvc *notification.NotificationService
 	txDB            repository.TxDB
 }
 
@@ -43,6 +46,8 @@ func NewTenantService(
 	landlordRepo repository.LandlordProfileRepository,
 	landlordService *LandlordService,
 	subjectRepo repository.SubjectRepository,
+	auditRepo repository.AuditRepository,
+	notificationSvc *notification.NotificationService,
 	txDB repository.TxDB,
 ) *TenantService {
 	return &TenantService{
@@ -52,6 +57,8 @@ func NewTenantService(
 		landlordRepo:    landlordRepo,
 		landlordService: landlordService,
 		subjectRepo:     subjectRepo,
+		auditRepo:       auditRepo,
+		notificationSvc: notificationSvc,
 		txDB:            txDB,
 	}
 }
@@ -292,6 +299,14 @@ func (s *TenantService) TerminateTenancy(ctx context.Context, landlordSubjectID 
 	// Update unit lifecycle to available
 	s.unitRepo.UpdateLifecycle(ctx, tenancy.UnitID, model.UnitAvailable)
 
+	// Log audit event
+	_ = s.auditRepo.LogEvent(ctx, "tenancy.terminate", landlordSubjectID, "tenancy", &tenancy.ID, map[string]interface{}{
+		"status": string(tenancy.Status),
+	}, map[string]interface{}{
+		"status":             string(model.TenancyTerminated),
+		"termination_reason": reason,
+	}, "", "", "", true, "")
+
 	return nil
 }
 
@@ -415,8 +430,28 @@ func (s *TenantService) CreateTenantInvitationByEmail(
 		return model.Tenancy{}, err
 	}
 
+	// Log audit event
+	_ = s.auditRepo.LogEvent(ctx, "tenancy.create", landlordSubjectID, "tenancy", &tenancy.ID, nil, map[string]interface{}{
+		"tenant_subject_id":   tenancy.TenantSubjectID,
+		"unit_id":             tenancy.UnitID,
+		"status":              string(tenancy.Status),
+		"lease_start_date":    tenancy.LeaseStartDate,
+		"lease_end_date":      tenancy.LeaseEndDate,
+		"invited_by_landlord": landlordProfile.ID,
+		"invitation_method":   "email",
+	}, "", "", "", true, "")
+
 	if err := tx.Commit(ctx); err != nil {
 		return model.Tenancy{}, err
+	}
+
+	// Send invitation notification (fire and forget - invitation validity independent of delivery)
+	if s.notificationSvc != nil {
+		unit, _ := s.unitRepo.GetByID(ctx, unitID)
+		property, _ := s.propertyRepo.GetByID(ctx, unit.PropertyID)
+		go func() {
+			_, _ = s.notificationSvc.SendInvitation(context.Background(), tenantEmail, token, property.PropertyName, unit.UnitNumber)
+		}()
 	}
 
 	return tenancy, nil
@@ -526,8 +561,12 @@ func (s *TenantService) ActivateTenant(
 		return model.Tenancy{}, fmt.Errorf("failed to update unit lifecycle: %w", err)
 	}
 
-	// TODO: Write audit record
-	// Record: tenant activated, tenancy accepted, unit occupied
+	// Log audit event
+	_ = s.auditRepo.LogEvent(ctx, "tenancy.activate", tenancy.TenantSubjectID, "tenancy", &tenancy.ID, map[string]interface{}{
+		"status": string(model.TenancyInvited),
+	}, map[string]interface{}{
+		"status": string(model.TenancyActive),
+	}, "", "", "", true, "")
 
 	if err := tx.Commit(ctx); err != nil {
 		return model.Tenancy{}, err
@@ -594,8 +633,13 @@ func (s *TenantService) RevokeInvitation(
 		return err
 	}
 
-	// TODO: Write audit record
-	// Record: invitation revoked
+	// Log audit event
+	_ = s.auditRepo.LogEvent(ctx, "tenancy.revoke", landlordSubjectID, "tenancy", &tenancyID, map[string]interface{}{
+		"status": string(tenancy.Status),
+	}, map[string]interface{}{
+		"status": string(model.TenancyRevoked),
+		"reason": "landlord revoked",
+	}, "", "", "", true, "")
 
 	return nil
 }
@@ -662,8 +706,18 @@ func (s *TenantService) ResendInvitation(
 		return "", err
 	}
 
-	// TODO: Write audit record
-	// Record: invitation resent
+	// Log audit event
+	_ = s.auditRepo.LogEvent(ctx, "tenancy.resend", landlordSubjectID, "tenancy", &tenancyID, nil, map[string]interface{}{
+		"new_expires_at": newExpiresAt,
+	}, "", "", "", true, "")
+
+	// Send resend notification (fire and forget - invitation validity independent of delivery)
+	if s.notificationSvc != nil {
+		tenantSubject, _ := s.subjectRepo.GetByID(ctx, tenancy.TenantSubjectID)
+		go func() {
+			_, _ = s.notificationSvc.SendInvitationResend(context.Background(), tenantSubject.Email, newToken)
+		}()
+	}
 
 	return newToken, nil
 }

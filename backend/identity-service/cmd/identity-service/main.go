@@ -14,6 +14,7 @@ import (
 	"github.com/kirilock/backend/identity-service/internal/client"
 	"github.com/kirilock/backend/identity-service/internal/handler"
 	"github.com/kirilock/backend/identity-service/internal/middleware"
+	"github.com/kirilock/backend/identity-service/internal/notification"
 	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
@@ -66,6 +67,7 @@ func main() {
 	paymentResponsibilityRepo := repository.NewPaymentResponsibilityRepository(pool)
 	landlordApplicationRepo := repository.NewLandlordApplicationRepository(pool)
 	lockAssignmentRepo := repository.NewLockAssignmentRepository(pool)
+	auditRepo := repository.NewAuditRepository(pool)
 
 	subjectService, err := service.NewSubjectService(subjectRepo)
 	if err != nil {
@@ -81,7 +83,11 @@ func main() {
 	landlordService := service.NewLandlordService(landlordProfileRepo, propertyRepo)
 	propertyService := service.NewPropertyService(propertyRepo, landlordProfileRepo, landlordService)
 	unitService := service.NewUnitService(unitRepo, propertyRepo, landlordProfileRepo, landlordService)
-	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, subjectRepo, pool)
+
+	// Notification service (no-op provider by default)
+	notificationSvc := notification.NewNotificationService()
+
+	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, subjectRepo, auditRepo, notificationSvc, pool)
 	paymentService := service.NewPaymentService(paymentAccountRepo, paymentResponsibilityRepo, landlordProfileRepo, landlordService)
 	landlordApplicationService := service.NewLandlordApplicationService(landlordApplicationRepo, subjectRepo)
 	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)

@@ -154,7 +154,6 @@ func (s *TenantService) CreateTenantInvitation(
 		LeaseStartDate:             leaseStartDate,
 		LeaseEndDate:               leaseEndDate,
 		InvitedByLandlordProfileID: &landlordProfile.ID,
-		InvitationToken:            token,
 		InvitationTokenHash:        tokenHash,
 		InvitationExpiresAt:        &expiresAt,
 		CreatedAt:                  time.Now(),
@@ -259,6 +258,13 @@ func (s *TenantService) TerminateTenancy(ctx context.Context, landlordSubjectID 
 		return err
 	}
 
+	// Use transaction for atomic termination
+	tx, err := s.txDB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
 	// Get tenancy
 	tenancy, err := s.tenancyRepo.GetByID(ctx, tenancyID)
 	if err != nil {
@@ -299,13 +305,17 @@ func (s *TenantService) TerminateTenancy(ctx context.Context, landlordSubjectID 
 	// Update unit lifecycle to available
 	s.unitRepo.UpdateLifecycle(ctx, tenancy.UnitID, model.UnitAvailable)
 
-	// Log audit event
+	// Log audit event within transaction
 	_ = s.auditRepo.LogEvent(ctx, "tenancy.terminate", landlordSubjectID, "tenancy", &tenancy.ID, map[string]interface{}{
 		"status": string(tenancy.Status),
 	}, map[string]interface{}{
 		"status":             string(model.TenancyTerminated),
 		"termination_reason": reason,
 	}, "", "", "", true, "")
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -409,7 +419,6 @@ func (s *TenantService) CreateTenantInvitationByEmail(
 		LeaseStartDate:             leaseStartDate,
 		LeaseEndDate:               leaseEndDate,
 		InvitedByLandlordProfileID: &landlordProfile.ID,
-		InvitationToken:            token,
 		InvitationTokenHash:        tokenHash,
 		InvitationExpiresAt:        &expiresAt,
 		CreatedAt:                  time.Now(),
@@ -592,6 +601,13 @@ func (s *TenantService) RevokeInvitation(
 		return err
 	}
 
+	// Use transaction for atomic revoke
+	tx, err := s.txDB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
 	// Get tenancy
 	tenancy, err := s.tenancyRepo.GetByID(ctx, tenancyID)
 	if err != nil {
@@ -633,13 +649,17 @@ func (s *TenantService) RevokeInvitation(
 		return err
 	}
 
-	// Log audit event
+	// Log audit event within transaction
 	_ = s.auditRepo.LogEvent(ctx, "tenancy.revoke", landlordSubjectID, "tenancy", &tenancyID, map[string]interface{}{
 		"status": string(tenancy.Status),
 	}, map[string]interface{}{
 		"status": string(model.TenancyRevoked),
 		"reason": "landlord revoked",
 	}, "", "", "", true, "")
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -654,6 +674,13 @@ func (s *TenantService) ResendInvitation(
 	if err := s.landlordService.CheckOperationalAccess(ctx, landlordSubjectID); err != nil {
 		return "", err
 	}
+
+	// Use transaction for atomic resend
+	tx, err := s.txDB.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback(ctx)
 
 	// Get tenancy
 	tenancy, err := s.tenancyRepo.GetByID(ctx, tenancyID)
@@ -694,8 +721,7 @@ func (s *TenantService) ResendInvitation(
 
 	newTokenHash := s.hashToken(newToken)
 
-	// Update tenancy with new token
-	tenancy.InvitationToken = newToken
+	// Update tenancy with new token hash only
 	tenancy.InvitationTokenHash = newTokenHash
 	// Extend expiration by 7 days from now
 	newExpiresAt := time.Now().Add(7 * 24 * time.Hour)
@@ -706,10 +732,14 @@ func (s *TenantService) ResendInvitation(
 		return "", err
 	}
 
-	// Log audit event
+	// Log audit event within transaction
 	_ = s.auditRepo.LogEvent(ctx, "tenancy.resend", landlordSubjectID, "tenancy", &tenancyID, nil, map[string]interface{}{
 		"new_expires_at": newExpiresAt,
 	}, "", "", "", true, "")
+
+	if err := tx.Commit(ctx); err != nil {
+		return "", err
+	}
 
 	// Send resend notification (fire and forget - invitation validity independent of delivery)
 	if s.notificationSvc != nil {

@@ -26,7 +26,6 @@ type Tenancy struct {
 	LeaseStartDate             time.Time
 	LeaseEndDate               *time.Time
 	InvitedByLandlordProfileID *uuid.UUID
-	InvitationToken            string
 	InvitationTokenHash        string
 	InvitationExpiresAt        *time.Time
 	InvitationAcceptedAt       *time.Time

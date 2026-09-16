@@ -40,16 +40,16 @@ func (r *DBTenancyRepository) Create(ctx context.Context, tenancy model.Tenancy)
 		INSERT INTO tenancies (
 			id, tenant_subject_id, unit_id, status,
 			lease_start_date, lease_end_date,
-			invited_by_landlord_profile_id, invitation_token, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
+			invited_by_landlord_profile_id, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
 			terminated_at, termination_reason,
 			created_at, updated_at, version
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	`
 
 	_, err := r.db.Exec(ctx, query,
 		tenancy.ID, tenancy.TenantSubjectID, tenancy.UnitID, tenancy.Status,
 		tenancy.LeaseStartDate, tenancy.LeaseEndDate,
-		tenancy.InvitedByLandlordProfileID, tenancy.InvitationToken, tenancy.InvitationTokenHash, tenancy.InvitationExpiresAt, tenancy.InvitationAcceptedAt,
+		tenancy.InvitedByLandlordProfileID, tenancy.InvitationTokenHash, tenancy.InvitationExpiresAt, tenancy.InvitationAcceptedAt,
 		tenancy.TerminatedAt, tenancy.TerminationReason,
 		tenancy.CreatedAt, tenancy.UpdatedAt, tenancy.Version,
 	)
@@ -61,7 +61,7 @@ func (r *DBTenancyRepository) GetByID(ctx context.Context, id uuid.UUID) (model.
 	query := `
 		SELECT id, tenant_subject_id, unit_id, status,
 			lease_start_date, lease_end_date,
-			invited_by_landlord_profile_id, invitation_token, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
+			invited_by_landlord_profile_id, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
 			terminated_at, termination_reason,
 			created_at, updated_at, version
 		FROM tenancies
@@ -72,7 +72,7 @@ func (r *DBTenancyRepository) GetByID(ctx context.Context, id uuid.UUID) (model.
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&tenancy.ID, &tenancy.TenantSubjectID, &tenancy.UnitID, &tenancy.Status,
 		&tenancy.LeaseStartDate, &tenancy.LeaseEndDate,
-		&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationToken, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
+		&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
 		&tenancy.TerminatedAt, &tenancy.TerminationReason,
 		&tenancy.CreatedAt, &tenancy.UpdatedAt, &tenancy.Version,
 	)
@@ -88,7 +88,7 @@ func (r *DBTenancyRepository) GetByTenantSubjectID(ctx context.Context, tenantSu
 	query := `
 		SELECT id, tenant_subject_id, unit_id, status,
 			lease_start_date, lease_end_date,
-			invited_by_landlord_profile_id, invitation_token, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
+			invited_by_landlord_profile_id, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
 			terminated_at, termination_reason,
 			created_at, updated_at, version
 		FROM tenancies
@@ -108,7 +108,7 @@ func (r *DBTenancyRepository) GetByTenantSubjectID(ctx context.Context, tenantSu
 		err := rows.Scan(
 			&tenancy.ID, &tenancy.TenantSubjectID, &tenancy.UnitID, &tenancy.Status,
 			&tenancy.LeaseStartDate, &tenancy.LeaseEndDate,
-			&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationToken, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
+			&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
 			&tenancy.TerminatedAt, &tenancy.TerminationReason,
 			&tenancy.CreatedAt, &tenancy.UpdatedAt, &tenancy.Version,
 		)
@@ -125,7 +125,7 @@ func (r *DBTenancyRepository) GetActiveByTenantSubjectID(ctx context.Context, te
 	query := `
 		SELECT id, tenant_subject_id, unit_id, status,
 			lease_start_date, lease_end_date,
-			invited_by_landlord_profile_id, invitation_token, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
+			invited_by_landlord_profile_id, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
 			terminated_at, termination_reason,
 			created_at, updated_at, version
 		FROM tenancies
@@ -137,7 +137,7 @@ func (r *DBTenancyRepository) GetActiveByTenantSubjectID(ctx context.Context, te
 	err := r.db.QueryRow(ctx, query, tenantSubjectID).Scan(
 		&tenancy.ID, &tenancy.TenantSubjectID, &tenancy.UnitID, &tenancy.Status,
 		&tenancy.LeaseStartDate, &tenancy.LeaseEndDate,
-		&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationToken, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
+		&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
 		&tenancy.TerminatedAt, &tenancy.TerminationReason,
 		&tenancy.CreatedAt, &tenancy.UpdatedAt, &tenancy.Version,
 	)
@@ -153,7 +153,7 @@ func (r *DBTenancyRepository) GetByUnitID(ctx context.Context, unitID uuid.UUID)
 	query := `
 		SELECT id, tenant_subject_id, unit_id, status,
 			lease_start_date, lease_end_date,
-			invited_by_landlord_profile_id, invitation_token, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
+			invited_by_landlord_profile_id, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
 			terminated_at, termination_reason,
 			created_at, updated_at, version
 		FROM tenancies
@@ -173,7 +173,7 @@ func (r *DBTenancyRepository) GetByUnitID(ctx context.Context, unitID uuid.UUID)
 		err := rows.Scan(
 			&tenancy.ID, &tenancy.TenantSubjectID, &tenancy.UnitID, &tenancy.Status,
 			&tenancy.LeaseStartDate, &tenancy.LeaseEndDate,
-			&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationToken, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
+			&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
 			&tenancy.TerminatedAt, &tenancy.TerminationReason,
 			&tenancy.CreatedAt, &tenancy.UpdatedAt, &tenancy.Version,
 		)
@@ -190,7 +190,7 @@ func (r *DBTenancyRepository) GetByTokenHash(ctx context.Context, tokenHash stri
 	query := `
 		SELECT id, tenant_subject_id, unit_id, status,
 			lease_start_date, lease_end_date,
-			invited_by_landlord_profile_id, invitation_token, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
+			invited_by_landlord_profile_id, invitation_token_hash, invitation_expires_at, invitation_accepted_at,
 			terminated_at, termination_reason,
 			created_at, updated_at, version
 		FROM tenancies
@@ -203,7 +203,7 @@ func (r *DBTenancyRepository) GetByTokenHash(ctx context.Context, tokenHash stri
 	err := r.db.QueryRow(ctx, query, tokenHash).Scan(
 		&tenancy.ID, &tenancy.TenantSubjectID, &tenancy.UnitID, &tenancy.Status,
 		&tenancy.LeaseStartDate, &tenancy.LeaseEndDate,
-		&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationToken, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
+		&tenancy.InvitedByLandlordProfileID, &tenancy.InvitationTokenHash, &tenancy.InvitationExpiresAt, &tenancy.InvitationAcceptedAt,
 		&tenancy.TerminatedAt, &tenancy.TerminationReason,
 		&tenancy.CreatedAt, &tenancy.UpdatedAt, &tenancy.Version,
 	)
@@ -219,15 +219,15 @@ func (r *DBTenancyRepository) Update(ctx context.Context, tenancy model.Tenancy)
 	query := `
 		UPDATE tenancies
 		SET status = $2, lease_start_date = $3, lease_end_date = $4,
-			invited_by_landlord_profile_id = $5, invitation_token = $6, invitation_token_hash = $7, invitation_expires_at = $8, invitation_accepted_at = $9,
-			terminated_at = $10, termination_reason = $11,
-			updated_at = $12, version = version + 1
-		WHERE id = $1 AND version = $13
+			invited_by_landlord_profile_id = $5, invitation_token_hash = $6, invitation_expires_at = $7, invitation_accepted_at = $8,
+			terminated_at = $9, termination_reason = $10,
+			updated_at = $11, version = version + 1
+		WHERE id = $1 AND version = $12
 	`
 
 	result, err := r.db.Exec(ctx, query,
 		tenancy.ID, tenancy.Status, tenancy.LeaseStartDate, tenancy.LeaseEndDate,
-		tenancy.InvitedByLandlordProfileID, tenancy.InvitationToken, tenancy.InvitationTokenHash, tenancy.InvitationExpiresAt, tenancy.InvitationAcceptedAt,
+		tenancy.InvitedByLandlordProfileID, tenancy.InvitationTokenHash, tenancy.InvitationExpiresAt, tenancy.InvitationAcceptedAt,
 		tenancy.TerminatedAt, tenancy.TerminationReason,
 		tenancy.UpdatedAt, tenancy.Version,
 	)

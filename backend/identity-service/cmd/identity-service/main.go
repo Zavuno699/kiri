@@ -37,6 +37,11 @@ func main() {
 		securityServiceURL = "http://localhost:8080"
 	}
 
+	deviceServiceURL := os.Getenv("DEVICE_SERVICE_URL")
+	if deviceServiceURL == "" {
+		deviceServiceURL = "http://localhost:8082"
+	}
+
 	pool, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		log.Fatalf("failed to create database pool: %v", err)
@@ -68,6 +73,8 @@ func main() {
 	landlordApplicationRepo := repository.NewLandlordApplicationRepository(pool)
 	lockAssignmentRepo := repository.NewLockAssignmentRepository(pool)
 	auditRepo := repository.NewAuditRepository(pool)
+	lockCommandRepo := repository.NewLockCommandRepository(pool)
+	lockRepo := repository.NewLockRepository(pool)
 
 	subjectService, err := service.NewSubjectService(subjectRepo)
 	if err != nil {
@@ -91,6 +98,7 @@ func main() {
 	paymentService := service.NewPaymentService(paymentAccountRepo, paymentResponsibilityRepo, landlordProfileRepo, landlordService)
 	landlordApplicationService := service.NewLandlordApplicationService(landlordApplicationRepo, subjectRepo)
 	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)
+	lockAuthorizer := service.NewTenantLockAuthorizer(tenancyRepo, lockAssignmentRepo)
 
 	subjectHandler, err := handler.NewSubjectHandler(subjectService)
 	if err != nil {
@@ -139,7 +147,13 @@ func main() {
 	}
 
 	authClient := client.NewAuthClient(securityServiceURL)
+	deviceClient := client.NewDeviceClient(deviceServiceURL)
 	authMiddleware := middleware.NewAuthMiddleware(authClient)
+
+	lockCommandHandler, err := handler.NewLockCommandHandler(lockAuthorizer, auditRepo, lockCommandRepo, lockRepo, lockAssignmentRepo, unitRepo, propertyRepo, landlordProfileRepo, deviceClient)
+	if err != nil {
+		log.Fatalf("failed to create lock command handler: %v", err)
+	}
 
 	mux := http.NewServeMux()
 
@@ -192,6 +206,12 @@ func main() {
 	mux.Handle("POST /assignments/reassign", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.ReassignLock)))
 	mux.Handle("GET /assignments/lock", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.GetLockAssignments)))
 	mux.Handle("GET /assignments/unit", authMiddleware.Authenticate(http.HandlerFunc(assignmentHandler.GetUnitAssignments)))
+
+	// Lock command route (authoritative tenant lock authorization)
+	mux.Handle("POST /locks/command", authMiddleware.Authenticate(http.HandlerFunc(lockCommandHandler.HandleLockCommand)))
+
+	// Landlord lock command route (property ownership enforced)
+	mux.Handle("POST /locks/landlord/command", authMiddleware.Authenticate(http.HandlerFunc(lockCommandHandler.HandleLandlordLockCommand)))
 
 	mux.Handle("POST /tenancies/invite", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.CreateTenantInvitation)))
 	mux.Handle("POST /tenancies/accept", authMiddleware.Authenticate(http.HandlerFunc(tenantHandler.AcceptInvitation)))

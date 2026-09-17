@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	sharedhttp "github.com/kirilock/backend/shared/http"
@@ -34,16 +35,21 @@ type SubjectResponse struct {
 
 type SubjectHandler struct {
 	subjectService *service.SubjectService
+	sessionService *service.SessionService
 	validator      *validation.Validator
 }
 
-func NewSubjectHandler(subjectService *service.SubjectService) (*SubjectHandler, error) {
+func NewSubjectHandler(subjectService *service.SubjectService, sessionService *service.SessionService) (*SubjectHandler, error) {
 	if subjectService == nil {
 		return nil, errors.New("subject service is required")
+	}
+	if sessionService == nil {
+		return nil, errors.New("session service is required")
 	}
 
 	return &SubjectHandler{
 		subjectService: subjectService,
+		sessionService: sessionService,
 		validator:      validation.New(),
 	}, nil
 }
@@ -105,6 +111,7 @@ type AuthenticateResponse struct {
 	Roles        []string `json:"roles"`
 	IsAdmin      bool     `json:"is_admin"`
 	IsSuperAdmin bool     `json:"is_super_admin"`
+	SessionID    string   `json:"session_id"` // Session token for authenticated requests
 }
 
 func (h *SubjectHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
@@ -136,12 +143,31 @@ func (h *SubjectHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create a session for the authenticated subject
+	// Generate a simple credential for the session
+	credentialID := uuid.New().String()
+	sessionExpiry := 24 * time.Hour
+
+	session, err := h.sessionService.CreateSession(
+		r.Context(),
+		subject.SubjectID,
+		credentialID,
+		sessionExpiry,
+	)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create session"})
+		return
+	}
+
 	response := AuthenticateResponse{
 		SubjectID:    subject.SubjectID,
 		Email:        subject.Email,
 		Roles:        subject.Roles,
 		IsAdmin:      subject.IsAdmin,
 		IsSuperAdmin: subject.IsSuperAdmin,
+		SessionID:    session.SessionID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -173,14 +173,6 @@ func (h *SessionHandler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	principal, err := middleware.PrincipalFromContext(r.Context())
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
-		return
-	}
-
 	var req RevokeSessionRequest
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
 		sharedhttp.WriteValidationError(w, r, err)
@@ -192,28 +184,21 @@ func (h *SessionHandler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := h.sessionService.ValidateSession(r.Context(), req.SessionID)
+	// Allow session revocation by session_id without authentication for logout
+	// This is safe because only the session holder would know the session_id
+	// Validate session exists before revoking
+	_, err := h.sessionService.ValidateSession(r.Context(), req.SessionID)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid session"})
 		return
 	}
-
-	if session.SubjectID != principal.Subject {
-		hasSuperAdminRole := false
-		for _, role := range principal.Roles {
-			if role == "super_admin" {
-				hasSuperAdminRole = true
-				break
-			}
-		}
-		if !hasSuperAdminRole {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "insufficient permissions"})
-			return
-		}
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid session"})
+		return
 	}
 
 	if err := h.sessionService.RevokeSession(

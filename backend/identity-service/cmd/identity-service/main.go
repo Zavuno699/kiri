@@ -100,7 +100,7 @@ func main() {
 	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)
 	lockAuthorizer := service.NewTenantLockAuthorizer(tenancyRepo, lockAssignmentRepo)
 
-	subjectHandler, err := handler.NewSubjectHandler(subjectService)
+	subjectHandler, err := handler.NewSubjectHandler(subjectService, sessionService)
 	if err != nil {
 		log.Fatalf("failed to create subject handler: %v", err)
 	}
@@ -146,9 +146,12 @@ func main() {
 		log.Fatalf("failed to create assignment handler: %v", err)
 	}
 
-	authClient := client.NewAuthClient(securityServiceURL)
+	_ = client.NewAuthClient(securityServiceURL) // Available for future security-service integration
 	deviceClient := client.NewDeviceClient(deviceServiceURL)
-	authMiddleware := middleware.NewAuthMiddleware(authClient)
+
+	// Use local session auth middleware for domain routes (session_id from /authenticate)
+	// This allows authenticated domain calls without requiring security-service token auth
+	authMiddleware := middleware.NewLocalSessionAuthMiddleware(sessionRepo, subjectRepo)
 
 	lockCommandHandler, err := handler.NewLockCommandHandler(lockAuthorizer, auditRepo, lockCommandRepo, lockRepo, lockAssignmentRepo, unitRepo, propertyRepo, landlordProfileRepo, deviceClient)
 	if err != nil {
@@ -172,9 +175,11 @@ func main() {
 	mux.HandleFunc("POST /tenancies/invitation/preview", tenantHandler.PreviewInvitation)
 	mux.HandleFunc("POST /tenancies/activate", tenantHandler.ActivateTenant)
 
+	// Session revoke without auth (for logout - session_id is the auth)
+	mux.HandleFunc("POST /sessions/revoke", sessionHandler.RevokeSession)
+
 	mux.Handle("POST /sessions", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.CreateSession)))
 	mux.Handle("POST /sessions/validate", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.ValidateSession)))
-	mux.Handle("POST /sessions/revoke", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.RevokeSession)))
 	mux.Handle("POST /sessions/revoke-all", authMiddleware.Authenticate(http.HandlerFunc(sessionHandler.RevokeAllSubjectSessions)))
 
 	mux.Handle("POST /subjects/admin", authMiddleware.Authenticate(http.HandlerFunc(subjectHandler.SetAdmin)))

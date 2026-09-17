@@ -14,6 +14,7 @@ export interface AuthenticateResponse {
   roles: string[]
   is_admin: boolean
   is_super_admin: boolean
+  session_id: string // Session token for authenticated requests
 }
 
 export async function authenticate(
@@ -32,7 +33,7 @@ export async function authenticate(
   setAuthenticationState({
     principalId: response.subject_id,
     principal: response.email,
-    sessionId: null, // No session token in current backend contract
+    sessionId: response.session_id, // Real session token from backend
     tenantId: null,
     roles: response.roles,
     isAdmin: response.is_admin,

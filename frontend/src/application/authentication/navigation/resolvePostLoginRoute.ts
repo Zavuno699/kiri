@@ -19,17 +19,29 @@ export function resolvePostLoginRoute(
     return returnTo
   }
 
-  // For now, all roles route to the main dashboard
-  // This can be updated to per-role dashboards when they are implemented
-  // Future implementation:
-  // - tenant: "/tenant-dashboard"
-  // - landlord: "/landlord-dashboard"
-  // - admin: "/admin-dashboard"
-  // - security_admin: "/security-dashboard"
-  // - super_admin: "/super-admin-dashboard"
+  // Role-based routing based on backend-derived roles
+  const roles = response.roles || []
   
-  // Placeholder for future role-based routing using response.roles
-  void response // eslint-disable-line @typescript-eslint/no-unused-vars
+  // Super Admin gets global admin dashboard
+  if (response.is_super_admin || roles.includes("super_admin")) {
+    return "/admin"
+  }
   
+  // Security Admin gets security dashboard
+  if (roles.includes("security_admin")) {
+    return "/security"
+  }
+  
+  // Landlord gets landlord dashboard
+  if (roles.includes("landlord")) {
+    return "/landlord"
+  }
+  
+  // Tenant gets tenant dashboard
+  if (roles.includes("tenant")) {
+    return "/tenant"
+  }
+  
+  // Default to root for other roles or no specific role
   return "/"
 }

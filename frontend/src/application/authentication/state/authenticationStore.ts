@@ -39,3 +39,18 @@ export function setAuthenticationState(next: AuthenticationState): Authenticatio
   }
   return getAuthenticationState()
 }
+
+export function clearAuthenticationState(): void {
+  state = {
+    principalId: undefined,
+    principal: null,
+    sessionId: null,
+    tenantId: null,
+    status: "anonymous",
+    authenticated: false,
+    capabilities: [],
+    roles: [],
+    isAdmin: false,
+    isSuperAdmin: false,
+  }
+}

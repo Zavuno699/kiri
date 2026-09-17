@@ -5,5 +5,11 @@ dist/
 .env.*
 !.env.example
 !.env.local.example
+
+# Dev account secrets (never commit real credentials)
+dev-accounts.env
+dev-secrets.env
+local-accounts.env
+
 coverage/
 *.log

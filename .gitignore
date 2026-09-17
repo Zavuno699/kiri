@@ -53,6 +53,11 @@ playwright/.cache/
 !.env.sample
 !.env.template
 
+# Dev account secrets (never commit real credentials)
+dev-accounts.env
+dev-secrets.env
+local-accounts.env
+
 # Local credentials / tokens
 *.pem
 *.key

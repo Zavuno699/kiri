@@ -21,37 +21,37 @@ type PaymentHandler struct {
 }
 
 type CreatePaymentAccountRequest struct {
-	AccountName         string          `json:"account_name" validate:"required"`
-	Provider            model.PaymentProvider `json:"provider" validate:"required"`
-	ProviderAccountID   string          `json:"provider_account_id"`
-	ProviderCustomerID  string          `json:"provider_customer_id"`
-	Currency            string          `json:"currency"`
-	Notes               string          `json:"notes"`
+	AccountName        string                `json:"account_name" validate:"required"`
+	Provider           model.PaymentProvider `json:"provider" validate:"required"`
+	ProviderAccountID  string                `json:"provider_account_id"`
+	ProviderCustomerID string                `json:"provider_customer_id"`
+	Currency           string                `json:"currency"`
+	Notes              string                `json:"notes"`
 }
 
 type CreatePaymentResponsibilityRequest struct {
 	TenantSubjectID         uuid.UUID `json:"tenant_subject_id" validate:"required"`
 	PaymentAccountID        uuid.UUID `json:"payment_account_id" validate:"required"`
 	TenancyID               uuid.UUID `json:"tenancy_id" validate:"required"`
-	ResponsibleForRent      bool     `json:"responsible_for_rent"`
-	ResponsibleForUtilities bool     `json:"responsible_for_utilities"`
-	ResponsibleForFees      bool     `json:"responsible_for_fees"`
-	MonthlyRentAmount       float64  `json:"monthly_rent_amount"`
-	Notes                   string   `json:"notes"`
+	ResponsibleForRent      bool      `json:"responsible_for_rent"`
+	ResponsibleForUtilities bool      `json:"responsible_for_utilities"`
+	ResponsibleForFees      bool      `json:"responsible_for_fees"`
+	MonthlyRentAmountMinor  int64     `json:"monthly_rent_amount_minor"`
+	Notes                   string    `json:"notes"`
 }
 
 type PaymentAccountResponse struct {
-	ID                 uuid.UUID                `json:"id"`
-	LandlordProfileID  uuid.UUID                `json:"landlord_profile_id"`
-	AccountName        string                   `json:"account_name"`
-	Provider           model.PaymentProvider     `json:"provider"`
-	ProviderAccountID  string                   `json:"provider_account_id"`
-	ProviderCustomerID string                   `json:"provider_customer_id"`
+	ID                 uuid.UUID                  `json:"id"`
+	LandlordProfileID  uuid.UUID                  `json:"landlord_profile_id"`
+	AccountName        string                     `json:"account_name"`
+	Provider           model.PaymentProvider      `json:"provider"`
+	ProviderAccountID  string                     `json:"provider_account_id"`
+	ProviderCustomerID string                     `json:"provider_customer_id"`
 	Status             model.PaymentAccountStatus `json:"status"`
-	Currency           string                   `json:"currency"`
-	Notes              string                   `json:"notes"`
-	CreatedAt          time.Time                `json:"created_at"`
-	UpdatedAt          time.Time                `json:"updated_at"`
+	Currency           string                     `json:"currency"`
+	Notes              string                     `json:"notes"`
+	CreatedAt          time.Time                  `json:"created_at"`
+	UpdatedAt          time.Time                  `json:"updated_at"`
 }
 
 type PaymentResponsibilityResponse struct {
@@ -60,13 +60,13 @@ type PaymentResponsibilityResponse struct {
 	PaymentAccountID        uuid.UUID                         `json:"payment_account_id"`
 	TenancyID               uuid.UUID                         `json:"tenancy_id"`
 	Status                  model.PaymentResponsibilityStatus `json:"status"`
-	ResponsibleForRent      bool                             `json:"responsible_for_rent"`
-	ResponsibleForUtilities bool                             `json:"responsible_for_utilities"`
-	ResponsibleForFees      bool                             `json:"responsible_for_fees"`
-	MonthlyRentAmount       float64                          `json:"monthly_rent_amount"`
-	Notes                   string                           `json:"notes"`
-	CreatedAt               time.Time                        `json:"created_at"`
-	UpdatedAt               time.Time                        `json:"updated_at"`
+	ResponsibleForRent      bool                              `json:"responsible_for_rent"`
+	ResponsibleForUtilities bool                              `json:"responsible_for_utilities"`
+	ResponsibleForFees      bool                              `json:"responsible_for_fees"`
+	MonthlyRentAmountMinor  int64                             `json:"monthly_rent_amount_minor"`
+	Notes                   string                            `json:"notes"`
+	CreatedAt               time.Time                         `json:"created_at"`
+	UpdatedAt               time.Time                         `json:"updated_at"`
 }
 
 func NewPaymentHandler(paymentService *service.PaymentService) (*PaymentHandler, error) {
@@ -112,8 +112,8 @@ func (h *PaymentHandler) CreatePaymentAccount(w http.ResponseWriter, r *http.Req
 	account := model.PaymentAccount{
 		AccountName:        req.AccountName,
 		Provider:           req.Provider,
-		ProviderAccountID:   req.ProviderAccountID,
-		ProviderCustomerID:  req.ProviderCustomerID,
+		ProviderAccountID:  req.ProviderAccountID,
+		ProviderCustomerID: req.ProviderCustomerID,
 		Currency:           req.Currency,
 		Notes:              req.Notes,
 	}
@@ -327,7 +327,7 @@ func (h *PaymentHandler) CreatePaymentResponsibility(w http.ResponseWriter, r *h
 		ResponsibleForRent:      req.ResponsibleForRent,
 		ResponsibleForUtilities: req.ResponsibleForUtilities,
 		ResponsibleForFees:      req.ResponsibleForFees,
-		MonthlyRentAmount:       req.MonthlyRentAmount,
+		MonthlyRentAmountMinor:  req.MonthlyRentAmountMinor,
 		Notes:                   req.Notes,
 	}
 
@@ -350,7 +350,7 @@ func (h *PaymentHandler) CreatePaymentResponsibility(w http.ResponseWriter, r *h
 		ResponsibleForRent:      created.ResponsibleForRent,
 		ResponsibleForUtilities: created.ResponsibleForUtilities,
 		ResponsibleForFees:      created.ResponsibleForFees,
-		MonthlyRentAmount:       created.MonthlyRentAmount,
+		MonthlyRentAmountMinor:  created.MonthlyRentAmountMinor,
 		Notes:                   created.Notes,
 		CreatedAt:               created.CreatedAt,
 		UpdatedAt:               created.UpdatedAt,
@@ -393,7 +393,7 @@ func (h *PaymentHandler) GetTenantPaymentResponsibility(w http.ResponseWriter, r
 		ResponsibleForRent:      responsibility.ResponsibleForRent,
 		ResponsibleForUtilities: responsibility.ResponsibleForUtilities,
 		ResponsibleForFees:      responsibility.ResponsibleForFees,
-		MonthlyRentAmount:       responsibility.MonthlyRentAmount,
+		MonthlyRentAmountMinor:  responsibility.MonthlyRentAmountMinor,
 		Notes:                   responsibility.Notes,
 		CreatedAt:               responsibility.CreatedAt,
 		UpdatedAt:               responsibility.UpdatedAt,

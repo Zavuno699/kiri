@@ -17,21 +17,22 @@ const (
 )
 
 type Payment struct {
-	ID               uuid.UUID
-	TenantID         uuid.UUID
-	Reference        string
-	Provider         string
-	ProviderChargeID string
-	AmountMinor      int64  // Amount in minor units (cents)
-	Currency         string // ISO 4217 currency code
-	Status           PaymentStatus
-	IdempotencyKey   string
-	RequestHash      string
-	CorrelationID    string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	SettledAt        *time.Time
-	Version          int64
+	ID                      uuid.UUID
+	TenantID                uuid.UUID
+	PaymentResponsibilityID *uuid.UUID // Links to identity-service PaymentResponsibility for authoritative ownership
+	Reference               string
+	Provider                string
+	ProviderChargeID        string
+	AmountMinor             int64  // Amount in minor units (cents)
+	Currency                string // ISO 4217 currency code
+	Status                  PaymentStatus
+	IdempotencyKey          string
+	RequestHash             string
+	CorrelationID           string
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
+	SettledAt               *time.Time
+	Version                 int64
 }
 
 func (p Payment) Validate() error {

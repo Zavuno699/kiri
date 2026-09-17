@@ -11,7 +11,7 @@ type PaymentResponsibilityStatus string
 
 const (
 	PaymentResponsibilityActive      PaymentResponsibilityStatus = "ACTIVE"
-	PaymentResponsibilityInactive   PaymentResponsibilityStatus = "INACTIVE"
+	PaymentResponsibilityInactive    PaymentResponsibilityStatus = "INACTIVE"
 	PaymentResponsibilityTransferred PaymentResponsibilityStatus = "TRANSFERRED"
 )
 
@@ -24,7 +24,7 @@ type PaymentResponsibility struct {
 	ResponsibleForRent      bool
 	ResponsibleForUtilities bool
 	ResponsibleForFees      bool
-	MonthlyRentAmount       float64
+	MonthlyRentAmountMinor  int64 // Amount in minor units (cents), never float64
 	Notes                   string
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
@@ -52,8 +52,8 @@ func (p PaymentResponsibility) Validate() error {
 		return errors.New("invalid payment responsibility status")
 	}
 
-	if p.MonthlyRentAmount < 0 {
-		return errors.New("monthly_rent_amount must be >= 0")
+	if p.MonthlyRentAmountMinor < 0 {
+		return errors.New("monthly_rent_amount_minor must be >= 0")
 	}
 
 	if p.Version < 1 {

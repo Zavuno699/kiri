@@ -29,6 +29,10 @@ func (h *PaymentReconciliationHandler) Reconcile(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
+	// TODO: Add role-based authorization check for SuperAdmin
+	// This requires integration with security-service authorization
+	// For now, route requires authentication at composition level
+
 	reference := strings.TrimSpace(
 		r.URL.Query().Get("reference"),
 	)

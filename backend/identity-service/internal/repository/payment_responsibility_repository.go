@@ -46,7 +46,7 @@ func (r *DBPaymentResponsibilityRepository) Create(ctx context.Context, responsi
 	_, err := r.db.Exec(ctx, query,
 		responsibility.ID, responsibility.TenantSubjectID, responsibility.PaymentAccountID, responsibility.TenancyID,
 		responsibility.Status, responsibility.ResponsibleForRent, responsibility.ResponsibleForUtilities, responsibility.ResponsibleForFees,
-		responsibility.MonthlyRentAmount, responsibility.Notes,
+		responsibility.MonthlyRentAmountMinor, responsibility.Notes,
 		responsibility.CreatedAt, responsibility.UpdatedAt, responsibility.Version,
 	)
 
@@ -67,7 +67,7 @@ func (r *DBPaymentResponsibilityRepository) GetByID(ctx context.Context, id uuid
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&responsibility.ID, &responsibility.TenantSubjectID, &responsibility.PaymentAccountID, &responsibility.TenancyID,
 		&responsibility.Status, &responsibility.ResponsibleForRent, &responsibility.ResponsibleForUtilities, &responsibility.ResponsibleForFees,
-		&responsibility.MonthlyRentAmount, &responsibility.Notes,
+		&responsibility.MonthlyRentAmountMinor, &responsibility.Notes,
 		&responsibility.CreatedAt, &responsibility.UpdatedAt, &responsibility.Version,
 	)
 
@@ -101,7 +101,7 @@ func (r *DBPaymentResponsibilityRepository) GetByTenantSubjectID(ctx context.Con
 		err := rows.Scan(
 			&responsibility.ID, &responsibility.TenantSubjectID, &responsibility.PaymentAccountID, &responsibility.TenancyID,
 			&responsibility.Status, &responsibility.ResponsibleForRent, &responsibility.ResponsibleForUtilities, &responsibility.ResponsibleForFees,
-			&responsibility.MonthlyRentAmount, &responsibility.Notes,
+			&responsibility.MonthlyRentAmountMinor, &responsibility.Notes,
 			&responsibility.CreatedAt, &responsibility.UpdatedAt, &responsibility.Version,
 		)
 		if err != nil {
@@ -128,7 +128,7 @@ func (r *DBPaymentResponsibilityRepository) GetActiveByTenantSubjectID(ctx conte
 	err := r.db.QueryRow(ctx, query, tenantSubjectID).Scan(
 		&responsibility.ID, &responsibility.TenantSubjectID, &responsibility.PaymentAccountID, &responsibility.TenancyID,
 		&responsibility.Status, &responsibility.ResponsibleForRent, &responsibility.ResponsibleForUtilities, &responsibility.ResponsibleForFees,
-		&responsibility.MonthlyRentAmount, &responsibility.Notes,
+		&responsibility.MonthlyRentAmountMinor, &responsibility.Notes,
 		&responsibility.CreatedAt, &responsibility.UpdatedAt, &responsibility.Version,
 	)
 
@@ -162,7 +162,7 @@ func (r *DBPaymentResponsibilityRepository) GetByTenancyID(ctx context.Context, 
 		err := rows.Scan(
 			&responsibility.ID, &responsibility.TenantSubjectID, &responsibility.PaymentAccountID, &responsibility.TenancyID,
 			&responsibility.Status, &responsibility.ResponsibleForRent, &responsibility.ResponsibleForUtilities, &responsibility.ResponsibleForFees,
-			&responsibility.MonthlyRentAmount, &responsibility.Notes,
+			&responsibility.MonthlyRentAmountMinor, &responsibility.Notes,
 			&responsibility.CreatedAt, &responsibility.UpdatedAt, &responsibility.Version,
 		)
 		if err != nil {
@@ -185,7 +185,7 @@ func (r *DBPaymentResponsibilityRepository) Update(ctx context.Context, responsi
 
 	result, err := r.db.Exec(ctx, query,
 		responsibility.ID, responsibility.Status, responsibility.ResponsibleForRent, responsibility.ResponsibleForUtilities, responsibility.ResponsibleForFees,
-		responsibility.MonthlyRentAmount, responsibility.Notes,
+		responsibility.MonthlyRentAmountMinor, responsibility.Notes,
 		responsibility.UpdatedAt, responsibility.Version,
 	)
 

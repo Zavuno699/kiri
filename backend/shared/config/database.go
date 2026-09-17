@@ -10,9 +10,11 @@ type DatabaseConfig struct {
 }
 
 func LoadDatabaseConfig() (DatabaseConfig, error) {
-	url := os.Getenv("KIRILOCK_DATABASE_URL")
+	// Canonical environment variable: DATABASE_URL
+	// Used by identity-service, security-service, and shared components
+	url := os.Getenv("DATABASE_URL")
 	if url == "" {
-		return DatabaseConfig{}, errors.New("KIRILOCK_DATABASE_URL is required")
+		return DatabaseConfig{}, errors.New("DATABASE_URL environment variable is required")
 	}
 
 	return DatabaseConfig{

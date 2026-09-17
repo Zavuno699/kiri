@@ -21,7 +21,7 @@ export function createRequestHeaders(
   }
 
   if (context.authToken) {
-    headers["Authorization"] = `Bearer ${context.authToken}`
+    headers["Authorization"] = context.authToken
   }
 
   return headers

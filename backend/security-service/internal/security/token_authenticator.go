@@ -126,15 +126,19 @@ func (a *TokenAuthenticator) Authenticate(
 		}
 	}
 
-	roles := []string{}
-	if a.subjectRepo != nil {
-		subject, err := a.subjectRepo.GetBySubjectID(ctx, credential.IdentityID)
-		if err == nil {
-			roles = subject.Roles
-			if subject.IsSuperAdmin {
-				roles = append(roles, string(RoleSuperAdmin))
-			}
-		}
+	// Fail-closed: require subject resolution for authorization
+	if a.subjectRepo == nil {
+		return Principal{}, errors.New("subject repository required for authorization")
+	}
+
+	subject, err := a.subjectRepo.GetBySubjectID(ctx, credential.IdentityID)
+	if err != nil {
+		return Principal{}, errors.New("subject not found")
+	}
+
+	roles := subject.Roles
+	if subject.IsSuperAdmin {
+		roles = append(roles, string(RoleSuperAdmin))
 	}
 
 	return Principal{

@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router"
 import { getAuthenticationState } from "../../application/authentication/state/authenticationStore"
+import { logout } from "../../application/authentication/commands/logout"
 
 interface NavItem {
   to: string
@@ -110,8 +111,8 @@ export function AppShell() {
   const navigation = getNavigationForRoles(authState.roles)
   const roleBadge = getRoleBadge(!!authState.isAdmin, !!authState.isSuperAdmin, authState.roles)
 
-  const handleSignOut = () => {
-    // TODO: Clear auth state
+  const handleSignOut = async () => {
+    await logout()
     navigate("/signin")
   }
 

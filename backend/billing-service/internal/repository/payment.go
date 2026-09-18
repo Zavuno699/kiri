@@ -60,9 +60,10 @@ func (r *PaymentRepository) CreatePending(
 		ctx,
 		`
 		INSERT INTO payments (
-			
+
                         id,
                         tenant_id,
+                        payment_responsibility_id,
                         reference,
                         provider,
                         provider_charge_id,
@@ -74,10 +75,11 @@ func (r *PaymentRepository) CreatePending(
                         correlation_id,
                         created_at,
                         updated_at,
+                        settled_at,
                         version
                 )
 		VALUES (
-			
+
                         $1,
                         $2,
                         $3,
@@ -91,11 +93,14 @@ func (r *PaymentRepository) CreatePending(
                         $11,
                         $12,
                         $13,
-                        $14
+                        $14,
+                        $15,
+                        $16
                 )
 		`,
 		payment.ID,
 		payment.TenantID,
+		payment.PaymentResponsibilityID,
 		payment.Reference,
 		payment.Provider,
 		payment.ProviderChargeID,
@@ -107,6 +112,7 @@ func (r *PaymentRepository) CreatePending(
 		payment.CorrelationID,
 		payment.CreatedAt,
 		payment.UpdatedAt,
+		payment.SettledAt,
 		payment.Version,
 	)
 
@@ -697,6 +703,7 @@ const paymentSelectSQL = `
 SELECT
 	id,
 	tenant_id,
+	payment_responsibility_id,
 	reference,
 	provider,
 	provider_charge_id,
@@ -723,6 +730,7 @@ func scanPayment(row rowScanner) (model.Payment, error) {
 	err := row.Scan(
 		&payment.ID,
 		&payment.TenantID,
+		&payment.PaymentResponsibilityID,
 		&payment.Reference,
 		&payment.Provider,
 		&payment.ProviderChargeID,

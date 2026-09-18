@@ -88,7 +88,7 @@ func TestBuildPendingPaymentPersistsProviderIdentity(t *testing.T) {
 		t.Fatalf("reference mismatch")
 	}
 
-	if payment.AmountUGX != request.Amount {
+	if payment.AmountMinor != request.Amount {
 		t.Fatalf("amount mismatch")
 	}
 
@@ -196,6 +196,7 @@ func TestPaymentApplicationPersistsCompletePayment(t *testing.T) {
 		WithArgs(
 			sqlmock.AnyArg(),
 			tenantID,
+			nil, // payment_responsibility_id
 			request.Reference,
 			"FLUTTERWAVE",
 			provider.payment.ID,
@@ -203,9 +204,11 @@ func TestPaymentApplicationPersistsCompletePayment(t *testing.T) {
 			"UGX",
 			model.PaymentPending,
 			request.IdempotencyKey,
+			sqlmock.AnyArg(), // request_hash
 			request.TraceID,
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
+			sqlmock.AnyArg(), // settled_at
 			int64(1),
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
@@ -309,7 +312,7 @@ func TestPaymentApplicationReplaysSameIdempotencyRequest(t *testing.T) {
 		Reference:        request.Reference,
 		Provider:         "FLUTTERWAVE",
 		ProviderChargeID: "flw-existing-replay-001",
-		AmountUGX:        request.Amount,
+		AmountMinor:      request.Amount,
 		Currency:         "UGX",
 		Status:           model.PaymentPending,
 		IdempotencyKey:   request.IdempotencyKey,
@@ -325,10 +328,11 @@ func TestPaymentApplicationReplaysSameIdempotencyRequest(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id",
 			"tenant_id",
+			"payment_responsibility_id",
 			"reference",
 			"provider",
 			"provider_charge_id",
-			"amount_ugx",
+			"amount_minor",
 			"currency",
 			"status",
 			"idempotency_key",
@@ -341,10 +345,11 @@ func TestPaymentApplicationReplaysSameIdempotencyRequest(t *testing.T) {
 		}).AddRow(
 			existing.ID,
 			existing.TenantID,
+			existing.PaymentResponsibilityID,
 			existing.Reference,
 			existing.Provider,
 			existing.ProviderChargeID,
-			existing.AmountUGX,
+			existing.AmountMinor,
 			existing.Currency,
 			existing.Status,
 			existing.IdempotencyKey,
@@ -429,7 +434,7 @@ func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testi
 		Reference:        request.Reference,
 		Provider:         "FLUTTERWAVE",
 		ProviderChargeID: "flw-existing-conflict-001",
-		AmountUGX:        request.Amount,
+		AmountMinor:      request.Amount,
 		Currency:         "UGX",
 		Status:           model.PaymentPending,
 		IdempotencyKey:   request.IdempotencyKey,
@@ -445,10 +450,11 @@ func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testi
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id",
 			"tenant_id",
+			"payment_responsibility_id",
 			"reference",
 			"provider",
 			"provider_charge_id",
-			"amount_ugx",
+			"amount_minor",
 			"currency",
 			"status",
 			"idempotency_key",
@@ -461,10 +467,11 @@ func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testi
 		}).AddRow(
 			existing.ID,
 			existing.TenantID,
+			existing.PaymentResponsibilityID,
 			existing.Reference,
 			existing.Provider,
 			existing.ProviderChargeID,
-			existing.AmountUGX,
+			existing.AmountMinor,
 			existing.Currency,
 			existing.Status,
 			existing.IdempotencyKey,

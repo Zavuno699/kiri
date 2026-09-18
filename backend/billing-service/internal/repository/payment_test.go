@@ -29,6 +29,7 @@ func TestCreatePendingPayment(t *testing.T) {
 		INSERT INTO payments (
 			id,
 			tenant_id,
+			payment_responsibility_id,
 			reference,
 			provider,
 			provider_charge_id,
@@ -40,6 +41,7 @@ func TestCreatePendingPayment(t *testing.T) {
 			correlation_id,
 			created_at,
 			updated_at,
+			settled_at,
 			version
 		)
 		VALUES (
@@ -56,12 +58,15 @@ func TestCreatePendingPayment(t *testing.T) {
 			$11,
 			$12,
 			$13,
-			$14
+			$14,
+			$15,
+			$16
 		)
 	`)).
 		WithArgs(
 			id,
 			tenantID,
+			nil, // payment_responsibility_id
 			"KIRI-TEST-001",
 			"flutterwave",
 			"",
@@ -73,6 +78,7 @@ func TestCreatePendingPayment(t *testing.T) {
 			"corr-test",
 			now,
 			now,
+			sqlmock.AnyArg(), // settled_at
 			int64(1),
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
@@ -147,6 +153,7 @@ func TestGetByReference(t *testing.T) {
 			sqlmock.NewRows([]string{
 				"id",
 				"tenant_id",
+				"payment_responsibility_id",
 				"reference",
 				"provider",
 				"provider_charge_id",
@@ -164,6 +171,7 @@ func TestGetByReference(t *testing.T) {
 				AddRow(
 					id,
 					tenantID,
+					nil, // payment_responsibility_id
 					"KIRI-REF-001",
 					"flutterwave",
 					"",

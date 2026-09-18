@@ -48,7 +48,7 @@ func (s *PaymentService) Create(
 		PaymentID:      uuid.NewString(),
 		Status:         model.PaymentStatusAccepted,
 		TenantPhone:    request.TenantPhone,
-		AmountUGX:      request.AmountUGX,
+		AmountMinor:    request.AmountMinor,
 		DaysRequested:  request.DaysRequested,
 		CurrencyCode:   request.CurrencyCode,
 		IdempotencyKey: request.IdempotencyKey,

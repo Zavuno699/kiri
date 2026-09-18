@@ -9,7 +9,7 @@ import "time"
 // constraints before the request reaches the payment service.
 type PaymentRequest struct {
 	TenantPhone    string `json:"tenant_phone" validate:"required,e164"`
-	AmountUGX      int64  `json:"amount_ugx" validate:"required,gte=20000"`
+	AmountMinor    int64  `json:"amount_minor" validate:"required,gte=20000"`
 	DaysRequested  int    `json:"days_requested" validate:"required,gte=1,lte=365"`
 	IdempotencyKey string `json:"idempotency_key" validate:"required,uuid4"`
 	CurrencyCode   string `json:"currency_code" validate:"required,oneof=UGX USD"`
@@ -30,7 +30,7 @@ type PaymentResult struct {
 	PaymentID      string        `json:"payment_id"`
 	Reference      string        `json:"reference"`
 	TenantPhone    string        `json:"tenant_phone"`
-	AmountUGX      int64         `json:"amount_ugx"`
+	AmountMinor    int64         `json:"amount_minor"`
 	DaysRequested  int           `json:"days_requested"`
 	DaysGranted    int           `json:"days_granted"`
 	CurrencyCode   string        `json:"currency_code"`

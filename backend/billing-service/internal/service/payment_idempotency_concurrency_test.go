@@ -122,10 +122,11 @@ func TestPaymentApplicationConcurrentSameIdempotencyKey(t *testing.T) {
 			sqlmock.NewRows([]string{
 				"id",
 				"tenant_id",
+				"payment_responsibility_id",
 				"reference",
 				"provider",
 				"provider_charge_id",
-				"amount_ugx",
+				"amount_minor",
 				"currency",
 				"status",
 				"idempotency_key",
@@ -138,6 +139,7 @@ func TestPaymentApplicationConcurrentSameIdempotencyKey(t *testing.T) {
 			}).AddRow(
 				paymentID,
 				tenantID,
+				nil, // payment_responsibility_id
 				request.Reference,
 				"FLUTTERWAVE",
 				provider.payment.ID,

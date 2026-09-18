@@ -18,7 +18,7 @@ func phase5HPayment() model.Payment {
 		TenantID:       uuid.New(),
 		Reference:      "KIRI-5H-001",
 		Provider:       "flutterwave",
-		AmountUGX:      20000,
+		AmountMinor:    20000,
 		Currency:       "UGX",
 		Status:         model.PaymentPending,
 		IdempotencyKey: uuid.NewString(),
@@ -35,7 +35,7 @@ func phase5HRequest(p model.Payment, eventID string) SettlementRequest {
 		Provider:         p.Provider,
 		ProviderChargeID: "FLW-CHARGE-5H-001",
 		Reference:        p.Reference,
-		AmountUGX:        p.AmountUGX,
+		AmountMinor:      p.AmountMinor,
 		Currency:         p.Currency,
 		ProviderEventID:  eventID,
 		CorrelationID:    p.CorrelationID,
@@ -82,7 +82,7 @@ func TestPhase5HRejectsWrongAmount(t *testing.T) {
 	}
 
 	req := phase5HRequest(payment, "event-002")
-	req.AmountUGX = 999999
+	req.AmountMinor = 999999
 
 	_, err := ledger.Settle(req)
 

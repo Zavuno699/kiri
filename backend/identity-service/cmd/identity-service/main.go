@@ -17,9 +17,14 @@ import (
 	"github.com/kirilock/backend/identity-service/internal/notification"
 	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
+	"github.com/kirilock/backend/shared/config"
 )
 
 func main() {
+	// Load .env only in development/test environment
+	// Production relies on real environment variable injection
+	config.LoadDevelopmentEnv()
+
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
 		os.Interrupt,

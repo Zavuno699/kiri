@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -56,6 +57,9 @@ func (r *DBSubjectRepository) Create(
 		return err
 	}
 
+	// Normalize email: lowercase and trim whitespace for consistent storage
+	normalizedEmail := strings.ToLower(strings.TrimSpace(subject.Email))
+
 	_, err := r.db.Exec(ctx, `
 		INSERT INTO identity_subjects (
 			id,
@@ -75,7 +79,7 @@ func (r *DBSubjectRepository) Create(
 	`,
 		subject.ID,
 		subject.SubjectID,
-		subject.Email,
+		normalizedEmail,
 		subject.PasswordHash,
 		subject.Roles,
 		subject.IsAdmin,
@@ -105,6 +109,9 @@ func (r *DBSubjectRepository) Update(
 		return err
 	}
 
+	// Normalize email: lowercase and trim whitespace for consistent storage
+	normalizedEmail := strings.ToLower(strings.TrimSpace(subject.Email))
+
 	result, err := r.db.Exec(ctx, `
 		UPDATE identity_subjects
 		SET
@@ -118,7 +125,7 @@ func (r *DBSubjectRepository) Update(
 		WHERE id = $1 AND version = $8
 	`,
 		subject.ID,
-		subject.Email,
+		normalizedEmail,
 		subject.PasswordHash,
 		subject.Roles,
 		subject.IsAdmin,
@@ -248,6 +255,9 @@ func (r *DBSubjectRepository) GetByEmail(
 		return model.Subject{}, ErrSubjectNotFound
 	}
 
+	// Normalize email: lowercase and trim whitespace to avoid case-sensitivity issues
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+
 	var s model.Subject
 
 	err := r.db.QueryRow(ctx, `
@@ -263,8 +273,8 @@ func (r *DBSubjectRepository) GetByEmail(
 			updated_at,
 			version
 		FROM identity_subjects
-		WHERE email = $1
-	`, email).Scan(
+		WHERE LOWER(TRIM(email)) = $1
+	`, normalizedEmail).Scan(
 		&s.ID,
 		&s.SubjectID,
 		&s.Email,

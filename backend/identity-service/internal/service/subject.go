@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -51,6 +52,9 @@ func (s *SubjectService) CreateSubject(
 		return model.Subject{}, ErrInvalidPassword
 	}
 
+	// Normalize email: lowercase and trim whitespace
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return model.Subject{}, err
@@ -59,7 +63,7 @@ func (s *SubjectService) CreateSubject(
 	subject := model.Subject{
 		ID:           uuid.New(),
 		SubjectID:    uuid.New().String(),
-		Email:        email,
+		Email:        normalizedEmail,
 		PasswordHash: string(hash),
 		Roles:        roles,
 		IsAdmin:      isAdmin,
@@ -88,7 +92,10 @@ func (s *SubjectService) VerifyPassword(
 		return model.Subject{}, errors.New("password is required")
 	}
 
-	subject, err := s.subjectRepo.GetByEmail(ctx, email)
+	// Normalize email: lowercase and trim whitespace
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+
+	subject, err := s.subjectRepo.GetByEmail(ctx, normalizedEmail)
 	if err != nil {
 		return model.Subject{}, err
 	}

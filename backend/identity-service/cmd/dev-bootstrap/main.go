@@ -5,15 +5,20 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
+	"github.com/kirilock/backend/shared/config"
 )
 
 func main() {
+	// Load .env only in development/test environment
+	config.LoadDevelopmentEnv()
+
 	// STEP 1: Refuse to run unless explicitly in development/test environment
 	env := os.Getenv("KIRI_ENV")
 	if env != "development" && env != "test" {
@@ -25,6 +30,10 @@ func main() {
 	landlordPassword := os.Getenv("DEV_LANDLORD_PASSWORD")
 	superAdminEmail := os.Getenv("DEV_SUPERADMIN_EMAIL")
 	superAdminPassword := os.Getenv("DEV_SUPERADMIN_PASSWORD")
+
+	// Normalize emails: lowercase and trim for consistency
+	landlordEmail = strings.ToLower(strings.TrimSpace(landlordEmail))
+	superAdminEmail = strings.ToLower(strings.TrimSpace(superAdminEmail))
 
 	if landlordEmail == "" || landlordPassword == "" {
 		log.Fatal("ERROR: DEV_LANDLORD_EMAIL and DEV_LANDLORD_PASSWORD environment variables are required")

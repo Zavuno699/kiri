@@ -96,7 +96,8 @@ func TestAuthMiddleware(t *testing.T) {
 
 	t.Run("valid session is accepted", func(t *testing.T) {
 		// Setup mock session repository with valid session
-		validSubjectID := uuid.New().String()
+		validSubjectUUID := uuid.New()
+		validSubjectID := validSubjectUUID.String()
 		mockSessionRepo := &mockSessionRepository{
 			sessions: map[string]repository.Session{
 				"valid-session-id": {
@@ -107,9 +108,9 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 		}
 		mockSubjectRepo := &mockSubjectRepository{
-			subjects: map[string]model.Subject{
-				validSubjectID: {
-					ID:           uuid.New(),
+			subjects: map[uuid.UUID]model.Subject{
+				validSubjectUUID: {
+					ID:           validSubjectUUID,
 					SubjectID:    validSubjectID,
 					Email:        "test@example.com",
 					PasswordHash: "dummy_hash",
@@ -189,11 +190,11 @@ func (m *mockSessionRepository) RevokeBySubjectID(ctx context.Context, subjectID
 
 // Mock subject repository for testing
 type mockSubjectRepository struct {
-	subjects map[string]model.Subject
+	subjects map[uuid.UUID]model.Subject
 }
 
 func (m *mockSubjectRepository) Create(ctx context.Context, subject model.Subject) error {
-	m.subjects[subject.SubjectID] = subject
+	m.subjects[subject.ID] = subject
 	return nil
 }
 
@@ -207,11 +208,12 @@ func (m *mockSubjectRepository) GetByID(ctx context.Context, id uuid.UUID) (mode
 }
 
 func (m *mockSubjectRepository) GetBySubjectID(ctx context.Context, subjectID string) (model.Subject, error) {
-	subject, exists := m.subjects[subjectID]
-	if !exists {
-		return model.Subject{}, repository.ErrSubjectNotFound
+	for _, subject := range m.subjects {
+		if subject.SubjectID == subjectID {
+			return subject, nil
+		}
 	}
-	return subject, nil
+	return model.Subject{}, repository.ErrSubjectNotFound
 }
 
 func (m *mockSubjectRepository) GetByEmail(ctx context.Context, email string) (model.Subject, error) {
@@ -224,41 +226,48 @@ func (m *mockSubjectRepository) GetByEmail(ctx context.Context, email string) (m
 }
 
 func (m *mockSubjectRepository) Update(ctx context.Context, subject model.Subject) error {
-	m.subjects[subject.SubjectID] = subject
+	m.subjects[subject.ID] = subject
 	return nil
 }
 
 func (m *mockSubjectRepository) UpdateRoles(ctx context.Context, id uuid.UUID, roles []string) error {
-	for subjectID, subject := range m.subjects {
-		if subject.ID == id {
-			subject.Roles = roles
-			m.subjects[subjectID] = subject
-			return nil
-		}
+	subject, exists := m.subjects[id]
+	if !exists {
+		return repository.ErrSubjectNotFound
 	}
-	return repository.ErrSubjectNotFound
+	subject.Roles = roles
+	m.subjects[id] = subject
+	return nil
 }
 
 func (m *mockSubjectRepository) SetAdmin(ctx context.Context, id uuid.UUID, isAdmin bool) error {
-	for subjectID, subject := range m.subjects {
-		if subject.ID == id {
-			subject.IsAdmin = isAdmin
-			m.subjects[subjectID] = subject
-			return nil
-		}
+	subject, exists := m.subjects[id]
+	if !exists {
+		return repository.ErrSubjectNotFound
 	}
-	return repository.ErrSubjectNotFound
+	subject.IsAdmin = isAdmin
+	m.subjects[id] = subject
+	return nil
 }
 
 func (m *mockSubjectRepository) SetSuperAdmin(ctx context.Context, id uuid.UUID, isSuperAdmin bool) error {
-	for subjectID, subject := range m.subjects {
-		if subject.ID == id {
-			subject.IsSuperAdmin = isSuperAdmin
-			m.subjects[subjectID] = subject
-			return nil
-		}
+	subject, exists := m.subjects[id]
+	if !exists {
+		return repository.ErrSubjectNotFound
 	}
-	return repository.ErrSubjectNotFound
+	subject.IsSuperAdmin = isSuperAdmin
+	m.subjects[id] = subject
+	return nil
+}
+
+func (m *mockSubjectRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	subject, exists := m.subjects[id]
+	if !exists {
+		return repository.ErrSubjectNotFound
+	}
+	subject.PasswordHash = passwordHash
+	m.subjects[id] = subject
+	return nil
 }
 
 type mockResponseWriter struct {

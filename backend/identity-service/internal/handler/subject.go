@@ -183,7 +183,7 @@ func (h *SubjectHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	sessionExpiry := 24 * time.Hour
 	session, err := h.sessionService.CreateSession(
 		r.Context(),
-		subject.SubjectID,
+		subject.ID.String(),
 		credentialID,
 		sessionExpiry,
 	)

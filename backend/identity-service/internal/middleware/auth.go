@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/kirilock/backend/identity-service/internal/client"
 	"github.com/kirilock/backend/identity-service/internal/repository"
 )
@@ -83,8 +84,8 @@ func (m *AuthMiddleware) authenticateSession(ctx context.Context, sessionID stri
 		return client.Principal{}, err
 	}
 
-	// Get subject from session
-	subject, err := m.subjectRepo.GetBySubjectID(ctx, session.SubjectID)
+	// Get subject from session using the subject's UUID ID
+	subject, err := m.subjectRepo.GetByID(ctx, uuid.MustParse(session.SubjectID))
 	if err != nil {
 		return client.Principal{}, err
 	}

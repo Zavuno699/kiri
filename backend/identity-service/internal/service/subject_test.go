@@ -98,6 +98,16 @@ func (m *mockSubjectRepository) SetSuperAdmin(ctx context.Context, id uuid.UUID,
 	return nil
 }
 
+func (m *mockSubjectRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	subject, exists := m.subjects[id]
+	if !exists {
+		return repository.ErrSubjectNotFound
+	}
+	subject.PasswordHash = passwordHash
+	m.subjects[id] = subject
+	return nil
+}
+
 func TestCreateSubject(t *testing.T) {
 	mockRepo := newMockSubjectRepository()
 	service, err := NewSubjectService(mockRepo)

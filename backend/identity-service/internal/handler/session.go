@@ -194,12 +194,6 @@ func (h *SessionHandler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid session"})
 		return
 	}
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "invalid session"})
-		return
-	}
 
 	if err := h.sessionService.RevokeSession(
 		r.Context(),

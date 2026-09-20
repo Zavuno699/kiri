@@ -24,6 +24,7 @@ type SubjectRepository interface {
 	GetByEmail(context.Context, string) (model.Subject, error)
 	Update(context.Context, model.Subject) error
 	UpdateRoles(context.Context, uuid.UUID, []string) error
+	UpdatePasswordHash(context.Context, uuid.UUID, string) error
 	SetAdmin(context.Context, uuid.UUID, bool) error
 	SetSuperAdmin(context.Context, uuid.UUID, bool) error
 }
@@ -318,6 +319,35 @@ func (r *DBSubjectRepository) UpdateRoles(
 			version = version + 1
 		WHERE id = $2
 	`, roles, id)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrSubjectNotFound
+	}
+
+	return nil
+}
+
+func (r *DBSubjectRepository) UpdatePasswordHash(
+	ctx context.Context,
+	id uuid.UUID,
+	passwordHash string,
+) error {
+	if id == uuid.Nil {
+		return ErrSubjectNotFound
+	}
+
+	result, err := r.db.Exec(ctx, `
+		UPDATE identity_subjects
+		SET
+			password_hash = $1,
+			updated_at = current_timestamp,
+			version = version + 1
+		WHERE id = $2
+	`, passwordHash, id)
 
 	if err != nil {
 		return err

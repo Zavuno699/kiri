@@ -233,7 +233,7 @@ func (r *DBSessionRepository) Revoke(
 			current_timestamp,
 			1
 		FROM identity_sessions
-\tWHERE session_id = $3
+		WHERE session_id = $3
 	`,
 		uuid.New(),
 		revokedAt,
@@ -264,17 +264,18 @@ func (r *DBSessionRepository) RevokeBySubjectID(
 			version
 		)
 		SELECT
-			uuid_generate_v4(),
+			$1,
 			subject_id,
 			credential_id,
 			'subject_revoked',
-			$1,
+			$2,
 			current_timestamp,
 			current_timestamp,
 			1
 		FROM identity_sessions
-		WHERE subject_id = $2
+		WHERE subject_id = $3
 	`,
+		uuid.New(),
 		revokedAt,
 		subjectID,
 	)

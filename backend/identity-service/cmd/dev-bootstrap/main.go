@@ -127,13 +127,10 @@ func provisionAccount(
 			return fmt.Errorf("failed to hash password: %w", err)
 		}
 
-		existing.PasswordHash = string(hash)
-		existing.Roles = roles
-		existing.IsAdmin = isAdmin
-		existing.IsSuperAdmin = isSuperAdmin
-		err = subjectRepo.Update(ctx, existing)
+		// Update password hash directly using repository method
+		err = subjectRepo.UpdatePasswordHash(ctx, existing.ID, string(hash))
 		if err != nil {
-			return fmt.Errorf("failed to update subject: %w", err)
+			return fmt.Errorf("failed to update password hash: %w", err)
 		}
 
 		return nil

@@ -9,17 +9,13 @@ export function selectActiveProperties(
 }
 
 export function selectOccupiedProperties(
-  properties: PropertyRecord[],
+  _properties: PropertyRecord[],
 ) {
-  return properties.filter(
-    (property) => property.occupancy === "occupied",
-  )
+  return []
 }
 
 export function selectAvailableProperties(
-  properties: PropertyRecord[],
+  _properties: PropertyRecord[],
 ) {
-  return properties.filter(
-    (property) => property.occupancy === "available",
-  )
+  return []
 }

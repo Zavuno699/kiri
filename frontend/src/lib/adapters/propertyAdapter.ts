@@ -13,25 +13,21 @@ export function adaptProperty(
 ): PropertyRecord {
   return {
     id: String(input.id ?? ""),
-    name: String(input.name ?? "Unnamed property"),
-    address: String(input.address ?? ""),
+    landlord_profile_id: String(input.landlord_profile_id ?? ""),
+    property_name: String(input.property_name ?? "Unnamed property"),
+    property_type: String(input.property_type ?? ""),
+    address_line1: String(input.address_line1 ?? ""),
+    address_line2: String(input.address_line2 ?? ""),
+    city: String(input.city ?? ""),
+    state: String(input.state ?? ""),
+    postal_code: String(input.postal_code ?? ""),
+    country: String(input.country ?? ""),
+    timezone: String(input.timezone ?? ""),
     status:
       normalizeStatus(input.status) as PropertyRecord["status"],
-    occupancy:
-      normalizeStatus(input.occupancy) as PropertyRecord["occupancy"],
-    units:
-      normalizeNumber(input.units) ?? 0,
-    occupiedUnits:
-      normalizeNumber(input.occupiedUnits) ??
-      normalizeNumber(input.occupied_units) ??
-      0,
-    availableUnits:
-      normalizeNumber(input.availableUnits) ??
-      normalizeNumber(input.available_units) ??
-      0,
-    activeLeaseCount:
-      normalizeNumber(input.activeLeaseCount) ??
-      normalizeNumber(input.active_lease_count) ??
-      0,
+    total_units: normalizeNumber(input.total_units) ?? 0,
+    description: String(input.description ?? ""),
+    created_at: String(input.created_at ?? ""),
+    updated_at: String(input.updated_at ?? ""),
   }
 }

@@ -14,11 +14,8 @@ export function toPropertyViewModel(
 ): PropertyViewModel {
   return {
     ...property,
-    occupancyLabel:
-      property.occupancy ?? "Unknown",
-    availabilityLabel:
-      `${property.availableUnits} available`,
-    statusLabel:
-      property.status ?? "Unknown",
+    occupancyLabel: "Unknown",
+    availabilityLabel: `${property.total_units} total units`,
+    statusLabel: property.status ?? "Unknown",
   }
 }

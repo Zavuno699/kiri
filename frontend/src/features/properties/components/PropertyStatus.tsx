@@ -10,10 +10,8 @@ export function PropertyStatus({
 }: PropertyStatusProps) {
   const map = {
     active: ["Active", "success"],
-    occupied: ["Occupied", "success"],
-    vacant: ["Vacant", "warning"],
-    maintenance: ["Maintenance", "danger"],
-    unknown: ["Unknown", "default"],
+    inactive: ["Inactive", "default"],
+    pending_activation: ["Pending", "warning"],
   } as const
 
   const [label, tone] = map[status]

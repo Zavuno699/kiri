@@ -17,10 +17,21 @@ export function PropertyTable({
           No properties available
         </div>
         <div className="mt-1 text-xs text-kiri-text-muted">
-          Properties will appear when the backend portfolio endpoint is connected.
+          Create your first property to get started.
         </div>
       </div>
     )
+  }
+
+  const formatAddress = (property: PropertyRecord) => {
+    const parts = [
+      property.address_line1,
+      property.address_line2,
+      property.city,
+      property.state,
+      property.postal_code,
+    ].filter(Boolean)
+    return parts.join(", ")
   }
 
   return (
@@ -31,8 +42,7 @@ export function PropertyTable({
             {[
               "Property",
               "Units",
-              "Occupancy",
-              "Leases",
+              "Type",
               "Status",
               "",
             ].map((header) => (
@@ -54,23 +64,19 @@ export function PropertyTable({
             >
               <td className="px-4 py-4">
                 <div className="text-sm font-semibold text-kiri-text">
-                  {property.name}
+                  {property.property_name}
                 </div>
                 <div className="mt-1 text-xs text-kiri-text-muted">
-                  {property.address}
+                  {formatAddress(property)}
                 </div>
               </td>
 
               <td className="px-4 py-4 text-xs text-kiri-text-soft">
-                {property.units}
+                {property.total_units}
               </td>
 
               <td className="px-4 py-4 text-xs text-kiri-text-soft">
-                {property.occupiedUnits} / {property.units}
-              </td>
-
-              <td className="px-4 py-4 text-xs text-kiri-text-soft">
-                {property.activeLeaseCount}
+                {property.property_type || "-"}
               </td>
 
               <td className="px-4 py-4">

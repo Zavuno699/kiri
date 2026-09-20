@@ -1,49 +1,56 @@
 import { useEffect, useMemo, useState } from "react"
 import { FilterBar } from "../../components/navigation/FilterBar"
 import { StatusPill } from "../../components/ui/StatusPill"
-import { apiFetch } from "../../api/client"
-import {
-  PropertyListService,
-} from "./services/propertyService"
+import { PropertyApiService } from "./services/propertyApiService"
 import type {
   PropertyRecord,
+  CreatePropertyRequest,
 } from "./types/property"
 import { PropertyTable } from "./components/PropertyTable"
+import { CreatePropertyModal } from "./components/CreatePropertyModal"
+import { PropertyDetailModal } from "./components/PropertyDetailModal"
 
-const propertyService = new PropertyListService(
-  async () => {
-    return apiFetch<PropertyRecord[]>("/properties", undefined, { useIdentityService: true })
-  },
-)
+const propertyApiService = new PropertyApiService()
 
 export function PropertiesPage() {
   const [properties, setProperties] = useState<PropertyRecord[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [available, setAvailable] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState<PropertyRecord | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadProperties = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await propertyApiService.getProperties()
+      setProperties(data)
+      setAvailable(true)
+    } catch (err) {
+      console.error("Failed to load properties:", err)
+      setError("Failed to load properties")
+      setAvailable(false)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false
-
-    void propertyService.execute()
-      .then((records: PropertyRecord[]) => {
-        if (cancelled) return
-        setProperties(records)
-        setAvailable(true)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setAvailable(false)
-      })
-      .finally(() => {
-        if (cancelled) return
-        setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
+    loadProperties()
   }, [])
+
+  const handleCreateProperty = async (request: CreatePropertyRequest) => {
+    try {
+      await propertyApiService.createProperty(request)
+      setShowCreateModal(false)
+      await loadProperties()
+    } catch (err) {
+      console.error("Failed to create property:", err)
+      throw err
+    }
+  }
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -53,8 +60,9 @@ export function PropertiesPage() {
     return properties.filter((property) =>
       [
         property.id,
-        property.name,
-        property.address,
+        property.property_name,
+        property.city,
+        property.state,
         property.status,
       ]
         .join(" ")
@@ -76,14 +84,23 @@ export function PropertiesPage() {
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-kiri-text-muted">
-            Portfolio inventory, occupancy and lease-linked operational state.
+            Manage your rental properties, units, and lock assignments.
           </p>
         </div>
 
-        <StatusPill
-          label={available ? "Live API" : "API awaiting connection"}
-          tone={available ? "success" : "warning"}
-        />
+        <div className="flex items-center gap-3">
+          <StatusPill
+            label={available ? "Live API" : "API awaiting connection"}
+            tone={available ? "success" : "warning"}
+          />
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            className="rounded-lg bg-kiri-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-kiri-blue-600"
+          >
+            Create Property
+          </button>
+        </div>
       </div>
 
       <FilterBar
@@ -97,9 +114,33 @@ export function PropertiesPage() {
         }
       />
 
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
       <section className="kiri-panel rounded-3xl p-4 sm:p-6">
-        <PropertyTable properties={filtered} />
+        <PropertyTable
+          properties={filtered}
+          onSelect={setSelectedProperty}
+        />
       </section>
+
+      {showCreateModal && (
+        <CreatePropertyModal
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateProperty}
+        />
+      )}
+
+      {selectedProperty && (
+        <PropertyDetailModal
+          property={selectedProperty}
+          onClose={() => setSelectedProperty(null)}
+          onPropertyUpdated={loadProperties}
+        />
+      )}
     </div>
   )
 }

@@ -1,24 +1,49 @@
 export type PropertyStatus =
   | "active"
-  | "occupied"
-  | "vacant"
-  | "maintenance"
-  | "unknown"
+  | "inactive"
+  | "pending_activation"
 
 export interface PropertyRecord {
-  occupancy?: "occupied" | "available" | "unknown"
-  availableUnits?: number
   id: string
-  name: string
-  address: string
-  units: number
-  occupiedUnits: number
+  landlord_profile_id: string
+  property_name: string
+  property_type: string
+  address_line1: string
+  address_line2: string
+  city: string
+  state: string
+  postal_code: string
+  country: string
+  timezone: string
   status: PropertyStatus
-  activeLeaseCount: number
+  total_units: number
+  description: string
+  created_at: string
+  updated_at: string
 }
 
-export interface PropertyDetail extends PropertyRecord {
-  propertyType?: string
-  createdAt?: string
-  updatedAt?: string
+export interface CreatePropertyRequest {
+  property_name: string
+  property_type?: string
+  address_line1: string
+  address_line2?: string
+  city: string
+  state: string
+  postal_code: string
+  country?: string
+  timezone?: string
+  description?: string
+}
+
+export interface UpdatePropertyRequest {
+  property_name: string
+  property_type?: string
+  address_line1: string
+  address_line2?: string
+  city: string
+  state: string
+  postal_code: string
+  country?: string
+  timezone?: string
+  description?: string
 }

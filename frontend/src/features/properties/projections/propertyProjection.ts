@@ -5,19 +5,15 @@ export function projectPropertyMetrics(
   properties: PropertyRecord[],
 ): PropertyMetrics {
   return {
-    occupiedUnits: properties.reduce(
-      (sum, property) =>
-        sum + (property.occupiedUnits ?? 0),
-      0,
-    ),
+    occupiedUnits: 0,
     availableUnits: properties.reduce(
       (sum, property) =>
-        sum + (property.availableUnits ?? 0),
+        sum + property.total_units,
       0,
     ),
     totalUnits: properties.reduce(
       (sum, property) =>
-        sum + (property.units ?? 0),
+        sum + property.total_units,
       0,
     ),
     activeLeases: 0,

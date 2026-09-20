@@ -11,6 +11,8 @@ export interface AuthenticationState {
   isSuperAdmin?: boolean
 }
 
+const STORAGE_KEY = "kirilock_auth_state"
+
 let state: AuthenticationState = {
   principalId: undefined,
   principal: null,
@@ -22,6 +24,29 @@ let state: AuthenticationState = {
   roles: [],
   isAdmin: false,
   isSuperAdmin: false,
+}
+
+// Initialize state from localStorage on module load
+if (typeof window !== "undefined") {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored) as AuthenticationState
+      state = { ...state, ...parsed }
+    }
+  } catch (e) {
+    // Ignore localStorage errors (e.g., in iframes with storage disabled)
+  }
+}
+
+function persistState(): void {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }
 }
 
 export function getAuthenticationState(): AuthenticationState {
@@ -37,6 +62,7 @@ export function setAuthenticationState(next: AuthenticationState): Authenticatio
     ...state,
     ...next,
   }
+  persistState()
   return getAuthenticationState()
 }
 
@@ -52,5 +78,12 @@ export function clearAuthenticationState(): void {
     roles: [],
     isAdmin: false,
     isSuperAdmin: false,
+  }
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch (e) {
+      // Ignore localStorage errors
+    }
   }
 }

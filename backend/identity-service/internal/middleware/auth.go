@@ -2,10 +2,13 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"time"
 
 	"github.com/kirilock/backend/identity-service/internal/client"
 	"github.com/kirilock/backend/identity-service/internal/repository"
+	"github.com/kirilock/backend/identity-service/internal/service"
 )
 
 type principalContextKey struct{}
@@ -26,6 +29,7 @@ type AuthMiddleware struct {
 	authClient      *client.AuthClient
 	sessionRepo     repository.SessionRepository
 	subjectRepo     repository.SubjectRepository
+	sessionService  *service.SessionService
 	useLocalSession bool
 }
 
@@ -36,10 +40,11 @@ func NewAuthMiddleware(authClient *client.AuthClient) *AuthMiddleware {
 	}
 }
 
-func NewLocalSessionAuthMiddleware(sessionRepo repository.SessionRepository, subjectRepo repository.SubjectRepository) *AuthMiddleware {
+func NewLocalSessionAuthMiddleware(sessionRepo repository.SessionRepository, subjectRepo repository.SubjectRepository, sessionService *service.SessionService) *AuthMiddleware {
 	return &AuthMiddleware{
 		sessionRepo:     sessionRepo,
 		subjectRepo:     subjectRepo,
+		sessionService:  sessionService,
 		useLocalSession: true,
 	}
 }
@@ -77,10 +82,16 @@ func (m *AuthMiddleware) authenticateSession(ctx context.Context, sessionID stri
 		return client.Principal{}, http.ErrNotSupported
 	}
 
-	// Validate session
+	// Validate session (checks revocation via repository query)
 	session, err := m.sessionRepo.GetBySessionID(ctx, sessionID)
 	if err != nil {
 		return client.Principal{}, err
+	}
+
+	// Check session expiry
+	now := time.Now().UTC()
+	if now.After(session.ExpiresAt) {
+		return client.Principal{}, errors.New("session expired")
 	}
 
 	// Get subject from session

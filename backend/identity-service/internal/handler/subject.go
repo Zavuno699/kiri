@@ -11,6 +11,7 @@ import (
 	"github.com/kirilock/backend/shared/validation"
 
 	"github.com/kirilock/backend/identity-service/internal/middleware"
+	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
 
@@ -36,6 +37,7 @@ type SubjectResponse struct {
 type SubjectHandler struct {
 	subjectService *service.SubjectService
 	sessionService *service.SessionService
+	credentialRepo repository.CredentialRepository
 	validator      *validation.Validator
 }
 
@@ -47,17 +49,21 @@ type SessionMeResponse struct {
 	IsSuperAdmin bool     `json:"is_super_admin"`
 }
 
-func NewSubjectHandler(subjectService *service.SubjectService, sessionService *service.SessionService) (*SubjectHandler, error) {
+func NewSubjectHandler(subjectService *service.SubjectService, sessionService *service.SessionService, credentialRepo repository.CredentialRepository) (*SubjectHandler, error) {
 	if subjectService == nil {
 		return nil, errors.New("subject service is required")
 	}
 	if sessionService == nil {
 		return nil, errors.New("session service is required")
 	}
+	if credentialRepo == nil {
+		return nil, errors.New("credential repository is required")
+	}
 
 	return &SubjectHandler{
 		subjectService: subjectService,
 		sessionService: sessionService,
+		credentialRepo: credentialRepo,
 		validator:      validation.New(),
 	}, nil
 }
@@ -152,10 +158,29 @@ func (h *SubjectHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a session for the authenticated subject
-	// Generate a simple credential for the session
-	credentialID := uuid.New().String()
-	sessionExpiry := 24 * time.Hour
+	// Generate a credential record for the session
+	credentialUUID := uuid.New()
+	credentialID := credentialUUID.String()
+	credential := repository.Credential{
+		ID:          credentialID,
+		SubjectID:   subject.ID.String(),
+		Type:        "session",
+		Fingerprint: "session_auth_" + credentialID,
+		State:       "active",
+		IssuedAt:    time.Now().UTC(),
+		ExpiresAt:   time.Now().UTC().Add(24 * time.Hour),
+	}
 
+	// Create credential first (required by session FK constraint)
+	err = h.credentialRepo.Create(r.Context(), credential)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to create credential"})
+		return
+	}
+
+	sessionExpiry := 24 * time.Hour
 	session, err := h.sessionService.CreateSession(
 		r.Context(),
 		subject.SubjectID,

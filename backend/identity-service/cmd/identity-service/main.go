@@ -105,7 +105,7 @@ func main() {
 	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)
 	lockAuthorizer := service.NewTenantLockAuthorizer(tenancyRepo, lockAssignmentRepo)
 
-	subjectHandler, err := handler.NewSubjectHandler(subjectService, sessionService)
+	subjectHandler, err := handler.NewSubjectHandler(subjectService, sessionService, credentialRepo)
 	if err != nil {
 		log.Fatalf("failed to create subject handler: %v", err)
 	}

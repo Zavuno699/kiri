@@ -156,7 +156,7 @@ func main() {
 
 	// Use local session auth middleware for domain routes (session_id from /authenticate)
 	// This allows authenticated domain calls without requiring security-service token auth
-	authMiddleware := middleware.NewLocalSessionAuthMiddleware(sessionRepo, subjectRepo, sessionService)
+	authMiddleware := middleware.NewLocalSessionAuthMiddleware(sessionRepo, subjectRepo)
 
 	lockCommandHandler, err := handler.NewLockCommandHandler(lockAuthorizer, auditRepo, lockCommandRepo, lockRepo, lockAssignmentRepo, unitRepo, propertyRepo, landlordProfileRepo, deviceClient)
 	if err != nil {

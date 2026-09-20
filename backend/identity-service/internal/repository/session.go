@@ -109,6 +109,9 @@ func (r *DBSessionRepository) GetBySessionID(
 	var id, subjectID, credentialID uuid.UUID
 	var issuedAt, expiresAt time.Time
 
+	// Filter out expired sessions and sessions with revoked credentials
+	// Revocation check: ANY revocation entry for the credential invalidates the session
+	// (prior logic r.revoked_at <= s.expires_at was incorrect - it allowed revoked sessions)
 	err := r.db.QueryRow(ctx, `
 		SELECT
 			s.id,
@@ -120,10 +123,10 @@ func (r *DBSessionRepository) GetBySessionID(
 			s.expires_at
 		FROM identity_sessions s
 		WHERE s.session_id = $1
+		AND s.expires_at > NOW()
 		AND NOT EXISTS (
 			SELECT 1 FROM identity_credential_revocations r
 			WHERE r.credential_id = s.credential_id
-			AND r.revoked_at <= s.expires_at
 		)
 	`, sessionID).Scan(
 		&id,

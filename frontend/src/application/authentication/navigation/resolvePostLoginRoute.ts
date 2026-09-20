@@ -27,7 +27,7 @@ export function resolvePostLoginRoute(
     return "/admin"
   }
   
-  // Security Admin gets security dashboard
+  // Security Admin gets security dashboard (under main protected routes)
   if (roles.includes("security_admin")) {
     return "/security"
   }
@@ -42,6 +42,6 @@ export function resolvePostLoginRoute(
     return "/tenant"
   }
   
-  // Default to root for other roles or no specific role
+  // Default to main dashboard for other roles or no specific role
   return "/"
 }

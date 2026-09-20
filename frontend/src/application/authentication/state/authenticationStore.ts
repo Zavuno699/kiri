@@ -43,6 +43,8 @@ if (typeof window !== "undefined") {
 function persistSession(): void {
   if (typeof window !== "undefined") {
     try {
+      // Only persist session_id when authenticated
+      // During rehydration, we have sessionId but not authenticated yet
       if (state.sessionId && state.authenticated) {
         localStorage.setItem(SESSION_STORAGE_KEY, state.sessionId)
       } else {

@@ -26,6 +26,9 @@ import { FrontendHealthPage } from "../pages/health/FrontendHealthPage";
 import { OperationalIntegrityPage } from "../pages/integrity/OperationalIntegrityPage";
 import { UnifiedRuntimePage } from "../pages/runtime/UnifiedRuntimePage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { AdminPage } from "../pages/admin/AdminPage";
+import { LandlordPage } from "../pages/landlord/LandlordPage";
+import { TenantPage } from "../pages/tenant/TenantPage";
 
 // Public pages
 import { AboutPage } from "../pages/public/AboutPage";
@@ -97,6 +100,52 @@ export const router = createBrowserRouter([
     path: "/landlord-application-status",
     element: <LandlordApplicationStatusPage />,
     errorElement: <RouteErrorBoundary />,
+  },
+  // Role-specific protected routes
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute requiredRoles={["super_admin"]}>
+        <AppShell />
+      </ProtectedRoute>
+    ),
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <AdminPage />,
+      },
+    ],
+  },
+  {
+    path: "/landlord",
+    element: (
+      <ProtectedRoute requiredRoles={["landlord", "super_admin"]}>
+        <AppShell />
+      </ProtectedRoute>
+    ),
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <LandlordPage />,
+      },
+    ],
+  },
+  {
+    path: "/tenant",
+    element: (
+      <ProtectedRoute requiredRoles={["tenant", "super_admin"]}>
+        <AppShell />
+      </ProtectedRoute>
+    ),
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <TenantPage />,
+      },
+    ],
   },
   // Protected routes (authentication required)
   {

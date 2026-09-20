@@ -35,6 +35,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
   if (!response.ok) {
     // Handle 401 unauthorized - clear auth state and redirect to sign-in
+    // Only redirect if currently authenticated (not during rehydration)
     if (response.status === 401) {
       const authState = getAuthenticationState()
       if (authState.authenticated) {
@@ -44,6 +45,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
           window.location.href = "/signin"
         }
       }
+      // If not authenticated (e.g., during rehydration), let caller handle the error
     }
 
     const message =
@@ -81,8 +83,9 @@ export async function apiFetch<T>(
     })
   }
 
-  // Attach session token as Authorization header if authenticated
-  if (authState.authenticated && authState.sessionId) {
+  // Attach session token as Authorization header if session_id is present
+  // During rehydration, sessionId exists but authenticated=false until backend validates
+  if (authState.sessionId) {
     headers.set("Authorization", authState.sessionId)
   }
 

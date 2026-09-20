@@ -39,6 +39,14 @@ type SubjectHandler struct {
 	validator      *validation.Validator
 }
 
+type SessionMeResponse struct {
+	SubjectID    string   `json:"subject_id"`
+	Email        string   `json:"email"`
+	Roles        []string `json:"roles"`
+	IsAdmin      bool     `json:"is_admin"`
+	IsSuperAdmin bool     `json:"is_super_admin"`
+}
+
 func NewSubjectHandler(subjectService *service.SubjectService, sessionService *service.SessionService) (*SubjectHandler, error) {
 	if subjectService == nil {
 		return nil, errors.New("subject service is required")
@@ -315,4 +323,42 @@ func (h *SubjectHandler) SetSuperAdmin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// GetSessionMe returns the current authenticated subject's information
+// Protected by AuthMiddleware, requires valid session_id in Authorization header
+func (h *SubjectHandler) GetSessionMe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	principal, err := middleware.PrincipalFromContext(r.Context())
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
+		return
+	}
+
+	// Get full subject details from repository
+	subject, err := h.subjectService.GetSubjectBySubjectID(r.Context(), principal.Subject)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to get subject"})
+		return
+	}
+
+	response := SessionMeResponse{
+		SubjectID:    subject.SubjectID,
+		Email:        subject.Email,
+		Roles:        subject.Roles,
+		IsAdmin:      subject.IsAdmin,
+		IsSuperAdmin: subject.IsSuperAdmin,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }

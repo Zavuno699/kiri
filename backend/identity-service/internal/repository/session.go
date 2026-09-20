@@ -111,15 +111,20 @@ func (r *DBSessionRepository) GetBySessionID(
 
 	err := r.db.QueryRow(ctx, `
 		SELECT
-			id,
-			subject_id,
-			credential_id,
-			session_id,
-			revocation_id,
-			issued_at,
-			expires_at
-		FROM identity_sessions
-		WHERE session_id = $1
+			s.id,
+			s.subject_id,
+			s.credential_id,
+			s.session_id,
+			s.revocation_id,
+			s.issued_at,
+			s.expires_at
+		FROM identity_sessions s
+		WHERE s.session_id = $1
+		AND NOT EXISTS (
+			SELECT 1 FROM identity_credential_revocations r
+			WHERE r.credential_id = s.credential_id
+			AND r.revoked_at <= s.expires_at
+		)
 	`, sessionID).Scan(
 		&id,
 		&subjectID,
@@ -131,7 +136,7 @@ func (r *DBSessionRepository) GetBySessionID(
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return Session{}, errors.New("session not found")
+		return Session{}, errors.New("session not found or revoked")
 	}
 	if err != nil {
 		return Session{}, err

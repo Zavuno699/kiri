@@ -3,7 +3,7 @@ export interface AuthenticationState {
   principal?: string | null
   sessionId?: string | null
   tenantId?: string | null
-  status?: "anonymous" | "authenticated" | "expired" | "locked"
+  status?: "anonymous" | "authenticated" | "expired" | "locked" | "loading"
   authenticated?: boolean
   capabilities?: string[]
   roles?: string[]
@@ -11,7 +11,7 @@ export interface AuthenticationState {
   isSuperAdmin?: boolean
 }
 
-const STORAGE_KEY = "kirilock_auth_state"
+const SESSION_STORAGE_KEY = "kirilock_session_id"
 
 let state: AuthenticationState = {
   principalId: undefined,
@@ -26,23 +26,28 @@ let state: AuthenticationState = {
   isSuperAdmin: false,
 }
 
-// Initialize state from localStorage on module load
+// Initialize session_id from localStorage on module load (NOT roles/flags)
+// Roles and admin flags must always come from authoritative backend
 if (typeof window !== "undefined") {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored) as AuthenticationState
-      state = { ...state, ...parsed }
+    const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY)
+    if (storedSessionId) {
+      state.sessionId = storedSessionId
+      state.status = "loading" // Will rehydrate from backend
     }
   } catch (e) {
     // Ignore localStorage errors (e.g., in iframes with storage disabled)
   }
 }
 
-function persistState(): void {
+function persistSession(): void {
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      if (state.sessionId && state.authenticated) {
+        localStorage.setItem(SESSION_STORAGE_KEY, state.sessionId)
+      } else {
+        localStorage.removeItem(SESSION_STORAGE_KEY)
+      }
     } catch (e) {
       // Ignore localStorage errors
     }
@@ -62,7 +67,7 @@ export function setAuthenticationState(next: AuthenticationState): Authenticatio
     ...state,
     ...next,
   }
-  persistState()
+  persistSession()
   return getAuthenticationState()
 }
 
@@ -81,9 +86,20 @@ export function clearAuthenticationState(): void {
   }
   if (typeof window !== "undefined") {
     try {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(SESSION_STORAGE_KEY)
     } catch (e) {
       // Ignore localStorage errors
     }
   }
+}
+
+export function getStoredSessionId(): string | null {
+  if (typeof window !== "undefined") {
+    try {
+      return localStorage.getItem(SESSION_STORAGE_KEY)
+    } catch (e) {
+      return null
+    }
+  }
+  return null
 }

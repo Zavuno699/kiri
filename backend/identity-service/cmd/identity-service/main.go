@@ -173,6 +173,9 @@ func main() {
 	mux.HandleFunc("POST /subjects", subjectHandler.CreateSubject)
 	mux.HandleFunc("POST /authenticate", subjectHandler.Authenticate)
 
+	// Session introspection endpoint for frontend rehydration
+	mux.Handle("GET /me", authMiddleware.Authenticate(http.HandlerFunc(subjectHandler.GetSessionMe)))
+
 	// Public landlord registration (no auth required)
 	mux.HandleFunc("POST /landlords/register", landlordApplicationHandler.PublicLandlordRegistration)
 

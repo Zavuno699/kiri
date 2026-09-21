@@ -42,7 +42,7 @@ export function ActivatePage() {
       const preview = await apiFetch<InvitationPreview>("/tenancies/invitation/preview", {
         method: "POST",
         body: JSON.stringify({ token: formData.token }),
-      }, { useIdentityService: true })
+      })
       
       setInvitationDetails(preview)
       setStep("create-password")
@@ -80,7 +80,7 @@ export function ActivatePage() {
           token: formData.token,
           password: formData.password 
         }),
-      }, { useIdentityService: true })
+      })
       
       setStep("success")
     } catch (err) {

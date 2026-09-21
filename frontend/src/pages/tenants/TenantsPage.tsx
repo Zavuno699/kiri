@@ -12,7 +12,7 @@ interface Unit {
   id: string
   unit_number: string
   unit_type: string
-  status: string
+  lifecycle: string
 }
 
 interface Tenancy {
@@ -22,23 +22,19 @@ interface Tenancy {
   status: string
   lease_start_date: string
   lease_end_date?: string
+  invitation_expires_at?: string
+  invitation_accepted_at?: string
+  terminated_at?: string
+  termination_reason?: string
   created_at: string
-}
-
-interface Invitation {
-  id: string
-  tenant_subject_id: string
-  unit_id: string
-  status: string
-  invitation_expires_at: string
-  created_at: string
+  updated_at: string
 }
 
 export function TenantsPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [units, setUnits] = useState<Unit[]>([])
   const [tenancies, setTenancies] = useState<Tenancy[]>([])
-  const [invitations, setInvitations] = useState<Invitation[]>([])
+  const [invitations, setInvitations] = useState<Tenancy[]>([])
   const [selectedProperty, setSelectedProperty] = useState<string>("")
   const [selectedUnit, setSelectedUnit] = useState<string>("")
   const [tenantEmail, setTenantEmail] = useState("")
@@ -48,25 +44,35 @@ export function TenantsPage() {
 
   const loadData = async () => {
     try {
-      const [propsData, tenanciesData, invitationsData] = await Promise.all([
+      const [propsData, tenanciesData] = await Promise.all([
         apiFetch<Property[]>("/properties", undefined, { useIdentityService: true }),
         apiFetch<Tenancy[]>("/tenancies/landlord", undefined, { useIdentityService: true }),
-        apiFetch<Invitation[]>("/tenancies/landlord", undefined, { useIdentityService: true }),
       ])
       setProperties(propsData)
-      setTenancies(tenanciesData)
-      setInvitations(invitationsData.filter(t => t.status === "INVITED"))
+      // Split tenancies by status - no duplicate fetch
+      setTenancies(tenanciesData.filter(t => t.status === "ACTIVE"))
+      setInvitations(tenanciesData.filter(t => t.status === "INVITED"))
     } catch (err) {
       console.error("Failed to load data:", err)
+      if (err instanceof Error) {
+        if (err.message.includes("401") || err.message.includes("403")) {
+          setError("You are not authorized to manage tenants")
+        } else {
+          setError("Failed to load tenant data")
+        }
+      } else {
+        setError("Failed to load tenant data")
+      }
     }
   }
 
   const loadUnitsForProperty = async (propertyId: string) => {
     try {
-      const data = await apiFetch<Unit[]>(`/units/property/${propertyId}`, undefined, { useIdentityService: true })
-      setUnits(data.filter(u => u.status === "AVAILABLE"))
+      const data = await apiFetch<Unit[]>(`/units/property?property_id=${propertyId}`, undefined, { useIdentityService: true })
+      setUnits(data.filter(u => u.lifecycle === "available" || u.lifecycle === "AVAILABLE"))
     } catch (err) {
       console.error("Failed to load units:", err)
+      setError("Failed to load units for selected property")
     }
   }
 
@@ -88,12 +94,12 @@ export function TenantsPage() {
     setError(null)
 
     try {
-      await apiFetch("/tenancies/invite-by-email", {
+      await apiFetch("/tenancies/invite", {
         method: "POST",
         body: JSON.stringify({
           tenant_email: tenantEmail,
           unit_id: selectedUnit,
-          lease_start_date: new Date().toISOString().split('T')[0],
+          lease_start_date: new Date().toISOString(),
         }),
       }, { useIdentityService: true })
 
@@ -102,9 +108,21 @@ export function TenantsPage() {
       setSelectedProperty("")
       setSelectedUnit("")
       loadData()
+      
+      // Note: For development, email delivery is not configured
+      // The landlord can use the resend button to get a development token
+      alert("Invitation created successfully. Note: Email delivery is not configured in development. Use the resend button to get a development token.")
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to create invitation")
+        if (err.message.includes("401") || err.message.includes("403")) {
+          setError("You are not authorized to create invitations")
+        } else if (err.message.includes("400")) {
+          setError("Invalid request: " + err.message)
+        } else if (err.message.includes("409")) {
+          setError("Unit is not available for assignment")
+        } else {
+          setError(err.message || "Failed to create invitation")
+        }
       } else {
         setError("Failed to create invitation")
       }
@@ -117,7 +135,7 @@ export function TenantsPage() {
     if (!confirm("Are you sure you want to revoke this invitation?")) return
 
     try {
-      await apiFetch(`/tenancies/${tenancyId}/revoke`, {
+      await apiFetch(`/tenancies/revoke?tenancy_id=${tenancyId}`, {
         method: "POST",
       }, { useIdentityService: true })
 
@@ -133,16 +151,42 @@ export function TenantsPage() {
 
   const handleResend = async (tenancyId: string) => {
     try {
-      await apiFetch(`/tenancies/${tenancyId}/resend`, {
+      const response = await apiFetch<{token: string}>(`/tenancies/resend?tenancy_id=${tenancyId}`, {
         method: "POST",
       }, { useIdentityService: true })
 
-      alert("Invitation resent successfully")
+      // For development, show the token since email delivery is not configured
+      const token = response.token
+      alert(`Invitation resent successfully. Development token: ${token}`)
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message || "Failed to resend invitation")
       } else {
         setError("Failed to resend invitation")
+      }
+    }
+  }
+
+  const handleTerminate = async (tenancyId: string) => {
+    const reason = prompt("Please provide a reason for termination:")
+    if (!reason) return
+
+    try {
+      await apiFetch(`/tenancies/terminate?tenancy_id=${tenancyId}`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }, { useIdentityService: true })
+
+      loadData()
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes("401") || err.message.includes("403")) {
+          setError("You are not authorized to terminate this tenancy")
+        } else {
+          setError(err.message || "Failed to terminate tenancy")
+        }
+      } else {
+        setError("Failed to terminate tenancy")
       }
     }
   }
@@ -184,11 +228,25 @@ export function TenantsPage() {
                       <div>
                         <p className="text-sm font-medium text-kiri-text">Tenant ID: {tenancy.tenant_subject_id.slice(0, 8)}...</p>
                         <p className="text-xs text-kiri-text-muted mt-1">Status: {tenancy.status}</p>
-                        <p className="text-xs text-kiri-text-muted">Started: {tenancy.lease_start_date}</p>
+                        <p className="text-xs text-kiri-text-muted">Started: {new Date(tenancy.lease_start_date).toLocaleDateString()}</p>
+                        {tenancy.lease_end_date && (
+                          <p className="text-xs text-kiri-text-muted">Ends: {new Date(tenancy.lease_end_date).toLocaleDateString()}</p>
+                        )}
+                        {tenancy.termination_reason && (
+                          <p className="text-xs text-kiri-text-muted">Reason: {tenancy.termination_reason}</p>
+                        )}
                       </div>
-                      <span className="inline-flex items-center rounded-full bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400">
-                        Active
-                      </span>
+                      <div className="flex gap-2">
+                        <span className="inline-flex items-center rounded-full bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400">
+                          Active
+                        </span>
+                        <button
+                          onClick={() => handleTerminate(tenancy.id)}
+                          className="rounded-lg bg-red-500/20 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/30 transition"
+                        >
+                          Terminate
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -208,7 +266,9 @@ export function TenantsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-kiri-text">Tenant ID: {invitation.tenant_subject_id.slice(0, 8)}...</p>
-                        <p className="text-xs text-kiri-text-muted mt-1">Expires: {new Date(invitation.invitation_expires_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-kiri-text-muted mt-1">
+                          Expires: {invitation.invitation_expires_at ? new Date(invitation.invitation_expires_at).toLocaleDateString() : 'N/A'}
+                        </p>
                       </div>
                       <div className="flex gap-2">
                         <button

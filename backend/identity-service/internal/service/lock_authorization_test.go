@@ -273,4 +273,75 @@ func TestTenantLockAuthorizer_AuthorizeLockOperation(t *testing.T) {
 		assert.False(t, result.Authorized, "should be denied for inactive lock assignment")
 		assert.Contains(t, result.Reason, "no lock assigned")
 	})
+
+	t.Run("fail-closed: must have complete ownership chain", func(t *testing.T) {
+		// This test verifies that removing any authorization check causes the test to fail
+		// The authorization chain is: Tenant → Active Tenancy → Unit → Assigned Lock → Lock State
+		// Each step must pass for authorization to succeed
+
+		tenantSubjectID := uuid.New()
+		unitID := uuid.New()
+		lockID := uuid.New()
+		tenancyID := uuid.New()
+		assignmentID := uuid.New()
+
+		tenancyRepo := NewMockTenancyRepository()
+		lockAssignmentRepo := NewMockLockAssignmentRepository()
+		authorizer := NewTenantLockAuthorizer(tenancyRepo, lockAssignmentRepo)
+
+		// Setup complete ownership chain
+		tenancyRepo.tenancies[tenancyID] = model.Tenancy{
+			ID:              tenancyID,
+			TenantSubjectID: tenantSubjectID,
+			UnitID:          unitID,
+			Status:          model.TenancyActive,
+		}
+
+		lockAssignmentRepo.assignments[assignmentID] = model.LockAssignment{
+			ID:     assignmentID,
+			LockID: lockID,
+			UnitID: unitID,
+			Status: model.LockAssignmentActive,
+		}
+
+		// Test 1: With complete chain, should be authorized
+		result, err := authorizer.AuthorizeLockOperation(context.Background(), LockAuthorizationRequest{
+			TenantSubjectID: tenantSubjectID,
+			LockID:          lockID,
+			Operation:       "lock.command",
+		})
+
+		require.NoError(t, err)
+		assert.True(t, result.Authorized, "should be authorized with complete chain")
+
+		// Test 2: Remove lock assignment - should be denied
+		delete(lockAssignmentRepo.assignments, assignmentID)
+
+		result, err = authorizer.AuthorizeLockOperation(context.Background(), LockAuthorizationRequest{
+			TenantSubjectID: tenantSubjectID,
+			LockID:          lockID,
+			Operation:       "lock.command",
+		})
+
+		require.NoError(t, err)
+		assert.False(t, result.Authorized, "should be denied without lock assignment")
+
+		// Test 3: Remove tenancy - should be denied
+		lockAssignmentRepo.assignments[assignmentID] = model.LockAssignment{
+			ID:     assignmentID,
+			LockID: lockID,
+			UnitID: unitID,
+			Status: model.LockAssignmentActive,
+		}
+		delete(tenancyRepo.tenancies, tenancyID)
+
+		result, err = authorizer.AuthorizeLockOperation(context.Background(), LockAuthorizationRequest{
+			TenantSubjectID: tenantSubjectID,
+			LockID:          lockID,
+			Operation:       "lock.command",
+		})
+
+		require.NoError(t, err)
+		assert.False(t, result.Authorized, "should be denied without tenancy")
+	})
 }

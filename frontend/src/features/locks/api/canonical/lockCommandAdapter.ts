@@ -1,30 +1,23 @@
 import {
-  transportApiRequest,
-} from "../../../../application/api/runtime/canonicalApiTransport";
-
-import {
-  requireCapability,
-} from "../../../../application/security/guards/requireCapability";
+  apiFetch,
+} from "../../../../api/client";
 
 export async function sendLockCommand<
   TResult = unknown,
 >(
   lockId: string,
-  body: unknown,
+  operation: "lock" | "unlock",
 ): Promise<TResult> {
-  requireCapability(
-    "locks.command",
-  );
-
   const response =
-    await transportApiRequest<TResult>({
+    await apiFetch<TResult>("/locks/command", {
       method: "POST",
-      path:
-        `/api/v1/locks/${lockId}/command`,
-      body,
-      capability:
-        "locks.command",
+      body: JSON.stringify({
+        lock_id: lockId,
+        operation: operation,
+      }),
+    }, {
+      useIdentityService: true,
     });
 
-  return response.data as TResult;
+  return response;
 }

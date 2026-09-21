@@ -83,10 +83,14 @@ export function LocksPage() {
       throw new Error("No lock selected")
     }
 
-    await sendLockCommand(selected.id, {
+    const result = await sendLockCommand(selected.id, {
       command: commandName,
       reason,
     })
+
+    if (!result.authorized) {
+      throw new Error(result.reason || "Command not authorized")
+    }
   }
 
   return (

@@ -69,7 +69,7 @@ export function TenantsPage() {
   const loadUnitsForProperty = async (propertyId: string) => {
     try {
       const data = await apiFetch<Unit[]>(`/units/property?property_id=${propertyId}`, undefined, { useIdentityService: true })
-      setUnits(data.filter(u => u.lifecycle === "available" || u.lifecycle === "AVAILABLE"))
+      setUnits(data.filter(u => u.lifecycle === "AVAILABLE"))
     } catch (err) {
       console.error("Failed to load units:", err)
       setError("Failed to load units for selected property")

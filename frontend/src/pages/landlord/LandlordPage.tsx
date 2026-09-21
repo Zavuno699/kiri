@@ -102,13 +102,13 @@ export function LandlordPage() {
       const metrics: DashboardMetrics = {
         properties: properties.length,
         totalUnits: allUnits.length,
-        occupiedUnits: allUnits.filter(u => u.lifecycle === "occupied" || u.lifecycle === "OCCUPIED").length,
-        vacantUnits: allUnits.filter(u => u.lifecycle === "available" || u.lifecycle === "AVAILABLE").length,
-        activeTenants: tenancies.filter(t => t.status === "ACTIVE" || t.status === "active").length,
-        activeTenancies: tenancies.filter(t => t.status === "ACTIVE" || t.status === "active").length,
-        assignedLocks: allAssignments.filter(a => a.status === "assigned" || a.status === "ASSIGNED").length,
-        unassignedLocks: allUnits.length - allAssignments.filter(a => a.status === "assigned" || a.status === "ASSIGNED").length,
-        pendingInvitations: tenancies.filter(t => t.status === "INVITED" || t.status === "invited").length,
+        occupiedUnits: allUnits.filter(u => u.lifecycle === "OCCUPIED").length,
+        vacantUnits: allUnits.filter(u => u.lifecycle === "AVAILABLE").length,
+        activeTenants: tenancies.filter(t => t.status === "ACTIVE").length,
+        activeTenancies: tenancies.filter(t => t.status === "ACTIVE").length,
+        assignedLocks: allAssignments.filter(a => a.status === "ASSIGNED").length,
+        unassignedLocks: allUnits.length - allAssignments.filter(a => a.status === "ASSIGNED").length,
+        pendingInvitations: tenancies.filter(t => t.status === "INVITED").length,
       }
 
       setData({

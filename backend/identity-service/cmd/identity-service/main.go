@@ -170,6 +170,9 @@ func main() {
 		w.Write([]byte("ok"))
 	})
 
+	// Wrap the entire mux with CORS middleware for development
+	corsMux := middleware.CORSMiddleware(mux)
+
 	mux.HandleFunc("POST /subjects", subjectHandler.CreateSubject)
 	mux.HandleFunc("POST /authenticate", subjectHandler.Authenticate)
 
@@ -250,7 +253,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         ":8081",
-		Handler:      mux,
+		Handler:      corsMux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

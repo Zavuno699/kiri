@@ -1,6 +1,7 @@
 import { apiFetch } from "../../../api/client"
 import {
   setAuthenticationState,
+  clearAuthenticationState,
 } from "../state/authenticationStore"
 
 export interface AuthenticateRequest {
@@ -20,6 +21,9 @@ export interface AuthenticateResponse {
 export async function authenticate(
   request: AuthenticateRequest,
 ): Promise<AuthenticateResponse> {
+  // Clear any existing session before authenticating to avoid stale session conflicts
+  clearAuthenticationState()
+
   const response = await apiFetch<AuthenticateResponse>(
     "/authenticate",
     {

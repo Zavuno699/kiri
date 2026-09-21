@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/kirilock/backend/identity-service/internal/model"
 	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
 	"github.com/kirilock/backend/shared/config"
@@ -68,15 +69,31 @@ func main() {
 
 	// STEP 5: Provision landlord account (idempotent)
 	fmt.Printf("Provisioning landlord account: %s\n", landlordEmail)
-	err = provisionAccount(ctx, subjectService, subjectRepo, landlordEmail, landlordPassword, []string{"landlord"}, false, false)
+	landlordSubject, err := provisionAccount(ctx, subjectService, subjectRepo, landlordEmail, landlordPassword, []string{"landlord"}, false, false)
 	if err != nil {
 		log.Fatalf("ERROR: failed to provision landlord account: %v", err)
 	}
 	fmt.Printf("✓ Landlord account provisioned: %s (roles: [landlord], is_admin: false, is_super_admin: false)\n", landlordEmail)
 
+	// STEP 5.5: Create landlord profile for operational access
+	landlordProfileRepo := repository.NewLandlordProfileRepository(pool)
+	landlordService := service.NewLandlordService(landlordProfileRepo, nil)
+
+	// Create landlord profile for dev purposes
+	landlordProfile, err := landlordService.CreateLandlordProfile(ctx, landlordSubject.ID, "Dev Landlord")
+	if err != nil {
+		log.Printf("Warning: failed to create landlord profile: %v", err)
+	}
+
+	// Verify the landlord profile for operational access
+	err = landlordService.ApproveVerification(ctx, landlordProfile.ID)
+	if err != nil {
+		log.Printf("Warning: failed to approve landlord verification: %v", err)
+	}
+
 	// STEP 6: Provision super admin account (idempotent) - this is the ONLY way to create the first super_admin
 	fmt.Printf("Provisioning super admin account: %s\n", superAdminEmail)
-	err = provisionAccount(ctx, subjectService, subjectRepo, superAdminEmail, superAdminPassword, []string{"super_admin"}, false, true)
+	_, err = provisionAccount(ctx, subjectService, subjectRepo, superAdminEmail, superAdminPassword, []string{"super_admin"}, false, true)
 	if err != nil {
 		log.Fatalf("ERROR: failed to provision super admin account: %v", err)
 	}
@@ -97,7 +114,7 @@ func provisionAccount(
 	roles []string,
 	isAdmin bool,
 	isSuperAdmin bool,
-) error {
+) (model.Subject, error) {
 	// Check if subject already exists
 	existing, err := subjectRepo.GetByEmail(ctx, email)
 	if err == nil {
@@ -107,41 +124,41 @@ func provisionAccount(
 		// Update roles
 		err = subjectRepo.UpdateRoles(ctx, existing.ID, roles)
 		if err != nil {
-			return fmt.Errorf("failed to update roles: %w", err)
+			return model.Subject{}, fmt.Errorf("failed to update roles: %w", err)
 		}
 
 		// Update admin flags
 		err = subjectRepo.SetAdmin(ctx, existing.ID, isAdmin)
 		if err != nil {
-			return fmt.Errorf("failed to set admin flag: %w", err)
+			return model.Subject{}, fmt.Errorf("failed to set admin flag: %w", err)
 		}
 
 		err = subjectRepo.SetSuperAdmin(ctx, existing.ID, isSuperAdmin)
 		if err != nil {
-			return fmt.Errorf("failed to set super admin flag: %w", err)
+			return model.Subject{}, fmt.Errorf("failed to set super admin flag: %w", err)
 		}
 
 		// Update password hash directly using bcrypt
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			return fmt.Errorf("failed to hash password: %w", err)
+			return model.Subject{}, fmt.Errorf("failed to hash password: %w", err)
 		}
 
 		// Update password hash directly using repository method
 		err = subjectRepo.UpdatePasswordHash(ctx, existing.ID, string(hash))
 		if err != nil {
-			return fmt.Errorf("failed to update password hash: %w", err)
+			return model.Subject{}, fmt.Errorf("failed to update password hash: %w", err)
 		}
 
-		return nil
+		return existing, nil
 	}
 
 	// Subject does not exist - create it
 	fmt.Printf("  Creating new subject...\n")
-	_, err = subjectService.CreateSubject(ctx, email, password, roles, isAdmin, isSuperAdmin)
+	newSubject, err := subjectService.CreateSubject(ctx, email, password, roles, isAdmin, isSuperAdmin)
 	if err != nil {
-		return fmt.Errorf("failed to create subject: %w", err)
+		return model.Subject{}, fmt.Errorf("failed to create subject: %w", err)
 	}
 
-	return nil
+	return newSubject, nil
 }

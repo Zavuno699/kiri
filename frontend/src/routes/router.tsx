@@ -130,6 +130,30 @@ export const router = createBrowserRouter([
         index: true,
         element: <LandlordPage />,
       },
+      {
+        path: "properties",
+        element: <PropertiesPage />,
+      },
+      {
+        path: "tenants",
+        element: <TenantsPage />,
+      },
+      {
+        path: "leases",
+        element: <LeasesPage />,
+      },
+      {
+        path: "payments",
+        element: <PaymentsPage />,
+      },
+      {
+        path: "devices",
+        element: <DevicesPage />,
+      },
+      {
+        path: "locks",
+        element: <LocksPage />,
+      },
     ],
   },
   {

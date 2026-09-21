@@ -78,6 +78,45 @@ const allNavigation: NavItem[] = [
   },
 ]
 
+const landlordNavigation: NavItem[] = [
+  {
+    to: "/landlord",
+    label: "Dashboard",
+    short: "DB",
+    end: true,
+  },
+  {
+    to: "/landlord/properties",
+    label: "Properties",
+    short: "PR",
+  },
+  {
+    to: "/landlord/tenants",
+    label: "Tenants",
+    short: "TN",
+  },
+  {
+    to: "/landlord/leases",
+    label: "Leases",
+    short: "LE",
+  },
+  {
+    to: "/landlord/payments",
+    label: "Payments",
+    short: "PY",
+  },
+  {
+    to: "/landlord/devices",
+    label: "Devices",
+    short: "DV",
+  },
+  {
+    to: "/landlord/locks",
+    label: "Locks",
+    short: "LK",
+  },
+]
+
 function getNavigationForRoles(userRoles: string[] = []): NavItem[] {
   return allNavigation.filter(item => {
     if (!item.requiredRoles || item.requiredRoles.length === 0) return true
@@ -108,7 +147,12 @@ export function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
   const authState = getAuthenticationState()
-  const navigation = getNavigationForRoles(authState.roles)
+  
+  // Use landlord-specific navigation when user is a landlord
+  const isLandlord = authState.roles?.includes("landlord")
+  const navigation = isLandlord 
+    ? landlordNavigation 
+    : getNavigationForRoles(authState.roles)
   const roleBadge = getRoleBadge(!!authState.isAdmin, !!authState.isSuperAdmin, authState.roles)
 
   const handleSignOut = async () => {

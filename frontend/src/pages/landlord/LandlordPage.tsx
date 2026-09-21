@@ -106,8 +106,8 @@ export function LandlordPage() {
         vacantUnits: allUnits.filter(u => u.lifecycle === "AVAILABLE").length,
         activeTenants: tenancies.filter(t => t.status === "ACTIVE").length,
         activeTenancies: tenancies.filter(t => t.status === "ACTIVE").length,
-        assignedLocks: allAssignments.filter(a => a.status === "ASSIGNED").length,
-        unassignedLocks: allUnits.length - allAssignments.filter(a => a.status === "ASSIGNED").length,
+        assignedLocks: allAssignments.filter(a => a.status === "ACTIVE").length,
+        unassignedLocks: allUnits.length - allAssignments.filter(a => a.status === "ACTIVE").length,
         pendingInvitations: tenancies.filter(t => t.status === "INVITED").length,
       }
 
@@ -369,7 +369,7 @@ export function LandlordPage() {
                   <p className="font-medium text-kiri-text">{property.property_name}</p>
                   <p className="text-xs text-kiri-text-muted">{property.property_type}</p>
                 </div>
-                <StatusPill label={property.status} tone={property.status === "active" ? "success" : "warning"} />
+                <StatusPill label={property.status} tone={property.status === "ACTIVE" ? "success" : "warning"} />
               </div>
             ))}
             {properties.length > 3 && (
@@ -458,7 +458,7 @@ export function LandlordPage() {
                   <p className="font-medium text-kiri-text">{account.provider}</p>
                   <p className="text-xs text-kiri-text-muted">{account.account_type}</p>
                 </div>
-                <StatusPill label={account.status} tone={account.status === "active" ? "success" : "warning"} />
+                <StatusPill label={account.status} tone={account.status === "ACTIVE" ? "success" : "warning"} />
               </div>
             ))}
           </div>

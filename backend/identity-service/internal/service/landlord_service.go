@@ -36,9 +36,10 @@ func (s *LandlordService) CreateLandlordProfile(ctx context.Context, subjectID u
 	profile := model.LandlordProfile{
 		ID:                 uuid.New(),
 		SubjectID:          subjectID,
-		VerificationStatus:  model.VerificationPending,
-		AuthorizationState:  model.AuthorizationAccountCreated,
+		VerificationStatus: model.VerificationPending,
+		AuthorizationState: model.AuthorizationAccountCreated,
 		LegalName:          legalName,
+		LegalEntityType:    "INDIVIDUAL", // Default for dev bootstrap
 		CreatedAt:          time.Now(),
 		UpdatedAt:          time.Now(),
 		Version:            1,
@@ -61,8 +62,8 @@ func (s *LandlordService) SubmitVerificationInformation(ctx context.Context, pro
 		return err
 	}
 
-	if profile.VerificationStatus != model.VerificationPending && 
-	   profile.VerificationStatus != model.VerificationNeedsMoreInformation {
+	if profile.VerificationStatus != model.VerificationPending &&
+		profile.VerificationStatus != model.VerificationNeedsMoreInformation {
 		return ErrInvalidVerificationState
 	}
 
@@ -94,8 +95,8 @@ func (s *LandlordService) ApproveVerification(ctx context.Context, profileID uui
 		return err
 	}
 
-	if profile.VerificationStatus != model.VerificationInformationSubmitted && 
-	   profile.VerificationStatus != model.VerificationUnderReview {
+	if profile.VerificationStatus != model.VerificationInformationSubmitted &&
+		profile.VerificationStatus != model.VerificationUnderReview {
 		return ErrInvalidVerificationState
 	}
 
@@ -120,8 +121,8 @@ func (s *LandlordService) RejectVerification(ctx context.Context, profileID uuid
 		return err
 	}
 
-	if profile.VerificationStatus != model.VerificationInformationSubmitted && 
-	   profile.VerificationStatus != model.VerificationUnderReview {
+	if profile.VerificationStatus != model.VerificationInformationSubmitted &&
+		profile.VerificationStatus != model.VerificationUnderReview {
 		return ErrInvalidVerificationState
 	}
 
@@ -145,8 +146,8 @@ func (s *LandlordService) RequestMoreInformation(ctx context.Context, profileID 
 		return err
 	}
 
-	if profile.VerificationStatus != model.VerificationInformationSubmitted && 
-	   profile.VerificationStatus != model.VerificationUnderReview {
+	if profile.VerificationStatus != model.VerificationInformationSubmitted &&
+		profile.VerificationStatus != model.VerificationUnderReview {
 		return ErrInvalidVerificationState
 	}
 
@@ -214,6 +215,10 @@ func (s *LandlordService) GetLandlordProperties(ctx context.Context, subjectID u
 	profile, err := s.landlordRepo.GetBySubjectID(ctx, subjectID)
 	if err != nil {
 		return nil, err
+	}
+
+	if s.propertyRepo == nil {
+		return []model.Property{}, nil
 	}
 
 	return s.propertyRepo.GetByLandlordProfileID(ctx, profile.ID)

@@ -77,18 +77,57 @@ func main() {
 
 	// STEP 5.5: Create landlord profile for operational access
 	landlordProfileRepo := repository.NewLandlordProfileRepository(pool)
-	landlordService := service.NewLandlordService(landlordProfileRepo, nil)
+	propertyRepo := repository.NewPropertyRepository(pool)
+	landlordService := service.NewLandlordService(landlordProfileRepo, propertyRepo)
 
-	// Create landlord profile for dev purposes
-	landlordProfile, err := landlordService.CreateLandlordProfile(ctx, landlordSubject.ID, "Dev Landlord")
-	if err != nil {
-		log.Printf("Warning: failed to create landlord profile: %v", err)
-	}
+	// Check if landlord profile already exists
+	existingProfile, err := landlordProfileRepo.GetBySubjectID(ctx, landlordSubject.ID)
+	if err == nil {
+		// Profile exists - ensure it has operational access
+		fmt.Printf("  Landlord profile exists, ensuring operational access...\n")
+		if existingProfile.AuthorizationState != model.AuthorizationOperationalAccess {
+			// For dev bootstrap, force the state transition using direct SQL
+			query := `
+				UPDATE landlord_profiles
+				SET verification_status = 'VERIFIED',
+				    authorization_state = 'OPERATIONAL_ACCESS_ENABLED',
+				    verified_at = current_timestamp,
+				    updated_at = current_timestamp
+				WHERE id = $1
+			`
+			_, err = pool.Exec(ctx, query, existingProfile.ID)
+			if err != nil {
+				log.Printf("Warning: failed to grant operational access: %v", err)
+			} else {
+				fmt.Printf("  ✓ Operational access granted\n")
+			}
+		} else {
+			fmt.Printf("  ✓ Already has operational access\n")
+		}
+	} else {
+		// Profile does not exist - create it
+		fmt.Printf("  Creating landlord profile...\n")
+		landlordProfile, err := landlordService.CreateLandlordProfile(ctx, landlordSubject.ID, "Dev Landlord")
+		if err != nil {
+			log.Fatalf("ERROR: failed to create landlord profile: %v", err)
+		}
 
-	// Verify the landlord profile for operational access
-	err = landlordService.ApproveVerification(ctx, landlordProfile.ID)
-	if err != nil {
-		log.Printf("Warning: failed to approve landlord verification: %v", err)
+		// For dev bootstrap, directly grant operational access (skip verification workflow)
+		// This bypasses the state transition validation for dev purposes
+		query := `
+			UPDATE landlord_profiles
+			SET verification_status = 'VERIFIED',
+			    authorization_state = 'OPERATIONAL_ACCESS_ENABLED',
+			    verified_at = current_timestamp,
+			    updated_at = current_timestamp
+			WHERE id = $1
+		`
+		_, err = pool.Exec(ctx, query, landlordProfile.ID)
+		if err != nil {
+			log.Printf("Warning: failed to grant operational access: %v", err)
+		} else {
+			fmt.Printf("  ✓ Landlord profile created and operational access granted\n")
+		}
 	}
 
 	// STEP 6: Provision super admin account (idempotent) - this is the ONLY way to create the first super_admin

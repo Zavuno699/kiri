@@ -79,6 +79,16 @@ func (l LandlordProfile) Validate() error {
 		return errors.New("invalid authorization state")
 	}
 
+	// Allow empty legal_entity_type for dev bootstrap, otherwise validate
+	if l.LegalEntityType != "" {
+		switch l.LegalEntityType {
+		case "INDIVIDUAL", "REGISTERED_BUSINESS", "PROPERTY_MANAGEMENT_ORG":
+			// Valid
+		default:
+			return errors.New("invalid legal entity type")
+		}
+	}
+
 	if l.Version < 1 {
 		return errors.New("version must be >= 1")
 	}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/kirilock/backend/identity-service/internal/middleware"
 	"github.com/kirilock/backend/identity-service/internal/model"
+	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
 
@@ -266,6 +267,12 @@ func (h *TenantHandler) GetLandlordTenancies(w http.ResponseWriter, r *http.Requ
 
 	tenancies, err := h.tenantService.GetLandlordTenancies(r.Context(), subjectID)
 	if err != nil {
+		if errors.Is(err, repository.ErrLandlordProfileNotFound) {
+			// Landlord has no profile yet - return empty array
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode([]TenancyResponse{})
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

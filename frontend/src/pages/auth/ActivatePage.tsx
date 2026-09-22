@@ -2,11 +2,13 @@ import { useState } from "react"
 import { useNavigate, useSearchParams } from "react-router"
 import { FieldLabel } from "../../components/forms/FieldLabel"
 import { apiFetch } from "../../api/client"
+import { setAuthenticationState } from "../../application/authentication/state/authenticationStore"
 
 interface ActivateFormData {
   token: string
   password: string
   confirmPassword: string
+  termsAccepted: boolean
 }
 
 interface InvitationPreview {
@@ -18,6 +20,14 @@ interface InvitationPreview {
   expires_at: string
 }
 
+interface ActivateTenantResponse {
+  tenancy: any
+  session_id: string
+  subject_id: string
+  email: string
+  roles: string[]
+}
+
 export function ActivatePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -27,6 +37,7 @@ export function ActivatePage() {
     token: tokenParam,
     password: "",
     confirmPassword: "",
+    termsAccepted: false,
   })
   const [step, setStep] = useState<"verify" | "create-password" | "success">("verify")
   const [isLoading, setIsLoading] = useState(false)
@@ -70,16 +81,35 @@ export function ActivatePage() {
       return
     }
 
+    if (!formData.termsAccepted) {
+      setError("You must accept the Terms & Conditions and Privacy Policy")
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
     try {
-      await apiFetch("/tenancies/activate", {
+      const response = await apiFetch<ActivateTenantResponse>("/tenancies/activate", {
         method: "POST",
         body: JSON.stringify({ 
           token: formData.token,
           password: formData.password 
         }),
+      })
+      
+      // Set authentication state from activation response
+      setAuthenticationState({
+        principalId: response.subject_id,
+        principal: response.email,
+        sessionId: response.session_id,
+        tenantId: null,
+        roles: response.roles,
+        isAdmin: response.roles.includes("admin"),
+        isSuperAdmin: response.roles.includes("super_admin"),
+        authenticated: true,
+        status: "authenticated",
+        capabilities: [],
       })
       
       setStep("success")
@@ -103,10 +133,10 @@ export function ActivatePage() {
               ✓
             </div>
             <h2 className="text-xl font-semibold text-kiri-text mb-2">
-              Account Activated
+              Your account is ready
             </h2>
             <p className="text-sm text-kiri-text-muted mb-6">
-              Your account has been successfully activated. You can now sign in to access your property.
+              Your account has been successfully activated. You are now being redirected to your dashboard.
             </p>
             
             {invitationDetails && (
@@ -126,11 +156,11 @@ export function ActivatePage() {
             
             <button
               type="button"
-              onClick={() => navigate("/signin")}
+              onClick={() => navigate("/tenant")}
               disabled={isLoading}
               className="w-full rounded-xl bg-kiri-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(47,107,255,0.3)] transition hover:bg-kiri-blue-500 hover:shadow-[0_0_30px_rgba(47,107,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              GO TO SIGN IN
+              GO TO DASHBOARD
             </button>
           </div>
         </div>
@@ -198,7 +228,7 @@ export function ActivatePage() {
             <>
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-kiri-text">
-                  Create Your Password
+                  Activate Your KiriLock Account
                 </h2>
                 <p className="mt-1 text-sm text-kiri-text-muted">
                   Choose a secure password to activate your account.
@@ -248,6 +278,28 @@ export function ActivatePage() {
                     disabled={isLoading}
                   />
                 </FieldLabel>
+
+                <div className="flex items-start gap-3">
+                  <input
+                    id="termsAccepted"
+                    type="checkbox"
+                    required
+                    checked={formData.termsAccepted}
+                    onChange={(e) => setFormData({ ...formData, termsAccepted: e.target.checked })}
+                    className="mt-1 h-4 w-4 rounded border-white/8 bg-white/[0.025] text-kiri-blue-600 focus:ring-kiri-blue-500/20 focus:ring-offset-0 disabled:opacity-50"
+                    disabled={isLoading}
+                  />
+                  <label htmlFor="termsAccepted" className="text-xs text-kiri-text-muted">
+                    I accept the{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-kiri-blue-400 hover:text-kiri-blue-300 underline">
+                      Terms & Conditions
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-kiri-blue-400 hover:text-kiri-blue-300 underline">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
 
                 {error && (
                   <div className="rounded-lg border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-sm text-red-400">

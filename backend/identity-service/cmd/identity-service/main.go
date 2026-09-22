@@ -109,7 +109,7 @@ func main() {
 	// Notification service (no-op provider by default)
 	notificationSvc := notification.NewNotificationService()
 
-	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, subjectRepo, auditRepo, notificationSvc, pool)
+	tenantService := service.NewTenantService(tenancyRepo, unitRepo, propertyRepo, landlordProfileRepo, landlordService, subjectRepo, credentialRepo, sessionRepo, auditRepo, notificationSvc, pool)
 	paymentService := service.NewPaymentService(paymentAccountRepo, paymentResponsibilityRepo, landlordProfileRepo, landlordService)
 	landlordApplicationService := service.NewLandlordApplicationService(landlordApplicationRepo, subjectRepo)
 	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)
@@ -151,7 +151,7 @@ func main() {
 		log.Fatalf("failed to create unit handler: %v", err)
 	}
 
-	tenantHandler, err := handler.NewTenantHandler(tenantService)
+	tenantHandler, err := handler.NewTenantHandler(tenantService, subjectRepo)
 	if err != nil {
 		log.Fatalf("failed to create tenant handler: %v", err)
 	}

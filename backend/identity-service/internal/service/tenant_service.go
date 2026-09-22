@@ -25,6 +25,7 @@ var (
 	ErrDuplicateActiveTenancy = errors.New("tenant already has an active tenancy")
 	ErrInvitationAlreadyUsed  = errors.New("invitation already used")
 	ErrUnauthorizedOperation  = errors.New("not authorized to perform this operation")
+	ErrWeakPassword           = errors.New("password must be at least 8 characters")
 )
 
 type TenantService struct {
@@ -34,6 +35,8 @@ type TenantService struct {
 	landlordRepo    repository.LandlordProfileRepository
 	landlordService *LandlordService
 	subjectRepo     repository.SubjectRepository
+	credentialRepo  repository.CredentialRepository
+	sessionRepo     repository.SessionRepository
 	auditRepo       repository.AuditRepository
 	notificationSvc *notification.NotificationService
 	txDB            repository.TxDB
@@ -46,6 +49,8 @@ func NewTenantService(
 	landlordRepo repository.LandlordProfileRepository,
 	landlordService *LandlordService,
 	subjectRepo repository.SubjectRepository,
+	credentialRepo repository.CredentialRepository,
+	sessionRepo repository.SessionRepository,
 	auditRepo repository.AuditRepository,
 	notificationSvc *notification.NotificationService,
 	txDB repository.TxDB,
@@ -57,6 +62,8 @@ func NewTenantService(
 		landlordRepo:    landlordRepo,
 		landlordService: landlordService,
 		subjectRepo:     subjectRepo,
+		credentialRepo:  credentialRepo,
+		sessionRepo:     sessionRepo,
 		auditRepo:       auditRepo,
 		notificationSvc: notificationSvc,
 		txDB:            txDB,
@@ -509,65 +516,101 @@ func (s *TenantService) PreviewInvitation(ctx context.Context, token string) (ma
 }
 
 // ActivateTenant activates a tenant via public token
-// Creates/updates credentials, accepts invitation, transitions unit to occupied
+// Creates/updates credentials, accepts invitation, transitions unit to occupied, creates session
 // All in one transaction
 func (s *TenantService) ActivateTenant(
 	ctx context.Context,
 	token string,
 	password string,
-) (model.Tenancy, error) {
+) (model.Tenancy, string, error) {
+	// Validate password strength
+	if len(password) < 8 {
+		return model.Tenancy{}, "", ErrWeakPassword
+	}
+
 	tokenHash := s.hashToken(token)
 
 	// Use transaction for atomic activation
 	tx, err := s.txDB.Begin(ctx)
 	if err != nil {
-		return model.Tenancy{}, err
+		return model.Tenancy{}, "", err
 	}
 	defer tx.Rollback(ctx)
 
 	// Find tenancy by token hash
 	tenancy, err := s.tenancyRepo.GetByTokenHash(ctx, tokenHash)
 	if err != nil {
-		return model.Tenancy{}, ErrInvalidInvitation
+		return model.Tenancy{}, "", ErrInvalidInvitation
 	}
 
 	// Check status
 	if tenancy.Status != model.TenancyInvited {
-		return model.Tenancy{}, ErrInvitationAlreadyUsed
+		return model.Tenancy{}, "", ErrInvitationAlreadyUsed
 	}
 
 	// Check expiration
 	if tenancy.InvitationExpiresAt != nil && time.Now().After(*tenancy.InvitationExpiresAt) {
-		return model.Tenancy{}, ErrInvitationExpired
+		return model.Tenancy{}, "", ErrInvitationExpired
 	}
 
 	// Hash password
 	passwordHash, err := hashPassword(password)
 	if err != nil {
-		return model.Tenancy{}, fmt.Errorf("failed to hash password: %w", err)
+		return model.Tenancy{}, "", fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Create credential for the tenant
+	credentialID := uuid.New().String()
+	credential := repository.Credential{
+		ID:          credentialID,
+		SubjectID:   tenancy.TenantSubjectID.String(),
+		Type:        "password",
+		Fingerprint: uuid.New().String(),
+		State:       "active",
+		IssuedAt:    time.Now(),
+		ExpiresAt:   time.Now().Add(365 * 24 * time.Hour),
+	}
+
+	if err := s.credentialRepo.Create(ctx, credential); err != nil {
+		return model.Tenancy{}, "", fmt.Errorf("failed to create credential: %w", err)
 	}
 
 	// Update subject with password
 	subject, err := s.subjectRepo.GetByID(ctx, tenancy.TenantSubjectID)
 	if err != nil {
-		return model.Tenancy{}, fmt.Errorf("failed to get subject: %w", err)
+		return model.Tenancy{}, "", fmt.Errorf("failed to get subject: %w", err)
 	}
 
 	subject.PasswordHash = passwordHash
 	subject.UpdatedAt = time.Now()
 
 	if err := s.subjectRepo.Update(ctx, subject); err != nil {
-		return model.Tenancy{}, fmt.Errorf("failed to update subject: %w", err)
+		return model.Tenancy{}, "", fmt.Errorf("failed to update subject: %w", err)
 	}
 
 	// Accept invitation
 	if err := s.tenancyRepo.AcceptInvitation(ctx, tenancy.ID); err != nil {
-		return model.Tenancy{}, fmt.Errorf("failed to accept invitation: %w", err)
+		return model.Tenancy{}, "", fmt.Errorf("failed to accept invitation: %w", err)
 	}
 
 	// Update unit lifecycle to occupied
 	if err := s.unitRepo.UpdateLifecycle(ctx, tenancy.UnitID, model.UnitOccupied); err != nil {
-		return model.Tenancy{}, fmt.Errorf("failed to update unit lifecycle: %w", err)
+		return model.Tenancy{}, "", fmt.Errorf("failed to update unit lifecycle: %w", err)
+	}
+
+	// Create session for the tenant
+	session := repository.Session{
+		ID:           uuid.New().String(),
+		SubjectID:    tenancy.TenantSubjectID.String(),
+		CredentialID: credentialID,
+		SessionID:    uuid.New().String(),
+		RevocationID: uuid.New().String(),
+		IssuedAt:     time.Now(),
+		ExpiresAt:    time.Now().Add(24 * time.Hour),
+	}
+
+	if err := s.sessionRepo.Create(ctx, session); err != nil {
+		return model.Tenancy{}, "", fmt.Errorf("failed to create session: %w", err)
 	}
 
 	// Log audit event
@@ -578,16 +621,16 @@ func (s *TenantService) ActivateTenant(
 	}, "", "", "", true, "")
 
 	if err := tx.Commit(ctx); err != nil {
-		return model.Tenancy{}, err
+		return model.Tenancy{}, "", err
 	}
 
-	// Return updated tenancy
+	// Return updated tenancy and session_id
 	updatedTenancy, err := s.tenancyRepo.GetByID(ctx, tenancy.ID)
 	if err != nil {
-		return model.Tenancy{}, err
+		return model.Tenancy{}, "", err
 	}
 
-	return updatedTenancy, nil
+	return updatedTenancy, session.SessionID, nil
 }
 
 // RevokeInvitation revokes a pending invitation

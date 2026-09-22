@@ -18,6 +18,7 @@ import (
 
 type TenantHandler struct {
 	tenantService *service.TenantService
+	subjectRepo   repository.SubjectRepository
 	validator     *validation.Validator
 }
 
@@ -46,6 +47,14 @@ type ActivateTenantRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type ActivateTenantResponse struct {
+	Tenancy   TenancyResponse `json:"tenancy"`
+	SessionID string          `json:"session_id"`
+	SubjectID uuid.UUID       `json:"subject_id"`
+	Email     string          `json:"email"`
+	Roles     []string        `json:"roles"`
+}
+
 type TenancyResponse struct {
 	ID                         uuid.UUID           `json:"id"`
 	TenantSubjectID            uuid.UUID           `json:"tenant_subject_id"`
@@ -62,13 +71,17 @@ type TenancyResponse struct {
 	UpdatedAt                  time.Time           `json:"updated_at"`
 }
 
-func NewTenantHandler(tenantService *service.TenantService) (*TenantHandler, error) {
+func NewTenantHandler(tenantService *service.TenantService, subjectRepo repository.SubjectRepository) (*TenantHandler, error) {
 	if tenantService == nil {
 		return nil, errors.New("tenant service is required")
+	}
+	if subjectRepo == nil {
+		return nil, errors.New("subject repository is required")
 	}
 
 	return &TenantHandler{
 		tenantService: tenantService,
+		subjectRepo:   subjectRepo,
 		validator:     validation.New(),
 	}, nil
 }
@@ -401,9 +414,9 @@ func (h *TenantHandler) ActivateTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tenancy, err := h.tenantService.ActivateTenant(r.Context(), req.Token, req.Password)
+	tenancy, sessionID, err := h.tenantService.ActivateTenant(r.Context(), req.Token, req.Password)
 	if err != nil {
-		if err == service.ErrInvalidInvitation || err == service.ErrInvitationExpired || err == service.ErrInvitationAlreadyUsed {
+		if err == service.ErrInvalidInvitation || err == service.ErrInvitationExpired || err == service.ErrInvitationAlreadyUsed || err == service.ErrWeakPassword {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -411,20 +424,33 @@ func (h *TenantHandler) ActivateTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := TenancyResponse{
-		ID:                         tenancy.ID,
-		TenantSubjectID:            tenancy.TenantSubjectID,
-		UnitID:                     tenancy.UnitID,
-		Status:                     tenancy.Status,
-		LeaseStartDate:             tenancy.LeaseStartDate,
-		LeaseEndDate:               tenancy.LeaseEndDate,
-		InvitedByLandlordProfileID: tenancy.InvitedByLandlordProfileID,
-		InvitationExpiresAt:        tenancy.InvitationExpiresAt,
-		InvitationAcceptedAt:       tenancy.InvitationAcceptedAt,
-		TerminatedAt:               tenancy.TerminatedAt,
-		TerminationReason:          tenancy.TerminationReason,
-		CreatedAt:                  tenancy.CreatedAt,
-		UpdatedAt:                  tenancy.UpdatedAt,
+	// Get subject details for response
+	subject, err := h.subjectRepo.GetByID(r.Context(), tenancy.TenantSubjectID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := ActivateTenantResponse{
+		Tenancy: TenancyResponse{
+			ID:                         tenancy.ID,
+			TenantSubjectID:            tenancy.TenantSubjectID,
+			UnitID:                     tenancy.UnitID,
+			Status:                     tenancy.Status,
+			LeaseStartDate:             tenancy.LeaseStartDate,
+			LeaseEndDate:               tenancy.LeaseEndDate,
+			InvitedByLandlordProfileID: tenancy.InvitedByLandlordProfileID,
+			InvitationExpiresAt:        tenancy.InvitationExpiresAt,
+			InvitationAcceptedAt:       tenancy.InvitationAcceptedAt,
+			TerminatedAt:               tenancy.TerminatedAt,
+			TerminationReason:          tenancy.TerminationReason,
+			CreatedAt:                  tenancy.CreatedAt,
+			UpdatedAt:                  tenancy.UpdatedAt,
+		},
+		SessionID: sessionID,
+		SubjectID: subject.ID,
+		Email:     subject.Email,
+		Roles:     subject.Roles,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

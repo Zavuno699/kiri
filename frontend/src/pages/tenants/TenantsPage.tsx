@@ -210,7 +210,7 @@ export function TenantsPage() {
             onClick={() => setShowCreateModal(true)}
             className="rounded-xl bg-kiri-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(47,107,255,0.3)] transition hover:bg-kiri-blue-500 hover:shadow-[0_0_30px_rgba(47,107,255,0.4)]"
           >
-            + Create Invitation
+            Invite Tenant
           </button>
         </div>
 
@@ -296,7 +296,10 @@ export function TenantsPage() {
         {showCreateModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="w-full max-w-md rounded-2xl border border-white/8 bg-kiri-925 p-6">
-              <h2 className="text-xl font-semibold text-kiri-text mb-4">Create Invitation</h2>
+              <h2 className="text-xl font-semibold text-kiri-text mb-2">Invite a Tenant</h2>
+              <p className="text-sm text-kiri-text-muted mb-4">
+                Invite a tenant to their assigned unit. The tenant will securely create their own password when they accept the invitation.
+              </p>
               
               <form onSubmit={handleCreateInvitation} className="space-y-4">
                 <FieldLabel label="Tenant Email">
@@ -359,7 +362,7 @@ export function TenantsPage() {
                     disabled={isLoading}
                     className="flex-1 rounded-xl bg-kiri-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(47,107,255,0.3)] transition hover:bg-kiri-blue-500 hover:shadow-[0_0_30px_rgba(47,107,255,0.4)] disabled:opacity-50 disabled:shadow-none"
                   >
-                    {isLoading ? "Creating..." : "Create Invitation"}
+                    {isLoading ? "Sending..." : "Send Invitation"}
                   </button>
                 </div>
               </form>

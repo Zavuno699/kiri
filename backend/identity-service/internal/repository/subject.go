@@ -29,6 +29,10 @@ type SubjectRepository interface {
 	SetSuperAdmin(context.Context, uuid.UUID, bool) error
 	CountSuperAdmins(context.Context) (int, error)
 	GetByIDForUpdate(context.Context, uuid.UUID) (model.Subject, error)
+	// Transactional methods - accept a pgx.Tx for all operations
+	SetSuperAdminTx(pgx.Tx, uuid.UUID, bool) error
+	CountSuperAdminsTx(pgx.Tx) (int, error)
+	GetByIDForUpdateTx(pgx.Tx, uuid.UUID) (model.Subject, error)
 }
 
 type DBSubjectRepository struct {
@@ -439,6 +443,71 @@ func (r *DBSubjectRepository) GetByIDForUpdate(ctx context.Context, id uuid.UUID
 
 	var subject model.Subject
 	err := r.db.QueryRow(ctx, query, id).Scan(
+		&subject.ID,
+		&subject.SubjectID,
+		&subject.Email,
+		&subject.PasswordHash,
+		&subject.Roles,
+		&subject.IsAdmin,
+		&subject.IsSuperAdmin,
+		&subject.CreatedAt,
+		&subject.UpdatedAt,
+		&subject.Version,
+	)
+
+	if err != nil {
+		return model.Subject{}, ErrSubjectNotFound
+	}
+
+	return subject, nil
+}
+
+// Transactional methods for use within a pgx.Tx
+
+func (r *DBSubjectRepository) SetSuperAdminTx(tx pgx.Tx, id uuid.UUID, isSuperAdmin bool) error {
+	if id == uuid.Nil {
+		return ErrSubjectNotFound
+	}
+
+	result, err := tx.Exec(context.Background(), `
+		UPDATE identity_subjects
+		SET
+			is_super_admin = $1,
+			updated_at = current_timestamp,
+			version = version + 1
+		WHERE id = $2
+	`, isSuperAdmin, id)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrSubjectNotFound
+	}
+
+	return nil
+}
+
+func (r *DBSubjectRepository) CountSuperAdminsTx(tx pgx.Tx) (int, error) {
+	const query = `SELECT COUNT(*) FROM identity_subjects WHERE is_super_admin = true`
+
+	var count int
+	err := tx.QueryRow(context.Background(), query).Scan(&count)
+	return count, err
+}
+
+func (r *DBSubjectRepository) GetByIDForUpdateTx(tx pgx.Tx, id uuid.UUID) (model.Subject, error) {
+	const query = `
+		SELECT id, subject_id, email, password_hash, roles, is_admin, is_super_admin,
+		       created_at, updated_at, version
+		FROM identity_subjects
+		WHERE id = $1
+		FOR UPDATE
+	`
+
+	var subject model.Subject
+	err := tx.QueryRow(context.Background(), query, id).Scan(
 		&subject.ID,
 		&subject.SubjectID,
 		&subject.Email,

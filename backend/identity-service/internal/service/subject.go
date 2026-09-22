@@ -173,25 +173,32 @@ func (s *SubjectService) SetSuperAdmin(
 	}
 
 	// Transactional enforcement of two-super-admin invariant
-	tx, ok := s.subjectRepo.(repository.TxDB)
+	txDB, ok := s.subjectRepo.(repository.TxDB)
 	if !ok {
 		return errors.New("repository does not support transactions")
 	}
 
-	txCtx, err := tx.Begin(ctx)
+	tx, err := txDB.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer txCtx.Rollback(ctx)
+	defer tx.Rollback(ctx)
 
-	// Lock target row for update
-	target, err := s.subjectRepo.GetByIDForUpdate(ctx, targetID)
+	// Acquire advisory lock for serialization
+	const superAdminLockKey int64 = 123456789
+	_, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", superAdminLockKey)
+	if err != nil {
+		return fmt.Errorf("failed to acquire advisory lock: %w", err)
+	}
+
+	// Lock target row for update using transactional method
+	target, err := s.subjectRepo.GetByIDForUpdateTx(tx, targetID)
 	if err != nil {
 		return fmt.Errorf("failed to get target for update: %w", err)
 	}
 
-	// Count current super admins
-	currentCount, err := s.subjectRepo.CountSuperAdmins(ctx)
+	// Count current super admins using transactional method
+	currentCount, err := s.subjectRepo.CountSuperAdminsTx(tx)
 	if err != nil {
 		return fmt.Errorf("failed to count super admins: %w", err)
 	}
@@ -210,12 +217,12 @@ func (s *SubjectService) SetSuperAdmin(
 		}
 	}
 
-	// Perform the update
-	if err := s.subjectRepo.SetSuperAdmin(ctx, targetID, isSuperAdmin); err != nil {
+	// Perform the update using transactional method
+	if err := s.subjectRepo.SetSuperAdminTx(tx, targetID, isSuperAdmin); err != nil {
 		return fmt.Errorf("failed to set super admin: %w", err)
 	}
 
-	if err := txCtx.Commit(ctx); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 

@@ -3,10 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kirilock/backend/identity-service/internal/model"
 )
@@ -26,14 +25,15 @@ type AdminProfileRepository interface {
 }
 
 type DBAdminProfileRepository struct {
-	db DB
+	pool *pgxpool.Pool
+	db   DB
 }
 
-func NewDBAdminProfileRepository(db DB) (*DBAdminProfileRepository, error) {
-	if db == nil {
+func NewDBAdminProfileRepository(pool *pgxpool.Pool) (*DBAdminProfileRepository, error) {
+	if pool == nil {
 		return nil, errors.New("database is required")
 	}
-	return &DBAdminProfileRepository{db: db}, nil
+	return &DBAdminProfileRepository{pool: pool, db: pool}, nil
 }
 
 func (r *DBAdminProfileRepository) Create(ctx context.Context, profile model.AdminProfile) error {
@@ -216,7 +216,7 @@ func (r *DBAdminProfileRepository) ListByStatus(ctx context.Context, status mode
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, status)
+	rows, err := r.pool.Query(ctx, query, status)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (r *DBAdminProfileRepository) ListByRole(ctx context.Context, role string) 
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, role)
+	rows, err := r.pool.Query(ctx, query, role)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (r *DBAdminProfileRepository) ListAll(ctx context.Context) ([]model.AdminPr
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}

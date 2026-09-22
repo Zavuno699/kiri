@@ -81,6 +81,16 @@ func main() {
 	lockCommandRepo := repository.NewLockCommandRepository(pool)
 	lockRepo := repository.NewLockRepository(pool)
 
+	// Admin governance repositories
+	adminInvitationRepo, err := repository.NewDBAdminInvitationRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create admin invitation repository: %v", err)
+	}
+	adminProfileRepo, err := repository.NewDBAdminProfileRepository(pool)
+	if err != nil {
+		log.Fatalf("failed to create admin profile repository: %v", err)
+	}
+
 	subjectService, err := service.NewSubjectService(subjectRepo)
 	if err != nil {
 		log.Fatalf("failed to create subject service: %v", err)
@@ -104,6 +114,16 @@ func main() {
 	landlordApplicationService := service.NewLandlordApplicationService(landlordApplicationRepo, subjectRepo)
 	assignmentService := service.NewAssignmentService(lockAssignmentRepo, propertyRepo, unitRepo, landlordProfileRepo, landlordService, pool)
 	lockAuthorizer := service.NewTenantLockAuthorizer(tenancyRepo, lockAssignmentRepo)
+
+	// Admin governance services
+	adminInvitationService, err := service.NewAdminInvitationService(adminInvitationRepo, subjectRepo, auditRepo, pool)
+	if err != nil {
+		log.Fatalf("failed to create admin invitation service: %v", err)
+	}
+	adminProfileService, err := service.NewAdminProfileService(adminProfileRepo, subjectRepo, sessionRepo, auditRepo, pool)
+	if err != nil {
+		log.Fatalf("failed to create admin profile service: %v", err)
+	}
 
 	subjectHandler, err := handler.NewSubjectHandler(subjectService, sessionService, credentialRepo)
 	if err != nil {
@@ -155,6 +175,12 @@ func main() {
 	deviceProvisioningHandler, err := handler.NewDeviceProvisioningHandler(auditRepo)
 	if err != nil {
 		log.Fatalf("failed to create device provisioning handler: %v", err)
+	}
+
+	// Admin governance handler for super admin operations
+	adminGovernanceHandler, err := handler.NewAdminGovernanceHandler(subjectService, adminInvitationService, adminProfileService, auditRepo)
+	if err != nil {
+		log.Fatalf("failed to create admin governance handler: %v", err)
 	}
 
 	_ = client.NewAuthClient(securityServiceURL) // Available for future security-service integration
@@ -260,6 +286,18 @@ func main() {
 	// Super Admin device provisioning routes
 	mux.Handle("POST /admin/devices/provision", authMiddleware.Authenticate(http.HandlerFunc(deviceProvisioningHandler.ProvisionDevice)))
 	mux.Handle("GET /admin/devices", authMiddleware.Authenticate(http.HandlerFunc(deviceProvisioningHandler.ListDevices)))
+
+	// Super Admin governance routes
+	mux.Handle("POST /admin/invite", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.InviteAdmin)))
+	mux.Handle("GET /admin/administrators", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.ListAdministrators)))
+	mux.Handle("GET /admin/permissions", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.GetEffectivePermissions)))
+	mux.Handle("POST /admin/super-admin/promote", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.PromoteToSuperAdmin)))
+	mux.Handle("POST /admin/super-admin/demote", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.DemoteFromSuperAdmin)))
+	mux.Handle("POST /admin/profile/approve", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.ApproveAdminProfile)))
+	mux.Handle("POST /admin/profile/reject", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.RejectAdminProfile)))
+	mux.Handle("POST /admin/profile/suspend", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.SuspendAdmin)))
+	mux.Handle("POST /admin/profile/reactivate", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.ReactivateAdmin)))
+	mux.Handle("POST /admin/profile/revoke", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.RevokeAdmin)))
 
 	server := &http.Server{
 		Addr:         ":8081",

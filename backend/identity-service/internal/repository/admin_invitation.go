@@ -3,10 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kirilock/backend/identity-service/internal/model"
 )
@@ -28,14 +27,15 @@ type AdminInvitationRepository interface {
 }
 
 type DBAdminInvitationRepository struct {
-	db DB
+	pool *pgxpool.Pool
+	db   DB
 }
 
-func NewDBAdminInvitationRepository(db DB) (*DBAdminInvitationRepository, error) {
-	if db == nil {
+func NewDBAdminInvitationRepository(pool *pgxpool.Pool) (*DBAdminInvitationRepository, error) {
+	if pool == nil {
 		return nil, errors.New("database is required")
 	}
-	return &DBAdminInvitationRepository{db: db}, nil
+	return &DBAdminInvitationRepository{pool: pool, db: pool}, nil
 }
 
 func (r *DBAdminInvitationRepository) Create(ctx context.Context, invitation model.AdminInvitation) error {
@@ -208,7 +208,7 @@ func (r *DBAdminInvitationRepository) ListByStatus(ctx context.Context, status m
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, status)
+	rows, err := r.pool.Query(ctx, query, status)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (r *DBAdminInvitationRepository) ListByInvitedBy(ctx context.Context, invit
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, invitedBySubjectID)
+	rows, err := r.pool.Query(ctx, query, invitedBySubjectID)
 	if err != nil {
 		return nil, err
 	}

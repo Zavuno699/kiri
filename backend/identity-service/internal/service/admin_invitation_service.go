@@ -17,7 +17,6 @@ import (
 
 var (
 	ErrAdminInvitationInvalidRole = errors.New("invalid admin role")
-	ErrMaxSuperAdminsExceeded     = errors.New("maximum of two super admins allowed")
 	ErrUnauthorizedAdminInvite    = errors.New("only super admin can invite admins")
 )
 
@@ -152,7 +151,7 @@ func (s *AdminInvitationService) CreateInvitation(
 		IntendedRole:        intendedRole,
 		Reason:              reason,
 		Department:          department,
-		InvitationTokenHash:  tokenHash,
+		InvitationTokenHash: tokenHash,
 		InvitationExpiresAt: expiresAt,
 		Status:              model.AdminInvitationInvited,
 		SingleUse:           true,

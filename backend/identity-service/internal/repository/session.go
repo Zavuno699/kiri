@@ -15,6 +15,8 @@ type SessionRepository interface {
 	GetByRevocationID(context.Context, string) (Session, error)
 	Revoke(context.Context, string, time.Time) error
 	RevokeBySubjectID(context.Context, string, time.Time) error
+	// Transactional method
+	CreateTx(pgx.Tx, Session) error
 }
 
 type Session struct {
@@ -66,6 +68,55 @@ func (r *DBSessionRepository) Create(
 	}
 
 	_, err := r.db.Exec(ctx, `
+		INSERT INTO identity_sessions (
+			id,
+			subject_id,
+			credential_id,
+			session_id,
+			revocation_id,
+			issued_at,
+			expires_at,
+			created_at,
+			updated_at,
+			version
+		)
+		VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+		)
+	`,
+		uuid.MustParse(session.ID),
+		uuid.MustParse(session.SubjectID),
+		uuid.MustParse(session.CredentialID),
+		session.SessionID,
+		session.RevocationID,
+		session.IssuedAt,
+		session.ExpiresAt,
+		time.Now().UTC(),
+		time.Now().UTC(),
+		1,
+	)
+
+	return err
+}
+
+func (r *DBSessionRepository) CreateTx(
+	tx pgx.Tx,
+	session Session,
+) error {
+	if session.ID == "" {
+		return errors.New("id is required")
+	}
+	if session.SubjectID == "" {
+		return errors.New("subject_id is required")
+	}
+	if session.SessionID == "" {
+		return errors.New("session_id is required")
+	}
+	if session.RevocationID == "" {
+		return errors.New("revocation_id is required")
+	}
+
+	_, err := tx.Exec(context.Background(), `
 		INSERT INTO identity_sessions (
 			id,
 			subject_id,

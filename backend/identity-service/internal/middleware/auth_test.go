@@ -189,6 +189,10 @@ func (m *mockSessionRepository) RevokeBySubjectID(ctx context.Context, subjectID
 	return nil
 }
 
+func (m *mockSessionRepository) CreateTx(tx pgx.Tx, session repository.Session) error {
+	return m.Create(context.Background(), session)
+}
+
 // Mock subject repository for testing
 type mockSubjectRepository struct {
 	subjects map[uuid.UUID]model.Subject
@@ -269,6 +273,10 @@ func (m *mockSubjectRepository) UpdatePasswordHash(ctx context.Context, id uuid.
 	subject.PasswordHash = passwordHash
 	m.subjects[id] = subject
 	return nil
+}
+
+func (m *mockSubjectRepository) UpdatePasswordHashTx(tx pgx.Tx, id uuid.UUID, passwordHash string) error {
+	return m.UpdatePasswordHash(context.Background(), id, passwordHash)
 }
 
 func (m *mockSubjectRepository) CountSuperAdmins(ctx context.Context) (int, error) {

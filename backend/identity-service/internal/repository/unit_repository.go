@@ -22,6 +22,8 @@ type UnitRepository interface {
 	GetAvailableByPropertyID(ctx context.Context, propertyID uuid.UUID) ([]model.Unit, error)
 	Update(ctx context.Context, unit model.Unit) error
 	UpdateLifecycle(ctx context.Context, id uuid.UUID, lifecycle model.UnitLifecycle) error
+	// Transactional method
+	UpdateLifecycleTx(pgx.Tx, uuid.UUID, model.UnitLifecycle) error
 }
 
 type DBUnitRepository struct {
@@ -183,6 +185,25 @@ func (r *DBUnitRepository) UpdateLifecycle(ctx context.Context, id uuid.UUID, li
 	`
 
 	result, err := r.db.Exec(ctx, query, id, lifecycle)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrUnitNotFound
+	}
+
+	return nil
+}
+
+func (r *DBUnitRepository) UpdateLifecycleTx(tx pgx.Tx, id uuid.UUID, lifecycle model.UnitLifecycle) error {
+	query := `
+		UPDATE units
+		SET lifecycle = $2, updated_at = current_timestamp
+		WHERE id = $1
+	`
+
+	result, err := tx.Exec(context.Background(), query, id, lifecycle)
 	if err != nil {
 		return err
 	}

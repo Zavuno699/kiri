@@ -25,6 +25,8 @@ type TenancyRepository interface {
 	Update(ctx context.Context, tenancy model.Tenancy) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status model.TenancyStatus) error
 	AcceptInvitation(ctx context.Context, id uuid.UUID) error
+	// Transactional method
+	AcceptInvitationTx(pgx.Tx, uuid.UUID) error
 }
 
 type DBTenancyRepository struct {
@@ -271,6 +273,26 @@ func (r *DBTenancyRepository) AcceptInvitation(ctx context.Context, id uuid.UUID
 	`
 
 	result, err := r.db.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrTenancyNotFound
+	}
+
+	return nil
+}
+
+func (r *DBTenancyRepository) AcceptInvitationTx(tx pgx.Tx, id uuid.UUID) error {
+	now := "current_timestamp"
+	query := `
+		UPDATE tenancies
+		SET status = 'ACTIVE', invitation_accepted_at = ` + now + `, updated_at = current_timestamp
+		WHERE id = $1 AND status = 'INVITED'
+	`
+
+	result, err := tx.Exec(context.Background(), query, id)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -50,6 +51,7 @@ func (m *MockTenancyRepository) UpdateStatus(ctx context.Context, id uuid.UUID, 
 	return nil
 }
 func (m *MockTenancyRepository) AcceptInvitation(ctx context.Context, id uuid.UUID) error { return nil }
+func (m *MockTenancyRepository) AcceptInvitationTx(tx pgx.Tx, id uuid.UUID) error         { return nil }
 
 // MockLockAssignmentRepository is a fake implementation for testing
 type MockLockAssignmentRepository struct {

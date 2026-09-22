@@ -109,6 +109,10 @@ func (m *mockSubjectRepository) UpdatePasswordHash(ctx context.Context, id uuid.
 	return nil
 }
 
+func (m *mockSubjectRepository) UpdatePasswordHashTx(tx pgx.Tx, id uuid.UUID, passwordHash string) error {
+	return m.UpdatePasswordHash(context.Background(), id, passwordHash)
+}
+
 func (m *mockSubjectRepository) CountSuperAdmins(ctx context.Context) (int, error) {
 	count := 0
 	for _, subject := range m.subjects {

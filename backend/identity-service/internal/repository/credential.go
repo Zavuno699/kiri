@@ -13,6 +13,8 @@ type CredentialRepository interface {
 	Create(context.Context, Credential) error
 	GetByFingerprint(context.Context, string) (Credential, error)
 	Revoke(context.Context, string, string, time.Time) error
+	// Transactional method
+	CreateTx(pgx.Tx, Credential) error
 }
 
 type Credential struct {
@@ -61,6 +63,52 @@ func (r *DBCredentialRepository) Create(
 	}
 
 	_, err := r.db.Exec(ctx, `
+		INSERT INTO identity_credentials (
+			id,
+			subject_id,
+			credential_type,
+			fingerprint,
+			state,
+			issued_at,
+			expires_at,
+			created_at,
+			updated_at,
+			version
+		)
+		VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+		)
+	`,
+		uuid.MustParse(credential.ID),
+		uuid.MustParse(credential.SubjectID),
+		credential.Type,
+		credential.Fingerprint,
+		credential.State,
+		credential.IssuedAt,
+		credential.ExpiresAt,
+		time.Now().UTC(),
+		time.Now().UTC(),
+		1,
+	)
+
+	return err
+}
+
+func (r *DBCredentialRepository) CreateTx(
+	tx pgx.Tx,
+	credential Credential,
+) error {
+	if credential.ID == "" {
+		return errors.New("id is required")
+	}
+	if credential.SubjectID == "" {
+		return errors.New("subject_id is required")
+	}
+	if credential.Fingerprint == "" {
+		return errors.New("fingerprint is required")
+	}
+
+	_, err := tx.Exec(context.Background(), `
 		INSERT INTO identity_credentials (
 			id,
 			subject_id,

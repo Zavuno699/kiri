@@ -33,6 +33,7 @@ type SubjectRepository interface {
 	SetSuperAdminTx(pgx.Tx, uuid.UUID, bool) error
 	CountSuperAdminsTx(pgx.Tx) (int, error)
 	GetByIDForUpdateTx(pgx.Tx, uuid.UUID) (model.Subject, error)
+	UpdatePasswordHashTx(pgx.Tx, uuid.UUID, string) error
 }
 
 type DBSubjectRepository struct {
@@ -347,6 +348,35 @@ func (r *DBSubjectRepository) UpdatePasswordHash(
 	}
 
 	result, err := r.db.Exec(ctx, `
+		UPDATE identity_subjects
+		SET
+			password_hash = $1,
+			updated_at = current_timestamp,
+			version = version + 1
+		WHERE id = $2
+	`, passwordHash, id)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrSubjectNotFound
+	}
+
+	return nil
+}
+
+func (r *DBSubjectRepository) UpdatePasswordHashTx(
+	tx pgx.Tx,
+	id uuid.UUID,
+	passwordHash string,
+) error {
+	if id == uuid.Nil {
+		return ErrSubjectNotFound
+	}
+
+	result, err := tx.Exec(context.Background(), `
 		UPDATE identity_subjects
 		SET
 			password_hash = $1,

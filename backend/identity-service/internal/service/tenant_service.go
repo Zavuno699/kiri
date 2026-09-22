@@ -571,30 +571,22 @@ func (s *TenantService) ActivateTenant(
 		ExpiresAt:   time.Now().Add(365 * 24 * time.Hour),
 	}
 
-	if err := s.credentialRepo.Create(ctx, credential); err != nil {
+	if err := s.credentialRepo.CreateTx(tx, credential); err != nil {
 		return model.Tenancy{}, "", fmt.Errorf("failed to create credential: %w", err)
 	}
 
-	// Update subject with password
-	subject, err := s.subjectRepo.GetByID(ctx, tenancy.TenantSubjectID)
-	if err != nil {
-		return model.Tenancy{}, "", fmt.Errorf("failed to get subject: %w", err)
+	// Update subject with password using transactional method
+	if err := s.subjectRepo.UpdatePasswordHashTx(tx, tenancy.TenantSubjectID, passwordHash); err != nil {
+		return model.Tenancy{}, "", fmt.Errorf("failed to update subject password: %w", err)
 	}
 
-	subject.PasswordHash = passwordHash
-	subject.UpdatedAt = time.Now()
-
-	if err := s.subjectRepo.Update(ctx, subject); err != nil {
-		return model.Tenancy{}, "", fmt.Errorf("failed to update subject: %w", err)
-	}
-
-	// Accept invitation
-	if err := s.tenancyRepo.AcceptInvitation(ctx, tenancy.ID); err != nil {
+	// Accept invitation using transactional method
+	if err := s.tenancyRepo.AcceptInvitationTx(tx, tenancy.ID); err != nil {
 		return model.Tenancy{}, "", fmt.Errorf("failed to accept invitation: %w", err)
 	}
 
-	// Update unit lifecycle to occupied
-	if err := s.unitRepo.UpdateLifecycle(ctx, tenancy.UnitID, model.UnitOccupied); err != nil {
+	// Update unit lifecycle to occupied using transactional method
+	if err := s.unitRepo.UpdateLifecycleTx(tx, tenancy.UnitID, model.UnitOccupied); err != nil {
 		return model.Tenancy{}, "", fmt.Errorf("failed to update unit lifecycle: %w", err)
 	}
 
@@ -609,7 +601,7 @@ func (s *TenantService) ActivateTenant(
 		ExpiresAt:    time.Now().Add(24 * time.Hour),
 	}
 
-	if err := s.sessionRepo.Create(ctx, session); err != nil {
+	if err := s.sessionRepo.CreateTx(tx, session); err != nil {
 		return model.Tenancy{}, "", fmt.Errorf("failed to create session: %w", err)
 	}
 

@@ -16,17 +16,17 @@ const (
 )
 
 type PlatformFeePolicy struct {
-	ID              uuid.UUID
-	PolicyVersion   string
-	FeeType         FeeType
-	PercentageFee   *float64 // e.g., 0.1000 for 10%, NULL for FIXED
-	FixedFee        *int64   // in minor units (cents), NULL for PERCENTAGE
-	Currency        string   // ISO 4217 currency code
-	EffectiveFrom   time.Time
-	EffectiveUntil  *time.Time // NULL means currently active
-	Description     string
-	CreatedBy       uuid.UUID // admin who created the policy
-	CreatedAt       time.Time
+	ID             uuid.UUID
+	PolicyVersion  string
+	FeeType        FeeType
+	PercentageFee  *int64 // in basis points (10000 = 100%), NULL for FIXED
+	FixedFee       *int64 // in minor units (cents), NULL for PERCENTAGE
+	Currency       string // ISO 4217 currency code
+	EffectiveFrom  time.Time
+	EffectiveUntil *time.Time // NULL means currently active
+	Description    string
+	CreatedBy      uuid.UUID // admin who created the policy
+	CreatedAt      time.Time
 }
 
 func (p PlatformFeePolicy) Validate() error {
@@ -51,8 +51,8 @@ func (p PlatformFeePolicy) Validate() error {
 		if p.PercentageFee == nil {
 			return errors.New("percentage fee is required for PERCENTAGE type")
 		}
-		if *p.PercentageFee < 0 || *p.PercentageFee > 1 {
-			return errors.New("percentage fee must be between 0 and 1")
+		if *p.PercentageFee < 0 || *p.PercentageFee > 10000 {
+			return errors.New("percentage fee must be between 0 and 10000 basis points (0-100%)")
 		}
 		if p.FixedFee != nil {
 			return errors.New("fixed fee must be NULL for PERCENTAGE type")
@@ -71,8 +71,8 @@ func (p PlatformFeePolicy) Validate() error {
 		if p.PercentageFee == nil {
 			return errors.New("percentage fee is required for HYBRID type")
 		}
-		if *p.PercentageFee < 0 || *p.PercentageFee > 1 {
-			return errors.New("percentage fee must be between 0 and 1")
+		if *p.PercentageFee < 0 || *p.PercentageFee > 10000 {
+			return errors.New("percentage fee must be between 0 and 10000 basis points (0-100%)")
 		}
 		if p.FixedFee == nil {
 			return errors.New("fixed fee is required for HYBRID type")
@@ -108,13 +108,17 @@ func (p PlatformFeePolicy) IsActive() bool {
 
 // CalculateFee computes the platform fee for a given gross amount
 // Returns fee in minor units (cents)
+// Uses integer arithmetic with basis points (10000 = 100%)
+// Rounding rule: round half up (standard commercial rounding)
 func (p PlatformFeePolicy) CalculateFee(grossAmountMinor int64) int64 {
 	switch p.FeeType {
 	case FeeTypePercentage:
 		if p.PercentageFee == nil {
 			return 0
 		}
-		return int64(float64(grossAmountMinor) * (*p.PercentageFee))
+		// fee = (amount * basis_points) / 10000 with rounding
+		// Round half up: (amount * basis_points + 5000) / 10000
+		return (grossAmountMinor*(*p.PercentageFee) + 5000) / 10000
 	case FeeTypeFixed:
 		if p.FixedFee == nil {
 			return 0
@@ -124,7 +128,7 @@ func (p PlatformFeePolicy) CalculateFee(grossAmountMinor int64) int64 {
 		if p.PercentageFee == nil || p.FixedFee == nil {
 			return 0
 		}
-		percentageAmount := int64(float64(grossAmountMinor) * (*p.PercentageFee))
+		percentageAmount := (grossAmountMinor*(*p.PercentageFee) + 5000) / 10000
 		return percentageAmount + *p.FixedFee
 	default:
 		return 0

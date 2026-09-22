@@ -14,8 +14,8 @@ CREATE TABLE platform_fee_policies (
     
     -- Fee structure
     fee_type fee_type NOT NULL,
-    percentage_fee DECIMAL(5, 4), -- e.g., 0.1000 for 10%
-    fixed_fee BIGINT, -- in minor units (cents)
+    percentage_fee BIGINT, -- in basis points (10000 = 100%), NULL for FIXED
+    fixed_fee BIGINT, -- in minor units (cents), NULL for PERCENTAGE
     
     -- Currency scope
     currency VARCHAR(3) NOT NULL, -- ISO 4217 currency code
@@ -34,9 +34,9 @@ CREATE TABLE platform_fee_policies (
     
     CONSTRAINT platform_fee_policies_percentage_check
         CHECK (
-            (fee_type = 'PERCENTAGE' AND percentage_fee IS NOT NULL AND percentage_fee >= 0 AND percentage_fee <= 1) OR
+            (fee_type = 'PERCENTAGE' AND percentage_fee IS NOT NULL AND percentage_fee >= 0 AND percentage_fee <= 10000) OR
             (fee_type = 'FIXED' AND percentage_fee IS NULL) OR
-            (fee_type = 'HYBRID' AND percentage_fee IS NOT NULL AND percentage_fee >= 0 AND percentage_fee <= 1)
+            (fee_type = 'HYBRID' AND percentage_fee IS NOT NULL AND percentage_fee >= 0 AND percentage_fee <= 10000)
         ),
     
     CONSTRAINT platform_fee_policies_fixed_check
@@ -65,7 +65,7 @@ RETURNS TABLE (
     id UUID,
     policy_version VARCHAR(20),
     fee_type fee_type,
-    percentage_fee DECIMAL(5, 4),
+    percentage_fee BIGINT,
     fixed_fee BIGINT,
     currency VARCHAR(3)
 ) AS $$

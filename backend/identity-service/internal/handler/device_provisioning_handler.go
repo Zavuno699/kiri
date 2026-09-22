@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -292,8 +293,9 @@ func (h *DeviceProvisioningHandler) ProvisionDevice(w http.ResponseWriter, r *ht
 	if err != nil {
 		// Log failure but don't fail the provisioning operation
 		// In production, this should be handled more robustly
-		http.Error(w, "audit logging failed", http.StatusInternalServerError)
-		return
+		// For now, log to stderr and continue with provisioning
+		// TODO: Make audit logging more robust in production
+		fmt.Fprintf(os.Stderr, "WARNING: audit logging failed for device provisioning: %v\n", err)
 	}
 
 	// Return safe response (NEVER include secret or reference)

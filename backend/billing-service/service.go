@@ -146,10 +146,18 @@ func NewFromConfig(
 		return nil, nil, err
 	}
 
-	provider, err := NewFlutterwaveProvider(flutterwaveConfig)
-	if err != nil {
-		_ = db.Close()
-		return nil, nil, err
+	// Provider is optional for dev/test
+	// If Flutterwave credentials are missing, use a dev/test provider
+	var provider service.PaymentProvider
+	if flutterwaveConfig.BaseURL != "" && flutterwaveConfig.ClientID != "" && flutterwaveConfig.ClientSecret != "" {
+		provider, err = NewFlutterwaveProvider(flutterwaveConfig)
+		if err != nil {
+			_ = db.Close()
+			return nil, nil, err
+		}
+	} else {
+		// Use dev/test provider that simulates responses without external calls
+		provider = service.NewDevTestProvider()
 	}
 
 	repo := repository.NewPaymentRepository(db)
@@ -208,12 +216,11 @@ func (s *Service) Stop() {
 func (s *Service) RegisterRoutes(mux *http.ServeMux) {
 	s.paymentHandler.RegisterRoutes(mux)
 
-	if s.reconciliationHandler == nil {
-		panic("payment reconciliation handler is required")
+	// Register reconciliation handler if present
+	if s.reconciliationHandler != nil {
+		mux.Handle(
+			"POST /api/v1/payments/reconcile",
+			http.HandlerFunc(s.reconciliationHandler.Reconcile),
+		)
 	}
-
-	mux.Handle(
-		"POST /api/v1/payments/reconcile",
-		http.HandlerFunc(s.reconciliationHandler.Reconcile),
-	)
 }

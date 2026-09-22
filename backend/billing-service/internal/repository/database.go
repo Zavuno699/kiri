@@ -8,6 +8,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// OpenDatabase is exported for health checks and service construction
 func OpenDatabase(ctx context.Context, databaseURL string) (*sql.DB, error) {
 	if databaseURL == "" {
 		return nil, fmt.Errorf("database URL is required")

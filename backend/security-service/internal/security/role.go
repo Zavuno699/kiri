@@ -9,6 +9,9 @@ const (
 	RoleDevice        Role = "device"
 	RoleOperator      Role = "operator"
 	RoleSecurityAdmin Role = "security_admin"
+	RoleFinanceAdmin  Role = "finance_admin"
+	RoleDeviceAdmin   Role = "device_admin"
+	RoleAuditAdmin    Role = "audit_admin"
 	RoleSuperAdmin    Role = "super_admin"
 )
 

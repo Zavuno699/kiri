@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -18,6 +19,8 @@ var (
 	ErrPasswordMismatch       = errors.New("password does not match")
 	ErrAdminSelfDemotion      = errors.New("cannot demote self from admin")
 	ErrSuperAdminSelfDemotion = errors.New("cannot demote self from super admin")
+	ErrMaxSuperAdminsExceeded = errors.New("maximum of two super admins allowed")
+	ErrLastSuperAdmin         = errors.New("cannot demote the last super admin")
 )
 
 type SubjectService struct {
@@ -169,7 +172,54 @@ func (s *SubjectService) SetSuperAdmin(
 		return ErrSuperAdminSelfDemotion
 	}
 
-	return s.subjectRepo.SetSuperAdmin(ctx, targetID, isSuperAdmin)
+	// Transactional enforcement of two-super-admin invariant
+	tx, ok := s.subjectRepo.(repository.TxDB)
+	if !ok {
+		return errors.New("repository does not support transactions")
+	}
+
+	txCtx, err := tx.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer txCtx.Rollback(ctx)
+
+	// Lock target row for update
+	target, err := s.subjectRepo.GetByIDForUpdate(ctx, targetID)
+	if err != nil {
+		return fmt.Errorf("failed to get target for update: %w", err)
+	}
+
+	// Count current super admins
+	currentCount, err := s.subjectRepo.CountSuperAdmins(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to count super admins: %w", err)
+	}
+
+	// Enforce max two super admins when promoting
+	if isSuperAdmin && !target.IsSuperAdmin {
+		if currentCount >= 2 {
+			return ErrMaxSuperAdminsExceeded
+		}
+	}
+
+	// Prevent demoting the last super admin
+	if !isSuperAdmin && target.IsSuperAdmin {
+		if currentCount <= 1 {
+			return ErrLastSuperAdmin
+		}
+	}
+
+	// Perform the update
+	if err := s.subjectRepo.SetSuperAdmin(ctx, targetID, isSuperAdmin); err != nil {
+		return fmt.Errorf("failed to set super admin: %w", err)
+	}
+
+	if err := txCtx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (s *SubjectService) UpdateRoles(

@@ -27,6 +27,8 @@ type SubjectRepository interface {
 	UpdatePasswordHash(context.Context, uuid.UUID, string) error
 	SetAdmin(context.Context, uuid.UUID, bool) error
 	SetSuperAdmin(context.Context, uuid.UUID, bool) error
+	CountSuperAdmins(context.Context) (int, error)
+	GetByIDForUpdate(context.Context, uuid.UUID) (model.Subject, error)
 }
 
 type DBSubjectRepository struct {
@@ -416,4 +418,42 @@ func (r *DBSubjectRepository) SetSuperAdmin(
 	}
 
 	return nil
+}
+
+func (r *DBSubjectRepository) CountSuperAdmins(ctx context.Context) (int, error) {
+	const query = `SELECT COUNT(*) FROM identity_subjects WHERE is_super_admin = true`
+
+	var count int
+	err := r.db.QueryRow(ctx, query).Scan(&count)
+	return count, err
+}
+
+func (r *DBSubjectRepository) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (model.Subject, error) {
+	const query = `
+		SELECT id, subject_id, email, password_hash, roles, is_admin, is_super_admin,
+		       created_at, updated_at, version
+		FROM identity_subjects
+		WHERE id = $1
+		FOR UPDATE
+	`
+
+	var subject model.Subject
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&subject.ID,
+		&subject.SubjectID,
+		&subject.Email,
+		&subject.PasswordHash,
+		&subject.Roles,
+		&subject.IsAdmin,
+		&subject.IsSuperAdmin,
+		&subject.CreatedAt,
+		&subject.UpdatedAt,
+		&subject.Version,
+	)
+
+	if err != nil {
+		return model.Subject{}, ErrSubjectNotFound
+	}
+
+	return subject, nil
 }

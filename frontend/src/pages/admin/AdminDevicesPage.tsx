@@ -26,10 +26,6 @@ export function AdminDevicesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadDevices()
-  }, [])
-
   const loadDevices = async () => {
     try {
       setLoading(true)
@@ -44,6 +40,10 @@ export function AdminDevicesPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadDevices()
+  }, [])
 
   return (
     <div className="p-6">

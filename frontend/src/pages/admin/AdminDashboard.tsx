@@ -45,40 +45,51 @@ export function AdminDashboard() {
   })
 
   useEffect(() => {
-    loadDevices()
-    loadMetrics()
-  }, [])
-
-  const loadDevices = async () => {
-    try {
-      const response = await apiFetch<DeviceListResponse>("/admin/devices", undefined, {
-        useIdentityService: true,
-      })
-      setDevices(response.devices)
-      setDeviceCount(response.total)
-    } catch (error) {
-      console.error("Failed to load devices:", error)
-    } finally {
-      setLoading(false)
+    const loadDevicesAsync = async () => {
+      try {
+        const response = await apiFetch<DeviceListResponse>("/admin/devices", undefined, {
+          useIdentityService: true,
+        })
+        setDevices(response.devices)
+        setDeviceCount(response.total)
+      } catch (error) {
+        console.error("Failed to load devices:", error)
+      } finally {
+        setLoading(false)
+      }
     }
-  }
 
-  const loadMetrics = async () => {
-    // TODO: Implement real metrics endpoint
-    // For now, mark as unavailable
-    setMetrics({
-      totalLandlords: 0,
-      totalTenants: 0,
-      activeTenancies: 0,
-      unassignedLocks: 0,
-      provisioningFailures: 0,
-      securityAlerts: 0,
-    })
-  }
+    const loadMetricsAsync = async () => {
+      // TODO: Implement real metrics endpoint
+      setMetrics({
+        totalLandlords: 0,
+        totalTenants: 0,
+        activeTenancies: 0,
+        unassignedLocks: 0,
+        provisioningFailures: 0,
+        securityAlerts: 0,
+      })
+    }
+
+    loadDevicesAsync()
+    loadMetricsAsync()
+  }, [])
 
   const handleProvisionSuccess = () => {
     setShowProvisionModal(false)
-    loadDevices()
+    // Reload devices
+    const reloadDevices = async () => {
+      try {
+        const response = await apiFetch<DeviceListResponse>("/admin/devices", undefined, {
+          useIdentityService: true,
+        })
+        setDevices(response.devices)
+        setDeviceCount(response.total)
+      } catch (error) {
+        console.error("Failed to load devices:", error)
+      }
+    }
+    reloadDevices()
   }
 
   return (

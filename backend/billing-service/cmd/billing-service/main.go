@@ -43,7 +43,7 @@ func main() {
 	// Billing service port
 	port := os.Getenv("BILLING_SERVICE_PORT")
 	if port == "" {
-		port = "8082"
+		port = "8083"
 	}
 
 	// Flutterwave configuration (optional for dev/test)
@@ -58,13 +58,14 @@ func main() {
 	validator := validation.New()
 
 	// Create billing service
-	// Note: Flutterwave provider is optional - if credentials are missing,
-	// we use a dev/test provider that simulates responses without external calls
+	// Note: DevTestProvider is only used in KIRI_ENV=development|test
+	// Production requires Flutterwave credentials
 	billingService, closeDatabase, err := billing.NewFromConfig(
 		ctx,
 		validator,
 		databaseURL,
 		flutterwaveConfig,
+		identityServiceURL,
 	)
 	if err != nil {
 		log.Fatalf("failed to create billing service: %v", err)

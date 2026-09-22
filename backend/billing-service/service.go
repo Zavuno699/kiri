@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kirilock/backend/billing-service/internal/flutterwave"
 	"github.com/kirilock/backend/billing-service/internal/handler"
+	"github.com/kirilock/backend/billing-service/internal/identity"
+	"github.com/kirilock/backend/billing-service/internal/middleware"
 	"github.com/kirilock/backend/billing-service/internal/repository"
 	"github.com/kirilock/backend/billing-service/internal/service"
 	"github.com/kirilock/backend/shared/validation"
@@ -25,12 +28,15 @@ type Service struct {
 	paymentHandler        *handler.PaymentApplicationHandler
 	reconciliationHandler *handler.PaymentReconciliationHandler
 	reconciliationRuntime *service.PaymentReconciliationRuntime
+	identityClient        *identity.Client
+	authMiddleware        *middleware.AuthenticationMiddleware
 }
 
 func New(
 	validator *validation.Validator,
 	provider service.PaymentProvider,
 	repo *repository.PaymentRepository,
+	identityClient *identity.Client,
 ) (*Service, error) {
 	if validator == nil {
 		return nil, errors.New("validator is required")
@@ -40,6 +46,9 @@ func New(
 	}
 	if repo == nil {
 		return nil, errors.New("payment repository is required")
+	}
+	if identityClient == nil {
+		return nil, errors.New("identity client is required")
 	}
 
 	application, err := service.NewPaymentApplication(provider, repo)
@@ -118,10 +127,14 @@ func New(
 		return nil, err
 	}
 
+	authMiddleware := middleware.NewAuthenticationMiddleware(identityClient)
+
 	return &Service{
 		paymentHandler:        paymentHandler,
 		reconciliationHandler: reconciliationHandler,
 		reconciliationRuntime: reconciliationRuntime,
+		identityClient:        identityClient,
+		authMiddleware:        authMiddleware,
 	}, nil
 }
 
@@ -130,6 +143,7 @@ func NewFromConfig(
 	validator *validation.Validator,
 	databaseURL string,
 	flutterwaveConfig FlutterwaveConfig,
+	identityServiceURL string,
 ) (*Service, func() error, error) {
 	if ctx == nil {
 		return nil, nil, errors.New("context is required")
@@ -140,24 +154,37 @@ func NewFromConfig(
 	if databaseURL == "" {
 		return nil, nil, errors.New("database URL is required")
 	}
+	if identityServiceURL == "" {
+		return nil, nil, errors.New("identity service URL is required")
+	}
 
 	db, err := repository.OpenDatabase(ctx, databaseURL)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Provider is optional for dev/test
-	// If Flutterwave credentials are missing, use a dev/test provider
+	// Identity client for session validation
+	identityClient := identity.NewClient(identityServiceURL)
+
+	// Provider selection: DevTestProvider only in dev/test, Flutterwave otherwise
 	var provider service.PaymentProvider
+	env := os.Getenv("KIRI_ENV")
+	isDevOrTest := env == "development" || env == "test"
+
 	if flutterwaveConfig.BaseURL != "" && flutterwaveConfig.ClientID != "" && flutterwaveConfig.ClientSecret != "" {
+		// Use real Flutterwave provider if credentials are provided
 		provider, err = NewFlutterwaveProvider(flutterwaveConfig)
 		if err != nil {
 			_ = db.Close()
 			return nil, nil, err
 		}
-	} else {
-		// Use dev/test provider that simulates responses without external calls
+	} else if isDevOrTest {
+		// Use dev/test provider in dev/test environment
 		provider = service.NewDevTestProvider()
+	} else {
+		// In production, Flutterwave credentials are required
+		_ = db.Close()
+		return nil, nil, errors.New("Flutterwave credentials are required in production environment")
 	}
 
 	repo := repository.NewPaymentRepository(db)
@@ -166,6 +193,7 @@ func NewFromConfig(
 		validator,
 		provider,
 		repo,
+		identityClient,
 	)
 	if err != nil {
 		_ = db.Close()
@@ -214,13 +242,18 @@ func (s *Service) Stop() {
 }
 
 func (s *Service) RegisterRoutes(mux *http.ServeMux) {
-	s.paymentHandler.RegisterRoutes(mux)
+	// Wrap all /api/v1/* routes with authentication middleware
+	apiMux := http.NewServeMux()
+	s.paymentHandler.RegisterRoutes(apiMux)
 
 	// Register reconciliation handler if present
 	if s.reconciliationHandler != nil {
-		mux.Handle(
+		apiMux.Handle(
 			"POST /api/v1/payments/reconcile",
 			http.HandlerFunc(s.reconciliationHandler.Reconcile),
 		)
 	}
+
+	// Apply authentication middleware to all /api/v1/* routes
+	mux.Handle("/api/v1/", s.authMiddleware.Authenticate(apiMux))
 }

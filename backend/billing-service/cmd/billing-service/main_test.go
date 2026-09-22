@@ -14,7 +14,7 @@ func TestNewFromConfig_MissingDatabaseURL(t *testing.T) {
 		Timeout: 30 * time.Second,
 	}
 
-	_, _, err := billing.NewFromConfig(nil, validator, "", cfg)
+	_, _, err := billing.NewFromConfig(nil, validator, "", cfg, "http://localhost:8081")
 	if err == nil {
 		t.Fatal("expected error for missing DATABASE_URL")
 	}
@@ -29,7 +29,7 @@ func TestNewFromConfig_WithDevTestProvider(t *testing.T) {
 
 	// This will fail if DATABASE_URL is not set, which is expected
 	// The test verifies the provider construction logic, not DB connectivity
-	if _, _, err := billing.NewFromConfig(nil, validator, "invalid-db-url", cfg); err == nil {
+	if _, _, err := billing.NewFromConfig(nil, validator, "invalid-db-url", cfg, "http://localhost:8081"); err == nil {
 		t.Fatal("expected error for invalid database URL")
 	}
 }

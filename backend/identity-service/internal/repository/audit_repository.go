@@ -10,6 +10,7 @@ import (
 
 type AuditRepository interface {
 	LogEvent(ctx context.Context, eventType string, actorID uuid.UUID, resourceType string, resourceID *uuid.UUID, oldValues map[string]interface{}, newValues map[string]interface{}, correlationID string, ipAddress string, userAgent string, success bool, errorMessage string) error
+	LogAdminAction(ctx context.Context, eventType string, resourceType string, resourceID *uuid.UUID, actorID uuid.UUID, details map[string]interface{}) error
 }
 
 type DBAuditRepository struct {
@@ -49,4 +50,28 @@ func (r *DBAuditRepository) LogEvent(
 	)
 
 	return err
+}
+
+func (r *DBAuditRepository) LogAdminAction(
+	ctx context.Context,
+	eventType string,
+	resourceType string,
+	resourceID *uuid.UUID,
+	actorID uuid.UUID,
+	details map[string]interface{},
+) error {
+	return r.LogEvent(
+		ctx,
+		eventType,
+		actorID,
+		resourceType,
+		resourceID,
+		nil,     // oldValues
+		details, // newValues
+		"",      // correlationID
+		"",      // ipAddress
+		"",      // userAgent
+		true,    // success
+		"",      // errorMessage
+	)
 }

@@ -15,15 +15,15 @@ import (
 var (
 	ErrAdminProfileInvalidTransition = errors.New("invalid admin profile status transition")
 	ErrUnauthorizedAdminAction       = errors.New("only super admin can perform this action")
-	ErrAuditAdminPrivilegeRequired    = errors.New("audit_admin privilege required")
+	ErrAuditAdminPrivilegeRequired   = errors.New("audit_admin privilege required")
 )
 
 type AdminProfileService struct {
-	profileRepo    repository.AdminProfileRepository
-	subjectRepo    repository.SubjectRepository
-	sessionRepo    repository.SessionRepository
-	auditRepo      repository.AuditRepository
-	txDB           repository.TxDB
+	profileRepo repository.AdminProfileRepository
+	subjectRepo repository.SubjectRepository
+	sessionRepo repository.SessionRepository
+	auditRepo   repository.AuditRepository
+	txDB        repository.TxDB
 }
 
 func NewAdminProfileService(
@@ -58,10 +58,14 @@ func NewAdminProfileService(
 	}, nil
 }
 
+func (s *AdminProfileService) ListAll(ctx context.Context) ([]model.AdminProfile, error) {
+	return s.profileRepo.ListAll(ctx)
+}
+
 func (s *AdminProfileService) validateStatusTransition(current, target model.AdminProfileStatus) error {
 	validTransitions := map[model.AdminProfileStatus][]model.AdminProfileStatus{
 		model.AdminProfileProfileCompleted: {model.AdminProfileVettingPending},
-		model.AdminProfileVettingPending:    {model.AdminProfileUnderReview, model.AdminProfileRejected},
+		model.AdminProfileVettingPending:   {model.AdminProfileUnderReview, model.AdminProfileRejected},
 		model.AdminProfileUnderReview:      {model.AdminProfileApproved, model.AdminProfileRejected},
 		model.AdminProfileApproved:         {model.AdminProfileActive},
 		model.AdminProfileActive:           {model.AdminProfileSuspended, model.AdminProfileRevoked},
@@ -117,12 +121,12 @@ func (s *AdminProfileService) CreateProfile(
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"action":    "admin_profile_created",
-		"subject":   subjectID.String(),
-		"role":      role,
-		"result":    "success",
+		"action":  "admin_profile_created",
+		"subject": subjectID.String(),
+		"role":    role,
+		"result":  "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_created", "profile", &profile.ID, subjectID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -179,7 +183,7 @@ func (s *AdminProfileService) SubmitForVetting(
 		"subject":  subjectID.String(),
 		"result":   "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_submitted_for_vetting", "profile", &profile.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -241,14 +245,14 @@ func (s *AdminProfileService) Approve(
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":     actorID.String(),
-		"action":       "admin_profile_approved",
-		"subject":      subjectID.String(),
-		"role":         profile.Role,
+		"actor_id":      actorID.String(),
+		"action":        "admin_profile_approved",
+		"subject":       subjectID.String(),
+		"role":          profile.Role,
 		"vetting_notes": vettingNotes,
-		"result":       "success",
+		"result":        "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_approved", "profile", &profile.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -306,7 +310,7 @@ func (s *AdminProfileService) Activate(
 		"role":     profile.Role,
 		"result":   "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_activated", "profile", &profile.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -367,19 +371,19 @@ func (s *AdminProfileService) Reject(
 	}
 
 	// Revoke sessions
-	if err := s.sessionRepo.RevokeBySubjectID(ctx, subjectID); err != nil {
+	if err := s.sessionRepo.RevokeBySubjectID(ctx, subjectID.String(), time.Now().UTC()); err != nil {
 		fmt.Printf("WARNING: failed to revoke sessions: %v\n", err)
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":       actorID.String(),
-		"action":         "admin_profile_rejected",
-		"subject":        subjectID.String(),
+		"actor_id":         actorID.String(),
+		"action":           "admin_profile_rejected",
+		"subject":          subjectID.String(),
 		"rejection_reason": reason,
-		"result":         "success",
+		"result":           "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_rejected", "profile", &profile.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -435,19 +439,19 @@ func (s *AdminProfileService) Suspend(
 	}
 
 	// Revoke sessions
-	if err := s.sessionRepo.RevokeBySubjectID(ctx, subjectID); err != nil {
+	if err := s.sessionRepo.RevokeBySubjectID(ctx, subjectID.String(), time.Now().UTC()); err != nil {
 		fmt.Printf("WARNING: failed to revoke sessions: %v\n", err)
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":         actorID.String(),
-		"action":           "admin_profile_suspended",
-		"subject":          subjectID.String(),
+		"actor_id":          actorID.String(),
+		"action":            "admin_profile_suspended",
+		"subject":           subjectID.String(),
 		"suspension_reason": reason,
-		"result":           "success",
+		"result":            "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_suspended", "profile", &profile.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -507,7 +511,7 @@ func (s *AdminProfileService) Reactivate(
 		"subject":  subjectID.String(),
 		"result":   "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_reactivated", "profile", &profile.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -560,7 +564,7 @@ func (s *AdminProfileService) Revoke(
 	}
 
 	// Revoke sessions
-	if err := s.sessionRepo.RevokeBySubjectID(ctx, subjectID); err != nil {
+	if err := s.sessionRepo.RevokeBySubjectID(ctx, subjectID.String(), time.Now().UTC()); err != nil {
 		fmt.Printf("WARNING: failed to revoke sessions: %v\n", err)
 	}
 
@@ -572,7 +576,7 @@ func (s *AdminProfileService) Revoke(
 		"role":     profile.Role,
 		"result":   "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "profile", subjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_profile_revoked", "profile", &profile.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 

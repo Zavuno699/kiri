@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -106,6 +107,32 @@ func (m *mockSubjectRepository) UpdatePasswordHash(ctx context.Context, id uuid.
 	subject.PasswordHash = passwordHash
 	m.subjects[id] = subject
 	return nil
+}
+
+func (m *mockSubjectRepository) CountSuperAdmins(ctx context.Context) (int, error) {
+	count := 0
+	for _, subject := range m.subjects {
+		if subject.IsSuperAdmin {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (m *mockSubjectRepository) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (model.Subject, error) {
+	return m.GetByID(ctx, id)
+}
+
+func (m *mockSubjectRepository) SetSuperAdminTx(tx pgx.Tx, id uuid.UUID, isSuperAdmin bool) error {
+	return m.SetSuperAdmin(context.Background(), id, isSuperAdmin)
+}
+
+func (m *mockSubjectRepository) CountSuperAdminsTx(tx pgx.Tx) (int, error) {
+	return m.CountSuperAdmins(context.Background())
+}
+
+func (m *mockSubjectRepository) GetByIDForUpdateTx(tx pgx.Tx, id uuid.UUID) (model.Subject, error) {
+	return m.GetByID(context.Background(), id)
 }
 
 func TestCreateSubject(t *testing.T) {

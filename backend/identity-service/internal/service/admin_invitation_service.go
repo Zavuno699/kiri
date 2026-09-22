@@ -102,7 +102,7 @@ func (s *AdminInvitationService) CreateInvitation(
 			return model.AdminInvitation{}, "", fmt.Errorf("failed to count super admins: %w", err)
 		}
 		if count >= 2 {
-			return model.AdminInvitation{}, "", ErrMaxSuperAdminsExceeded
+			return model.AdminInvitation{}, "", errors.New("maximum of two super admins allowed")
 		}
 	}
 
@@ -173,7 +173,7 @@ func (s *AdminInvitationService) CreateInvitation(
 		"department":     department,
 		"result":         "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "invitation", target.SubjectID, auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_invitation_created", "invitation", &invitation.ID, actorID, auditEvent); err != nil {
 		// Log but don't fail the transaction
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
@@ -231,7 +231,7 @@ func (s *AdminInvitationService) AcceptInvitation(
 		"intended_role":  invitation.IntendedRole,
 		"result":         "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "invitation", invitation.SubjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_invitation_accepted", "invitation", &invitation.ID, invitation.SubjectID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 
@@ -286,7 +286,7 @@ func (s *AdminInvitationService) RevokeInvitation(
 		"intended_role":  invitation.IntendedRole,
 		"result":         "success",
 	}
-	if err := s.auditRepo.LogEvent(ctx, "admin", "invitation", invitation.SubjectID.String(), auditEvent); err != nil {
+	if err := s.auditRepo.LogAdminAction(ctx, "admin_invitation_revoked", "invitation", &invitation.ID, actorID, auditEvent); err != nil {
 		fmt.Printf("WARNING: failed to log audit event: %v\n", err)
 	}
 

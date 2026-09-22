@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	sharedhttp "github.com/kirilock/backend/shared/http"
-	"github.com/kirilock/backend/shared/validation"
 
 	"github.com/kirilock/backend/identity-service/internal/middleware"
 	"github.com/kirilock/backend/identity-service/internal/repository"
@@ -23,7 +22,7 @@ type AdminGovernanceHandler struct {
 	adminInvitationService *service.AdminInvitationService
 	adminProfileService    *service.AdminProfileService
 	auditRepo              repository.AuditRepository
-	validator              *validation.Validator
+	subjectRepo            repository.SubjectRepository
 }
 
 func NewAdminGovernanceHandler(
@@ -31,6 +30,7 @@ func NewAdminGovernanceHandler(
 	adminInvitationService *service.AdminInvitationService,
 	adminProfileService *service.AdminProfileService,
 	auditRepo repository.AuditRepository,
+	subjectRepo repository.SubjectRepository,
 ) (*AdminGovernanceHandler, error) {
 	if subjectService == nil {
 		return nil, errors.New("subject service is required")
@@ -44,39 +44,17 @@ func NewAdminGovernanceHandler(
 	if auditRepo == nil {
 		return nil, errors.New("audit repository is required")
 	}
+	if subjectRepo == nil {
+		return nil, errors.New("subject repository is required")
+	}
 
 	return &AdminGovernanceHandler{
 		subjectService:         subjectService,
 		adminInvitationService: adminInvitationService,
 		adminProfileService:    adminProfileService,
 		auditRepo:              auditRepo,
-		validator:              validation.NewValidator(),
+		subjectRepo:            subjectRepo,
 	}, nil
-}
-
-type InviteAdminRequest struct {
-	SubjectID    uuid.UUID `json:"subject_id" validate:"required"`
-	IntendedRole string    `json:"intended_role" validate:"required"`
-	Reason       string    `json:"reason" validate:"required"`
-	Department   string    `json:"department"`
-}
-
-type ListAdminsResponse struct {
-	Admins []AdminSummary `json:"admins"`
-	Total  int            `json:"total"`
-}
-
-type AdminSummary struct {
-	SubjectID    uuid.UUID `json:"subject_id"`
-	Email        string    `json:"email"`
-	Role         string    `json:"role"`
-	Status       string    `json:"status"`
-	IsSuperAdmin bool      `json:"is_super_admin"`
-	CreatedAt    string    `json:"created_at"`
-}
-
-type EffectivePermissionsResponse struct {
-	RoleScopes map[string][]string `json:"role_scopes"`
 }
 
 // InviteAdmin creates an admin invitation (super_admin only)
@@ -86,7 +64,7 @@ func (h *AdminGovernanceHandler) InviteAdmin(w http.ResponseWriter, r *http.Requ
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -99,50 +77,52 @@ func (h *AdminGovernanceHandler) InviteAdmin(w http.ResponseWriter, r *http.Requ
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
-	var req InviteAdminRequest
+	var req struct {
+		SubjectID    uuid.UUID `json:"subject_id"`
+		IntendedRole string    `json:"intended_role"`
+		Reason       string    `json:"reason"`
+		Department   string    `json:"department"`
+	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Create invitation
 	invitation, token, err := h.adminInvitationService.CreateInvitation(
 		ctx,
-		principal.SubjectID,
+		actorID,
 		req.SubjectID,
 		req.IntendedRole,
 		req.Reason,
 		req.Department,
 	)
 	if err != nil {
-		if errors.Is(err, service.ErrMaxSuperAdminsExceeded) {
-			sharedhttp.WriteError(w, r, http.StatusConflict, "maximum of two super admins allowed")
+		if err.Error() == "maximum of two super admins allowed" {
+			sharedhttp.WriteError(w, http.StatusConflict, "max_super_admins", "maximum of two super admins allowed", "", nil)
 			return
 		}
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to create invitation")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to create invitation", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":       principal.SubjectID,
+		"actor_id":       principal.Subject,
 		"action":         "admin_invited",
 		"target_subject": req.SubjectID.String(),
 		"intended_role":  req.IntendedRole,
 		"result":         "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "invitation", req.SubjectID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "admin_invited", "invitation", &invitation.ID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
@@ -156,7 +136,7 @@ func (h *AdminGovernanceHandler) InviteAdmin(w http.ResponseWriter, r *http.Requ
 		"expires_at":       invitation.InvitationExpiresAt,
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusCreated, response)
+	sharedhttp.WriteJSON(w, http.StatusCreated, response)
 }
 
 // ListAdministrators lists all administrators (super_admin only)
@@ -166,7 +146,7 @@ func (h *AdminGovernanceHandler) ListAdministrators(w http.ResponseWriter, r *ht
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -179,18 +159,43 @@ func (h *AdminGovernanceHandler) ListAdministrators(w http.ResponseWriter, r *ht
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
-	// TODO: Implement list from admin_profiles
-	// For now, return empty list
-	response := ListAdminsResponse{
-		Admins: []AdminSummary{},
-		Total:  0,
+	// List all admin profiles
+	profiles, err := h.adminProfileService.ListAll(ctx)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to list administrators", "", nil)
+		return
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, response)
+	// Build response with admin summaries
+	admins := make([]map[string]interface{}, 0, len(profiles))
+	for _, profile := range profiles {
+		// Get subject details
+		subject, err := h.subjectRepo.GetByID(ctx, profile.SubjectID)
+		if err != nil {
+			// Skip if subject not found
+			continue
+		}
+
+		admins = append(admins, map[string]interface{}{
+			"subject_id":     profile.SubjectID,
+			"email":          subject.Email,
+			"role":           profile.Role,
+			"status":         profile.Status,
+			"is_super_admin": subject.IsSuperAdmin,
+			"created_at":     profile.CreatedAt,
+		})
+	}
+
+	response := map[string]interface{}{
+		"admins": admins,
+		"total":  len(admins),
+	}
+
+	sharedhttp.WriteJSON(w, http.StatusOK, response)
 }
 
 // GetEffectivePermissions returns the role→scope matrix (authenticated)
@@ -200,7 +205,7 @@ func (h *AdminGovernanceHandler) GetEffectivePermissions(w http.ResponseWriter, 
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -213,14 +218,14 @@ func (h *AdminGovernanceHandler) GetEffectivePermissions(w http.ResponseWriter, 
 		}
 	}
 	if !hasPermission {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin or audit_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin or audit_admin role required", "", nil)
 		return
 	}
 
 	// Return role→scope matrix from security-service
 	// For now, return a static mapping
-	response := EffectivePermissionsResponse{
-		RoleScopes: map[string][]string{
+	response := map[string]interface{}{
+		"role_scopes": map[string][]string{
 			"super_admin":    {"lease.read", "lease.write", "payment.read", "payment.reconcile", "payment.settle", "financial.read", "financial.configure", "device.read", "device.provision", "device.command", "lock.read", "lock.command", "security.read", "security.write", "audit.read"},
 			"security_admin": {"security.read", "security.write", "audit.read", "device.read"},
 			"finance_admin":  {"payment.read", "payment.write", "payment.reconcile", "payment.settle", "payment.refund", "financial.read", "audit.read"},
@@ -229,7 +234,7 @@ func (h *AdminGovernanceHandler) GetEffectivePermissions(w http.ResponseWriter, 
 		},
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, response)
+	sharedhttp.WriteJSON(w, http.StatusOK, response)
 }
 
 // PromoteToSuperAdmin promotes a subject to super admin (super_admin only)
@@ -239,7 +244,7 @@ func (h *AdminGovernanceHandler) PromoteToSuperAdmin(w http.ResponseWriter, r *h
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -252,48 +257,45 @@ func (h *AdminGovernanceHandler) PromoteToSuperAdmin(w http.ResponseWriter, r *h
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
 	var req struct {
-		TargetID uuid.UUID `json:"target_id" validate:"required"`
+		TargetID uuid.UUID `json:"target_id"`
 	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Promote
-	err = h.subjectService.SetSuperAdmin(ctx, principal.SubjectID, req.TargetID, true)
+	err = h.subjectService.SetSuperAdmin(ctx, actorID, req.TargetID, true)
 	if err != nil {
-		if errors.Is(err, service.ErrMaxSuperAdminsExceeded) {
-			sharedhttp.WriteError(w, r, http.StatusConflict, "maximum of two super admins allowed")
+		if err.Error() == "maximum of two super admins allowed" {
+			sharedhttp.WriteError(w, http.StatusConflict, "max_super_admins", "maximum of two super admins allowed", "", nil)
 			return
 		}
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to promote to super admin")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to promote to super admin", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":  principal.SubjectID,
+		"actor_id":  principal.Subject,
 		"action":    "super_admin_promoted",
 		"target_id": req.TargetID.String(),
 		"result":    "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "super_admin", req.TargetID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "super_admin_promoted", "super_admin", &req.TargetID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, map[string]string{"status": "promoted"})
+	sharedhttp.WriteJSON(w, http.StatusOK, map[string]string{"status": "promoted"})
 }
 
 // DemoteFromSuperAdmin demotes a super admin (super_admin only)
@@ -303,7 +305,7 @@ func (h *AdminGovernanceHandler) DemoteFromSuperAdmin(w http.ResponseWriter, r *
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -316,48 +318,45 @@ func (h *AdminGovernanceHandler) DemoteFromSuperAdmin(w http.ResponseWriter, r *
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
 	var req struct {
-		TargetID uuid.UUID `json:"target_id" validate:"required"`
+		TargetID uuid.UUID `json:"target_id"`
 	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Demote
-	err = h.subjectService.SetSuperAdmin(ctx, principal.SubjectID, req.TargetID, false)
+	err = h.subjectService.SetSuperAdmin(ctx, actorID, req.TargetID, false)
 	if err != nil {
 		if errors.Is(err, service.ErrLastSuperAdmin) {
-			sharedhttp.WriteError(w, r, http.StatusConflict, "cannot demote the last super admin")
+			sharedhttp.WriteError(w, http.StatusConflict, "last_super_admin", "cannot demote the last super admin", "", nil)
 			return
 		}
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to demote from super admin")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to demote from super admin", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":  principal.SubjectID,
+		"actor_id":  principal.Subject,
 		"action":    "super_admin_demoted",
 		"target_id": req.TargetID.String(),
 		"result":    "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "super_admin", req.TargetID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "super_admin_demoted", "super_admin", &req.TargetID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, map[string]string{"status": "demoted"})
+	sharedhttp.WriteJSON(w, http.StatusOK, map[string]string{"status": "demoted"})
 }
 
 // ApproveAdminProfile approves an admin profile (super_admin only)
@@ -367,7 +366,7 @@ func (h *AdminGovernanceHandler) ApproveAdminProfile(w http.ResponseWriter, r *h
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -380,46 +379,43 @@ func (h *AdminGovernanceHandler) ApproveAdminProfile(w http.ResponseWriter, r *h
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
 	var req struct {
-		SubjectID    uuid.UUID `json:"subject_id" validate:"required"`
+		SubjectID    uuid.UUID `json:"subject_id"`
 		VettingNotes string    `json:"vetting_notes"`
 	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Approve
-	err = h.adminProfileService.Approve(ctx, principal.SubjectID, req.SubjectID, req.VettingNotes)
+	err = h.adminProfileService.Approve(ctx, actorID, req.SubjectID, req.VettingNotes)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to approve admin profile")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to approve admin profile", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":      principal.SubjectID,
+		"actor_id":      principal.Subject,
 		"action":        "admin_profile_approved",
 		"target_id":     req.SubjectID.String(),
 		"vetting_notes": req.VettingNotes,
 		"result":        "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "profile", req.SubjectID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "admin_profile_approved", "profile", &req.SubjectID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, map[string]string{"status": "approved"})
+	sharedhttp.WriteJSON(w, http.StatusOK, map[string]string{"status": "approved"})
 }
 
 // RejectAdminProfile rejects an admin profile (super_admin only)
@@ -429,7 +425,7 @@ func (h *AdminGovernanceHandler) RejectAdminProfile(w http.ResponseWriter, r *ht
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -442,46 +438,43 @@ func (h *AdminGovernanceHandler) RejectAdminProfile(w http.ResponseWriter, r *ht
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
 	var req struct {
-		SubjectID       uuid.UUID `json:"subject_id" validate:"required"`
-		RejectionReason string    `json:"rejection_reason" validate:"required"`
+		SubjectID       uuid.UUID `json:"subject_id"`
+		RejectionReason string    `json:"rejection_reason"`
 	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Reject
-	err = h.adminProfileService.Reject(ctx, principal.SubjectID, req.SubjectID, req.RejectionReason)
+	err = h.adminProfileService.Reject(ctx, actorID, req.SubjectID, req.RejectionReason)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to reject admin profile")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to reject admin profile", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":         principal.SubjectID,
+		"actor_id":         principal.Subject,
 		"action":           "admin_profile_rejected",
 		"target_id":        req.SubjectID.String(),
 		"rejection_reason": req.RejectionReason,
 		"result":           "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "profile", req.SubjectID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "admin_profile_rejected", "profile", &req.SubjectID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, map[string]string{"status": "rejected"})
+	sharedhttp.WriteJSON(w, http.StatusOK, map[string]string{"status": "rejected"})
 }
 
 // SuspendAdmin suspends an admin (super_admin only)
@@ -491,7 +484,7 @@ func (h *AdminGovernanceHandler) SuspendAdmin(w http.ResponseWriter, r *http.Req
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -504,46 +497,43 @@ func (h *AdminGovernanceHandler) SuspendAdmin(w http.ResponseWriter, r *http.Req
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
 	var req struct {
-		SubjectID        uuid.UUID `json:"subject_id" validate:"required"`
-		SuspensionReason string    `json:"suspension_reason" validate:"required"`
+		SubjectID        uuid.UUID `json:"subject_id"`
+		SuspensionReason string    `json:"suspension_reason"`
 	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Suspend
-	err = h.adminProfileService.Suspend(ctx, principal.SubjectID, req.SubjectID, req.SuspensionReason)
+	err = h.adminProfileService.Suspend(ctx, actorID, req.SubjectID, req.SuspensionReason)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to suspend admin")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to suspend admin", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":          principal.SubjectID,
+		"actor_id":          principal.Subject,
 		"action":            "admin_suspended",
 		"target_id":         req.SubjectID.String(),
 		"suspension_reason": req.SuspensionReason,
 		"result":            "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "profile", req.SubjectID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "admin_suspended", "profile", &req.SubjectID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, map[string]string{"status": "suspended"})
+	sharedhttp.WriteJSON(w, http.StatusOK, map[string]string{"status": "suspended"})
 }
 
 // ReactivateAdmin reactivates a suspended admin (super_admin only)
@@ -553,7 +543,7 @@ func (h *AdminGovernanceHandler) ReactivateAdmin(w http.ResponseWriter, r *http.
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -566,44 +556,41 @@ func (h *AdminGovernanceHandler) ReactivateAdmin(w http.ResponseWriter, r *http.
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
 	var req struct {
-		SubjectID uuid.UUID `json:"subject_id" validate:"required"`
+		SubjectID uuid.UUID `json:"subject_id"`
 	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Reactivate
-	err = h.adminProfileService.Reactivate(ctx, principal.SubjectID, req.SubjectID)
+	err = h.adminProfileService.Reactivate(ctx, actorID, req.SubjectID)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to reactivate admin")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to reactivate admin", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":  principal.SubjectID,
+		"actor_id":  principal.Subject,
 		"action":    "admin_reactivated",
 		"target_id": req.SubjectID.String(),
 		"result":    "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "profile", req.SubjectID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "admin_reactivated", "profile", &req.SubjectID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, map[string]string{"status": "reactivated"})
+	sharedhttp.WriteJSON(w, http.StatusOK, map[string]string{"status": "reactivated"})
 }
 
 // RevokeAdmin revokes an admin permanently (super_admin only)
@@ -613,7 +600,7 @@ func (h *AdminGovernanceHandler) RevokeAdmin(w http.ResponseWriter, r *http.Requ
 	// Resolve principal
 	principal, err := middleware.PrincipalFromContext(ctx)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusUnauthorized, "unauthorized")
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "unauthorized", "unauthorized", "", nil)
 		return
 	}
 
@@ -626,42 +613,39 @@ func (h *AdminGovernanceHandler) RevokeAdmin(w http.ResponseWriter, r *http.Requ
 		}
 	}
 	if !hasSuperAdmin {
-		sharedhttp.WriteError(w, r, http.StatusForbidden, "insufficient permissions: super_admin role required")
+		sharedhttp.WriteError(w, http.StatusForbidden, "forbidden", "insufficient permissions: super_admin role required", "", nil)
 		return
 	}
 
 	// Decode request
 	var req struct {
-		SubjectID uuid.UUID `json:"subject_id" validate:"required"`
+		SubjectID uuid.UUID `json:"subject_id"`
 	}
 	if err := sharedhttp.DecodeJSON(w, r, &req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
+		sharedhttp.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body", "", nil)
 		return
 	}
 
-	// Validate request
-	if err := h.validator.Error(req); err != nil {
-		sharedhttp.WriteValidationError(w, r, err)
-		return
-	}
+	// Convert principal.Subject to UUID
+	actorID := uuid.MustParse(principal.Subject)
 
 	// Revoke
-	err = h.adminProfileService.Revoke(ctx, principal.SubjectID, req.SubjectID)
+	err = h.adminProfileService.Revoke(ctx, actorID, req.SubjectID)
 	if err != nil {
-		sharedhttp.WriteError(w, r, http.StatusInternalServerError, "failed to revoke admin")
+		sharedhttp.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to revoke admin", "", nil)
 		return
 	}
 
 	// Audit log
 	auditEvent := map[string]interface{}{
-		"actor_id":  principal.SubjectID,
+		"actor_id":  principal.Subject,
 		"action":    "admin_revoked",
 		"target_id": req.SubjectID.String(),
 		"result":    "success",
 	}
-	if err := h.auditRepo.LogEvent(ctx, "admin", "profile", req.SubjectID.String(), auditEvent); err != nil {
+	if err := h.auditRepo.LogAdminAction(ctx, "admin_revoked", "profile", &req.SubjectID, actorID, auditEvent); err != nil {
 		// Log but don't fail the response
 	}
 
-	sharedhttp.WriteJSON(w, r, http.StatusOK, map[string]string{"status": "revoked"})
+	sharedhttp.WriteJSON(w, http.StatusOK, map[string]string{"status": "revoked"})
 }

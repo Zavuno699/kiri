@@ -178,7 +178,7 @@ func main() {
 	}
 
 	// Admin governance handler for super admin operations
-	adminGovernanceHandler, err := handler.NewAdminGovernanceHandler(subjectService, adminInvitationService, adminProfileService, auditRepo)
+	adminGovernanceHandler, err := handler.NewAdminGovernanceHandler(subjectService, adminInvitationService, adminProfileService, auditRepo, subjectRepo)
 	if err != nil {
 		log.Fatalf("failed to create admin governance handler: %v", err)
 	}

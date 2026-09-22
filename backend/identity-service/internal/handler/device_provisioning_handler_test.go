@@ -64,6 +64,30 @@ func (m *MockAuditRepository) LogEvent(
 	return nil
 }
 
+func (m *MockAuditRepository) LogAdminAction(
+	ctx context.Context,
+	eventType string,
+	resourceType string,
+	resourceID *uuid.UUID,
+	actorID uuid.UUID,
+	details map[string]interface{},
+) error {
+	return m.LogEvent(
+		ctx,
+		eventType,
+		actorID,
+		resourceType,
+		resourceID,
+		nil,
+		details,
+		"",
+		"",
+		"",
+		true,
+		"",
+	)
+}
+
 func TestProvisionDevice_SuperAdmin_Success(t *testing.T) {
 	mockAudit := &MockAuditRepository{}
 	handler, err := NewDeviceProvisioningHandler(mockAudit)

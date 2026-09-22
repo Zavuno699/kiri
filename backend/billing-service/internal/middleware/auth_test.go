@@ -53,6 +53,46 @@ func TestAuthenticationMiddleware_NoSession(t *testing.T) {
 	}
 }
 
+func TestAuthenticationMiddleware_RawSessionID(t *testing.T) {
+	// Test that the middleware accepts raw session ID (platform contract)
+	mockClient := &mockIdentityClient{shouldFail: false, validSession: true}
+	authMiddleware := NewAuthenticationMiddleware(mockClient)
+
+	handler := authMiddleware.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "valid-session-id") // No Bearer prefix
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for raw session ID, got %d", w.Code)
+	}
+}
+
+func TestAuthenticationMiddleware_BearerPrefix(t *testing.T) {
+	// Test that the middleware accepts Bearer prefix (for compatibility)
+	mockClient := &mockIdentityClient{shouldFail: false, validSession: true}
+	authMiddleware := NewAuthenticationMiddleware(mockClient)
+
+	handler := authMiddleware.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer valid-session-id") // With Bearer prefix
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for Bearer prefix, got %d", w.Code)
+	}
+}
+
 func TestAuthenticationMiddleware_InvalidSession(t *testing.T) {
 	mockClient := &mockIdentityClient{shouldFail: false, validSession: false}
 	authMiddleware := NewAuthenticationMiddleware(mockClient)
@@ -62,7 +102,7 @@ func TestAuthenticationMiddleware_InvalidSession(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("Authorization", "Bearer invalid-session-id")
+	req.Header.Set("Authorization", "invalid-session-id")
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, req)
@@ -82,7 +122,7 @@ func TestAuthenticationMiddleware_ValidSession(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("Authorization", "Bearer valid-session-id")
+	req.Header.Set("Authorization", "valid-session-id")
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, req)

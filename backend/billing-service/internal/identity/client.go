@@ -48,7 +48,7 @@ func (c *Client) ValidateSession(ctx context.Context, sessionID string) (middlew
 		return middleware.AuthenticatedSubject{}, fmt.Errorf("create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+sessionID)
+	req.Header.Set("Authorization", sessionID)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

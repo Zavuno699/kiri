@@ -59,13 +59,15 @@ func (m *AuthenticationMiddleware) Authenticate(next http.Handler) http.Handler 
 			return
 		}
 
-		// Parse "Bearer <session-id>"
-		if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-			http.Error(w, "invalid authorization header format", http.StatusUnauthorized)
-			return
+		// Accept both "Bearer <session-id>" and raw session ID
+		// This matches the platform contract (raw session ID) while supporting Bearer-style callers
+		var sessionID string
+		if len(authHeader) >= 7 && authHeader[:7] == "Bearer " {
+			sessionID = authHeader[7:]
+		} else {
+			sessionID = authHeader
 		}
 
-		sessionID := authHeader[7:]
 		if sessionID == "" {
 			http.Error(w, "missing session ID", http.StatusUnauthorized)
 			return

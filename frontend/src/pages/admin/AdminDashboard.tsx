@@ -309,12 +309,16 @@ function ProvisionDeviceModal({ onClose, onSuccess }: { onClose: () => void; onS
     setStep(2)
   }
 
-  const handleStep2Next = async () => {
+  const handleStep2Next = () => {
     if (!credentials.credential_value) {
       setError("Please enter the credential value")
       return
     }
     setError(null)
+    setStep(3)
+  }
+
+  const handleProvision = async () => {
     setLoading(true)
 
     try {
@@ -533,7 +537,7 @@ function ProvisionDeviceModal({ onClose, onSuccess }: { onClose: () => void; onS
                   Back
                 </button>
                 <button
-                  onClick={handleStep2Next}
+                  onClick={handleProvision}
                   disabled={loading}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >

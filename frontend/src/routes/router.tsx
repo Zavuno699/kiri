@@ -27,6 +27,7 @@ import { OperationalIntegrityPage } from "../pages/integrity/OperationalIntegrit
 import { UnifiedRuntimePage } from "../pages/runtime/UnifiedRuntimePage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { AdminPage } from "../pages/admin/AdminPage";
+import { AdminDevicesPage } from "../pages/admin/AdminDevicesPage";
 import { LandlordPage } from "../pages/landlord/LandlordPage";
 import { TenantPage } from "../pages/tenant/TenantPage";
 
@@ -114,6 +115,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <AdminPage />,
+      },
+      {
+        path: "devices",
+        element: <AdminDevicesPage />,
       },
     ],
   },

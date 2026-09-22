@@ -151,6 +151,12 @@ func main() {
 		log.Fatalf("failed to create assignment handler: %v", err)
 	}
 
+	// Device provisioning handler for super admin operations
+	deviceProvisioningHandler, err := handler.NewDeviceProvisioningHandler(auditRepo)
+	if err != nil {
+		log.Fatalf("failed to create device provisioning handler: %v", err)
+	}
+
 	_ = client.NewAuthClient(securityServiceURL) // Available for future security-service integration
 	deviceClient := client.NewDeviceClient(deviceServiceURL)
 
@@ -250,6 +256,10 @@ func main() {
 	mux.Handle("GET /landlords/applications", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.AdminListApplications)))
 	mux.Handle("GET /landlords/application", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.AdminGetApplication)))
 	mux.Handle("POST /landlords/application/review", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.AdminReview)))
+
+	// Super Admin device provisioning routes
+	mux.Handle("POST /admin/devices/provision", authMiddleware.Authenticate(http.HandlerFunc(deviceProvisioningHandler.ProvisionDevice)))
+	mux.Handle("GET /admin/devices", authMiddleware.Authenticate(http.HandlerFunc(deviceProvisioningHandler.ListDevices)))
 
 	server := &http.Server{
 		Addr:         ":8081",

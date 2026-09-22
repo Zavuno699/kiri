@@ -94,7 +94,11 @@ func (h *AdminGovernanceHandler) InviteAdmin(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Create invitation
 	invitation, token, err := h.adminInvitationService.CreateInvitation(
@@ -106,7 +110,7 @@ func (h *AdminGovernanceHandler) InviteAdmin(w http.ResponseWriter, r *http.Requ
 		req.Department,
 	)
 	if err != nil {
-		if err.Error() == "maximum of two super admins allowed" {
+		if errors.Is(err, service.ErrMaxSuperAdminsExceeded) {
 			sharedhttp.WriteError(w, http.StatusConflict, "max_super_admins", "maximum of two super admins allowed", "", nil)
 			return
 		}
@@ -271,12 +275,16 @@ func (h *AdminGovernanceHandler) PromoteToSuperAdmin(w http.ResponseWriter, r *h
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Promote
 	err = h.subjectService.SetSuperAdmin(ctx, actorID, req.TargetID, true)
 	if err != nil {
-		if err.Error() == "maximum of two super admins allowed" {
+		if errors.Is(err, service.ErrMaxSuperAdminsExceeded) {
 			sharedhttp.WriteError(w, http.StatusConflict, "max_super_admins", "maximum of two super admins allowed", "", nil)
 			return
 		}
@@ -332,7 +340,11 @@ func (h *AdminGovernanceHandler) DemoteFromSuperAdmin(w http.ResponseWriter, r *
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Demote
 	err = h.subjectService.SetSuperAdmin(ctx, actorID, req.TargetID, false)
@@ -394,7 +406,11 @@ func (h *AdminGovernanceHandler) ApproveAdminProfile(w http.ResponseWriter, r *h
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Approve
 	err = h.adminProfileService.Approve(ctx, actorID, req.SubjectID, req.VettingNotes)
@@ -453,7 +469,11 @@ func (h *AdminGovernanceHandler) RejectAdminProfile(w http.ResponseWriter, r *ht
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Reject
 	err = h.adminProfileService.Reject(ctx, actorID, req.SubjectID, req.RejectionReason)
@@ -512,7 +532,11 @@ func (h *AdminGovernanceHandler) SuspendAdmin(w http.ResponseWriter, r *http.Req
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Suspend
 	err = h.adminProfileService.Suspend(ctx, actorID, req.SubjectID, req.SuspensionReason)
@@ -570,7 +594,11 @@ func (h *AdminGovernanceHandler) ReactivateAdmin(w http.ResponseWriter, r *http.
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Reactivate
 	err = h.adminProfileService.Reactivate(ctx, actorID, req.SubjectID)
@@ -627,7 +655,11 @@ func (h *AdminGovernanceHandler) RevokeAdmin(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Convert principal.Subject to UUID
-	actorID := uuid.MustParse(principal.Subject)
+	actorID, err := uuid.Parse(principal.Subject)
+	if err != nil {
+		sharedhttp.WriteError(w, http.StatusUnauthorized, "invalid_principal", "invalid principal subject ID", "", nil)
+		return
+	}
 
 	// Revoke
 	err = h.adminProfileService.Revoke(ctx, actorID, req.SubjectID)

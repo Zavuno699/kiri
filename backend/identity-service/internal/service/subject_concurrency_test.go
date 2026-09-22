@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -153,8 +154,8 @@ func TestConcurrentSuperAdminPromotion(t *testing.T) {
 	for err := range promoteErrors {
 		if err != nil {
 			errorCount++
-			if err.Error() != "maximum of two super admins allowed" {
-				t.Errorf("Expected 'maximum of two super admins allowed' error, got %v", err)
+			if !errors.Is(err, ErrMaxSuperAdminsExceeded) {
+				t.Errorf("Expected ErrMaxSuperAdminsExceeded, got %v", err)
 			}
 		}
 	}
@@ -168,8 +169,8 @@ func TestConcurrentSuperAdminPromotion(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error when creating third super admin, got nil")
 	}
-	if err.Error() != "maximum of two super admins allowed" {
-		t.Errorf("Expected 'maximum of two super admins allowed' error, got %v", err)
+	if !errors.Is(err, ErrMaxSuperAdminsExceeded) {
+		t.Errorf("Expected ErrMaxSuperAdminsExceeded, got %v", err)
 	}
 
 	// Test 3: Demote one, then promote another should succeed
@@ -204,8 +205,8 @@ func TestConcurrentSuperAdminPromotion(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error when demoting last super admin, got nil")
 	}
-	if err.Error() != "cannot demote the last super admin" {
-		t.Errorf("Expected 'cannot demote the last super admin' error, got %v", err)
+	if !errors.Is(err, ErrLastSuperAdmin) {
+		t.Errorf("Expected ErrLastSuperAdmin, got %v", err)
 	}
 
 	// Cleanup

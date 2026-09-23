@@ -173,8 +173,14 @@ func main() {
 		w.Write([]byte(`{"subject":"` + principal.Subject + `","authorized":true}`))
 	})
 
+	// Read PORT from environment (Railway injection), fallback to default 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":" + port,
 		Handler:      mux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,

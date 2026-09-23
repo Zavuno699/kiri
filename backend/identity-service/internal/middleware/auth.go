@@ -3,6 +3,8 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/kirilock/backend/identity-service/internal/client"
@@ -12,8 +14,23 @@ import (
 // CORSMiddleware adds CORS headers for development
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Allow all origins for development
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// Read allowed origins from environment, fallback to * for development
+		allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+		if allowedOrigins == "" {
+			allowedOrigins = "*"
+		}
+
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			// Check if origin is allowed
+			if allowedOrigins == "*" || strings.Contains(allowedOrigins, origin) {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
+		} else {
+			// If no origin header, use the allowed origins value
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

@@ -30,14 +30,16 @@ func NewConfig() Config {
 	}
 
 	address := os.Getenv("DEVICE_SERVICE_HTTP_ADDRESS")
-	port := os.Getenv("DEVICE_SERVICE_HTTP_PORT")
+	port := os.Getenv("PORT") // Railway injection
+	if port == "" {
+		port = os.Getenv("DEVICE_SERVICE_HTTP_PORT")
+	}
+	if port == "" {
+		port = "8080"
+	}
 
 	if address == "" {
 		address = "0.0.0.0"
-	}
-
-	if port == "" {
-		port = "8080"
 	}
 
 	driver := os.Getenv("DEVICE_DB_DRIVER")

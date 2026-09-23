@@ -41,7 +41,11 @@ func main() {
 	}
 
 	// Billing service port
-	port := os.Getenv("BILLING_SERVICE_PORT")
+	// Read PORT first (Railway injection), then BILLING_SERVICE_PORT, then default 8083
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = os.Getenv("BILLING_SERVICE_PORT")
+	}
 	if port == "" {
 		port = "8083"
 	}

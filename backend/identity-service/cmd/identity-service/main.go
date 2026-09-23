@@ -299,8 +299,14 @@ func main() {
 	mux.Handle("POST /admin/profile/reactivate", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.ReactivateAdmin)))
 	mux.Handle("POST /admin/profile/revoke", authMiddleware.Authenticate(http.HandlerFunc(adminGovernanceHandler.RevokeAdmin)))
 
+	// Read PORT from environment (Railway injection), fallback to default 8081
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+
 	server := &http.Server{
-		Addr:         ":8081",
+		Addr:         ":" + port,
 		Handler:      corsMux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,

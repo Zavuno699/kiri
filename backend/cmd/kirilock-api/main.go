@@ -45,6 +45,15 @@ func main() {
 		log.Fatalf("database configuration error: %v", err)
 	}
 
+	identityCfg := struct {
+		URL string
+	}{
+		URL: os.Getenv("IDENTITY_SERVICE_URL"),
+	}
+	if identityCfg.URL == "" {
+		identityCfg.URL = "http://localhost:8081"
+	}
+
 	flutterwaveCfg, err := loadFlutterwaveConfig()
 	if err != nil {
 		log.Fatalf("flutterwave configuration error: %v", err)
@@ -68,6 +77,7 @@ func main() {
 		validator,
 		databaseCfg.URL,
 		flutterwaveCfg,
+		identityCfg.URL,
 	)
 	if err != nil {
 		log.Fatalf("billing service initialization error: %v", err)

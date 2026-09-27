@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS leases (
     tenant_id UUID NOT NULL,
     property_id UUID NOT NULL,
 
-    status STRING NOT NULL,
+    status TEXT NOT NULL,
 
     entitlement_from TIMESTAMPTZ NOT NULL,
     entitlement_until TIMESTAMPTZ NOT NULL,

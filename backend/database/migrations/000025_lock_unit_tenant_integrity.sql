@@ -3,28 +3,51 @@
 
 -- Add foreign key constraints to ensure proper property hierarchy
 -- Units must belong to properties
-ALTER TABLE units 
-ADD CONSTRAINT units_property_fk 
-    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'units_property_fk'
+        AND conrelid = 'units'::regclass
+    ) THEN
+        ALTER TABLE units
+        ADD CONSTRAINT units_property_fk
+            FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT;
+    END IF;
+END $$;
 
 -- Locks should be assignable only to units in the same property
 -- This is enforced at application level but we add documentation constraint
-COMMENT ON TABLE lock_unit_assignments IS 
+COMMENT ON TABLE lock_unit_assignments IS
     'Lock-unit assignments. Application layer must ensure lock and unit belong to same property to prevent cross-property assignments.';
 
--- Tenancies must be linked to valid units, properties, and landlord profiles
-ALTER TABLE tenancies 
-ADD CONSTRAINT tenancies_unit_fk 
-    FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE RESTRICT,
-ADD CONSTRAINT tenancies_property_fk 
-    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT,
-ADD CONSTRAINT tenancies_landlord_fk 
-    FOREIGN KEY (landlord_profile_id) REFERENCES landlord_profiles(id) ON DELETE RESTRICT;
+-- Tenancies must be linked to valid units
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'tenancies_unit_fk'
+        AND conrelid = 'tenancies'::regclass
+    ) THEN
+        ALTER TABLE tenancies
+        ADD CONSTRAINT tenancies_unit_fk
+            FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE RESTRICT;
+    END IF;
+END $$;
 
 -- Payment responsibilities must be linked to valid tenancies
-ALTER TABLE payment_responsibilities 
-ADD CONSTRAINT payment_responsibilities_tenancy_fk 
-    FOREIGN KEY (tenancy_id) REFERENCES tenancies(id) ON DELETE RESTRICT;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'payment_responsibilities_tenancy_fk'
+        AND conrelid = 'payment_responsibilities'::regclass
+    ) THEN
+        ALTER TABLE payment_responsibilities
+        ADD CONSTRAINT payment_responsibilities_tenancy_fk
+            FOREIGN KEY (tenancy_id) REFERENCES tenancies(id) ON DELETE RESTRICT;
+    END IF;
+END $$;
 
 -- Ensure lock assignments respect property boundaries
 -- Create a function to validate lock-unit assignment property integrity
@@ -61,5 +84,4 @@ CREATE TRIGGER lock_unit_property_integrity_trigger
 COMMENT ON COLUMN lock_unit_assignments.lock_id IS 'Lock device ID. Application must ensure lock and unit belong to same property.';
 COMMENT ON COLUMN lock_unit_assignments.unit_id IS 'Unit ID. Unit must belong to a valid property.';
 COMMENT ON COLUMN tenancies.tenant_subject_id IS 'Tenant subject ID from identity-service. Must be a valid subject.';
-COMMENT ON COLUMN tenancies.landlord_profile_id IS 'Landlord profile ID. Must be a valid landlord profile.';
 COMMENT ON COLUMN payment_responsibilities.tenancy_id IS 'Tenancy ID. Must be a valid active tenancy.';

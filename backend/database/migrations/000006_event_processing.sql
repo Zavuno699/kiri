@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS event_processing (
-    consumer_name STRING NOT NULL,
+    consumer_name TEXT NOT NULL,
     event_id UUID NOT NULL,
-    event_type STRING NOT NULL,
-    status STRING NOT NULL,
+    event_type TEXT NOT NULL,
+    status TEXT NOT NULL,
     correlation_id UUID NULL,
     occurred_at TIMESTAMPTZ NOT NULL,
     started_at TIMESTAMPTZ NOT NULL,

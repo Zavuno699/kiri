@@ -8,21 +8,21 @@ CREATE TABLE IF NOT EXISTS payments (
 
     tenant_id UUID NOT NULL,
 
-    reference STRING NOT NULL,
+    reference TEXT NOT NULL,
 
-    provider STRING NOT NULL,
+    provider TEXT NOT NULL,
 
-    provider_charge_id STRING NULL,
+    provider_charge_id TEXT NULL,
 
     amount_ugx INT8 NOT NULL,
 
-    currency STRING NOT NULL,
+    currency TEXT NOT NULL,
 
-    status STRING NOT NULL,
+    status TEXT NOT NULL,
 
-    idempotency_key STRING NOT NULL,
+    idempotency_key TEXT NOT NULL,
 
-    correlation_id STRING NOT NULL,
+    correlation_id TEXT NOT NULL,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -70,21 +70,21 @@ CREATE INDEX IF NOT EXISTS payments_created_at_idx
 CREATE TABLE IF NOT EXISTS payment_webhook_receipts (
     id UUID PRIMARY KEY,
 
-    provider STRING NOT NULL,
+    provider TEXT NOT NULL,
 
-    provider_event_id STRING NOT NULL,
+    provider_event_id TEXT NOT NULL,
 
     payment_id UUID NOT NULL,
 
-    provider_charge_id STRING NULL,
+    provider_charge_id TEXT NULL,
 
-    payload_hash STRING NOT NULL,
+    payload_hash TEXT NOT NULL,
 
     received_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     processed_at TIMESTAMPTZ NULL,
 
-    status STRING NOT NULL,
+    status TEXT NOT NULL,
 
     CONSTRAINT payment_webhook_payment_fk
         FOREIGN KEY (payment_id) REFERENCES payments (id),

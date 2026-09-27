@@ -1,5 +1,5 @@
 ALTER TABLE payments
-    ADD COLUMN request_hash STRING NOT NULL DEFAULT '';
+    ADD COLUMN request_hash TEXT NOT NULL DEFAULT '';
 
 CREATE INDEX payments_provider_idempotency_idx
     ON payments (provider, idempotency_key);

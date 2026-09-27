@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS locks (
     id UUID PRIMARY KEY,
     lease_id UUID NOT NULL,
     device_id UUID NOT NULL,
-    state STRING NOT NULL,
+    state TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     version INT8 NOT NULL DEFAULT 1,

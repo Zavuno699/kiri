@@ -1,50 +1,269 @@
 package handler
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/kirilock/backend/billing-service/internal/identity"
+	"github.com/kirilock/backend/billing-service/internal/model"
+	"github.com/kirilock/backend/billing-service/internal/service"
+	"github.com/kirilock/backend/shared/validation"
 )
 
-// stubPaymentApplication is a minimal stub that satisfies the PaymentApplication interface
-// Note: This requires the service.PaymentApplication type to be used as an interface
-// For now, we'll test the error mapping logic more directly at the service level
-// and keep handler tests minimal since the complex dependency setup is not essential
-// for verifying the sentinel error propagation.
-
-// The service-level tests in payment_application_test.go already verify that
-// the sentinel errors are properly propagated. The handler error mapping is
-// simple string-based matching for compatibility, which is covered by the
-// service tests.
-
-// We'll add a minimal test to verify the handler doesn't break the happy path
-func TestPaymentApplicationHandler_HappyPath(t *testing.T) {
-	// This test would require a full mock setup which is complex
-	// The service-level tests already verify the error propagation
-	// Skip this test for now - the critical error mapping is tested in service layer
-	t.Skip("Handler happy path requires complex mock setup - tested at service level")
+// fakePaymentCreator is a fake implementation of paymentCreator for testing
+type fakePaymentCreator struct {
+	createFunc func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error)
 }
 
-// Verify that the sentinel errors exist and can be used with errors.Is
-func TestSentinelErrorsExist(t *testing.T) {
-	if identity.ErrInvalidSession == nil {
-		t.Fatal("ErrInvalidSession is nil")
+func (f *fakePaymentCreator) CreatePendingPayment(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+	if f.createFunc != nil {
+		return f.createFunc(ctx, sessionID, request)
 	}
-	if identity.ErrForbidden == nil {
-		t.Fatal("ErrForbidden is nil")
-	}
-	if identity.ErrResponsibilityNotFound == nil {
-		t.Fatal("ErrResponsibilityNotFound is nil")
-	}
-	if identity.ErrResponsibilityConflict == nil {
-		t.Fatal("ErrResponsibilityConflict is nil")
+	return model.Payment{}, nil
+}
+
+func TestPaymentApplicationHandler_ErrorCodeMapping(t *testing.T) {
+	validator := validation.New()
+	responsibilityID := uuid.New()
+
+	// Create a valid request struct
+	validRequest := service.CreatePaymentRequest{
+		PaymentResponsibilityID: responsibilityID,
+		Reference:               "KIRI-TEST-001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "test-key-001",
+		TraceID:                 "trace-001",
 	}
 
-	// Test errors.Is works
-	err := fmt.Errorf("wrapped: %w", identity.ErrInvalidSession)
-	if !errors.Is(err, identity.ErrInvalidSession) {
-		t.Fatal("errors.Is failed for ErrInvalidSession")
+	validRequestBody, err := json.Marshal(validRequest)
+	if err != nil {
+		t.Fatalf("failed to marshal request: %v", err)
+	}
+
+	tests := []struct {
+		name           string
+		createFunc     func(context.Context, string, service.CreatePaymentRequest) (model.Payment, error)
+		expectedStatus int
+	}{
+		{
+			name: "invalid session returns 401",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, fmt.Errorf("invalid session: %w", identity.ErrInvalidSession)
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "forbidden returns 403",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, fmt.Errorf("forbidden: %w", identity.ErrForbidden)
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "responsibility not found returns 404",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, fmt.Errorf("payment responsibility not found: %w", identity.ErrResponsibilityNotFound)
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name: "responsibility conflict returns 409",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, fmt.Errorf("payment responsibility conflict: %w", identity.ErrResponsibilityConflict)
+			},
+			expectedStatus: http.StatusConflict,
+		},
+		{
+			name: "payment responsibility not active returns 409",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, errors.New("payment responsibility is not active")
+			},
+			expectedStatus: http.StatusConflict,
+		},
+		{
+			name: "unexpected error returns 500",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, errors.New("something unexpected")
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "success returns 201",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{
+					ID:                      uuid.New(),
+					TenantID:                uuid.New(),
+					PaymentResponsibilityID: &responsibilityID,
+					Reference:               request.Reference,
+					AmountMinor:             request.Amount,
+					Currency:                request.Currency,
+					Status:                  model.PaymentPending,
+				}, nil
+			},
+			expectedStatus: http.StatusCreated,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fake := &fakePaymentCreator{createFunc: tt.createFunc}
+			handler, err := NewPaymentApplicationHandler(validator, fake)
+			if err != nil {
+				t.Fatalf("NewPaymentApplicationHandler: %v", err)
+			}
+
+			req := httptest.NewRequest("POST", "/api/v1/payments", strings.NewReader(string(validRequestBody)))
+			req.Header.Set("Authorization", "Bearer test-session-id")
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d: %s", tt.expectedStatus, w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+func TestPaymentApplicationHandler_BadJSON(t *testing.T) {
+	fake := &fakePaymentCreator{
+		createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+			return model.Payment{}, nil
+		},
+	}
+	handler, err := NewPaymentApplicationHandler(validation.New(), fake)
+	if err != nil {
+		t.Fatalf("NewPaymentApplicationHandler: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", "/api/v1/payments", strings.NewReader(`{"invalid json`))
+	req.Header.Set("Authorization", "Bearer test-session-id")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestPaymentApplicationHandler_ValidationFailure(t *testing.T) {
+	fake := &fakePaymentCreator{
+		createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+			return model.Payment{}, nil
+		},
+	}
+	handler, err := NewPaymentApplicationHandler(validation.New(), fake)
+	if err != nil {
+		t.Fatalf("NewPaymentApplicationHandler: %v", err)
+	}
+
+	// Missing required field
+	invalidBody := `{
+		"reference": "KIRI-TEST-001",
+		"amount": 20000,
+		"currency": "UGX"
+	}`
+
+	req := httptest.NewRequest("POST", "/api/v1/payments", strings.NewReader(invalidBody))
+	req.Header.Set("Authorization", "Bearer test-session-id")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Errorf("expected 422, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestPaymentApplicationHandler_MissingAuthHeader(t *testing.T) {
+	fake := &fakePaymentCreator{
+		createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+			return model.Payment{}, nil
+		},
+	}
+	handler, err := NewPaymentApplicationHandler(validation.New(), fake)
+	if err != nil {
+		t.Fatalf("NewPaymentApplicationHandler: %v", err)
+	}
+
+	validRequest := service.CreatePaymentRequest{
+		PaymentResponsibilityID: uuid.New(),
+		Reference:               "KIRI-TEST-001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "test-key-001",
+		TraceID:                 "trace-001",
+	}
+
+	validRequestBody, err := json.Marshal(validRequest)
+	if err != nil {
+		t.Fatalf("failed to marshal request: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", "/api/v1/payments", strings.NewReader(string(validRequestBody)))
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestPaymentApplicationHandler_SessionIDRequired(t *testing.T) {
+	fake := &fakePaymentCreator{
+		createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+			return model.Payment{}, nil
+		},
+	}
+	handler, err := NewPaymentApplicationHandler(validation.New(), fake)
+	if err != nil {
+		t.Fatalf("NewPaymentApplicationHandler: %v", err)
+	}
+
+	validRequest := service.CreatePaymentRequest{
+		PaymentResponsibilityID: uuid.New(),
+		Reference:               "KIRI-TEST-001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "test-key-001",
+		TraceID:                 "trace-001",
+	}
+
+	validRequestBody, err := json.Marshal(validRequest)
+	if err != nil {
+		t.Fatalf("failed to marshal request: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", "/api/v1/payments", strings.NewReader(string(validRequestBody)))
+	req.Header.Set("Authorization", "Bearer ") // Empty Bearer token
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d: %s", w.Code, w.Body.String())
 	}
 }

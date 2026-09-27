@@ -1,23 +1,30 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/kirilock/backend/billing-service/internal/identity"
+	"github.com/kirilock/backend/billing-service/internal/model"
 	"github.com/kirilock/backend/billing-service/internal/service"
 	"github.com/kirilock/backend/shared/validation"
 )
 
+// paymentCreator is the interface for creating payments, allowing the handler to use a fake in tests
+type paymentCreator interface {
+	CreatePendingPayment(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error)
+}
+
 type PaymentApplicationHandler struct {
 	validator   *validation.Validator
-	application *service.PaymentApplication
+	application paymentCreator
 }
 
 func NewPaymentApplicationHandler(
 	validator *validation.Validator,
-	application *service.PaymentApplication,
+	application paymentCreator,
 ) (*PaymentApplicationHandler, error) {
 	if validator == nil {
 		return nil, errors.New("validator is required")

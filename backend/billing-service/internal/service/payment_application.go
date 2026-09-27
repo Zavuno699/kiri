@@ -58,8 +58,18 @@ func (s *PaymentApplication) CreatePendingPayment(
 	// Resolve responsibility from identity-service to derive ownership
 	responsibility, err := s.identityClient.ResolvePaymentResponsibility(ctx, sessionID, request.PaymentResponsibilityID)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return model.Payment{}, errors.New("payment responsibility not found")
+		// Preserve sentinel errors for handler mapping
+		if errors.Is(err, identity.ErrResponsibilityNotFound) {
+			return model.Payment{}, fmt.Errorf("payment responsibility not found: %w", identity.ErrResponsibilityNotFound)
+		}
+		if errors.Is(err, identity.ErrInvalidSession) {
+			return model.Payment{}, fmt.Errorf("invalid session: %w", identity.ErrInvalidSession)
+		}
+		if errors.Is(err, identity.ErrForbidden) {
+			return model.Payment{}, fmt.Errorf("forbidden: %w", identity.ErrForbidden)
+		}
+		if errors.Is(err, identity.ErrResponsibilityConflict) {
+			return model.Payment{}, fmt.Errorf("payment responsibility conflict: %w", identity.ErrResponsibilityConflict)
 		}
 		return model.Payment{}, fmt.Errorf("resolve payment responsibility: %w", err)
 	}

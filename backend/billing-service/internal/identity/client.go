@@ -81,11 +81,14 @@ func (c *Client) ValidateSession(ctx context.Context, sessionID string) (middlew
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusUnauthorized {
-		return middleware.AuthenticatedSubject{}, errors.New("invalid session")
-	}
-
-	if resp.StatusCode != http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
+		return middleware.AuthenticatedSubject{}, fmt.Errorf("session validation failed: %w", ErrInvalidSession)
+	case http.StatusForbidden:
+		return middleware.AuthenticatedSubject{}, fmt.Errorf("session validation failed: %w", ErrForbidden)
+	case http.StatusOK:
+		// Continue
+	default:
 		return middleware.AuthenticatedSubject{}, fmt.Errorf("identity-service returned status %d", resp.StatusCode)
 	}
 
@@ -127,11 +130,18 @@ func (c *Client) ResolvePaymentResponsibility(ctx context.Context, sessionID str
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusNotFound {
-		return PaymentResponsibilityResponse{}, errors.New("payment responsibility not found")
-	}
-
-	if resp.StatusCode != http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
+		return PaymentResponsibilityResponse{}, fmt.Errorf("responsibility resolution failed: %w", ErrInvalidSession)
+	case http.StatusForbidden:
+		return PaymentResponsibilityResponse{}, fmt.Errorf("responsibility resolution failed: %w", ErrForbidden)
+	case http.StatusNotFound:
+		return PaymentResponsibilityResponse{}, fmt.Errorf("responsibility resolution failed: %w", ErrResponsibilityNotFound)
+	case http.StatusConflict:
+		return PaymentResponsibilityResponse{}, fmt.Errorf("responsibility resolution failed: %w", ErrResponsibilityConflict)
+	case http.StatusOK:
+		// Continue
+	default:
 		return PaymentResponsibilityResponse{}, fmt.Errorf("identity-service returned status %d", resp.StatusCode)
 	}
 

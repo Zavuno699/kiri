@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -66,8 +67,8 @@ func TestValidateSession_IdentityServiceContract(t *testing.T) {
 		t.Fatal("expected error for invalid session")
 	}
 
-	if err.Error() != "invalid session" {
-		t.Errorf("expected 'invalid session' error, got '%v'", err)
+	if !errors.Is(err, ErrInvalidSession) {
+		t.Errorf("expected ErrInvalidSession, got '%v'", err)
 	}
 
 	// Test 3: Empty session ID should return error

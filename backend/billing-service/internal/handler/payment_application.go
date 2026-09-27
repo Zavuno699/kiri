@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/kirilock/backend/billing-service/internal/identity"
 	"github.com/kirilock/backend/billing-service/internal/service"
 	"github.com/kirilock/backend/shared/validation"
 )
@@ -81,13 +82,15 @@ func (h *PaymentApplicationHandler) ServeHTTP(
 		request,
 	)
 	if err != nil {
-		// Return appropriate status code based on error type
-		if err.Error() == "payment responsibility not found" {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err.Error() == "payment responsibility is not active" {
-			http.Error(w, err.Error(), http.StatusConflict)
-		} else if err.Error() == "session ID is required" {
+		// Return appropriate status code based on error type using sentinel errors
+		if errors.Is(err, identity.ErrInvalidSession) || err.Error() == "session ID is required" {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
+		} else if errors.Is(err, identity.ErrForbidden) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else if errors.Is(err, identity.ErrResponsibilityNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else if errors.Is(err, identity.ErrResponsibilityConflict) || err.Error() == "payment responsibility is not active" {
+			http.Error(w, err.Error(), http.StatusConflict)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

@@ -5,6 +5,7 @@
     "dockerfilePath": "device-service/Dockerfile"
   },
   "deploy": {
+    "healthcheckPath": "/health/ready",
     "restartPolicyType": "ON_FAILURE"
   }
 }

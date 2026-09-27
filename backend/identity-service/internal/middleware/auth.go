@@ -23,12 +23,29 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			// Check if origin is allowed
-			if allowedOrigins == "*" || strings.Contains(allowedOrigins, origin) {
+			if allowedOrigins == "*" {
+				// When credentials are allowed, cannot use *, so echo the specific origin
 				w.Header().Set("Access-Control-Allow-Origin", origin)
+			} else {
+				// Split on commas, trim spaces, and check for exact match
+				allowedOriginsList := strings.Split(allowedOrigins, ",")
+				allowed := false
+				for _, allowedOrigin := range allowedOriginsList {
+					allowedOrigin = strings.TrimSpace(allowedOrigin)
+					if allowedOrigin == origin {
+						allowed = true
+						break
+					}
+				}
+				if allowed {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+				}
 			}
 		} else {
-			// If no origin header, use the allowed origins value
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
+			// If no origin header, use the allowed origins value (only for * or fallback)
+			if allowedOrigins == "*" {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			}
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")

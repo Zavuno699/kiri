@@ -14,15 +14,25 @@ import (
 // CORSMiddleware adds CORS headers for development
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Read allowed origins from environment, fallback to localhost dev origins
+		// Set Vary: Origin unconditionally for all requests (before any early returns)
+		w.Header().Add("Vary", "Origin")
+
+		// Read allowed origins from environment
 		allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
 		if allowedOrigins == "" {
-			// Safe dev fallback: only allow localhost frontend
-			allowedOrigins = "http://localhost:5173,http://localhost:3000"
+			// Check environment: only use localhost fallback in development/test
+			env := os.Getenv("KIRI_ENV")
+			if env == "development" || env == "test" {
+				// Safe dev fallback: only allow localhost frontend
+				allowedOrigins = "http://localhost:5173,http://localhost:3000"
+			} else {
+				// Production: fail closed with empty allowlist
+				allowedOrigins = ""
+			}
 		}
 
 		origin := r.Header.Get("Origin")
-		if origin != "" {
+		if origin != "" && allowedOrigins != "" {
 			// Split on commas, trim spaces, and check for exact match
 			allowedOriginsList := strings.Split(allowedOrigins, ",")
 			allowed := false
@@ -35,7 +45,6 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			}
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Vary", "Origin")
 			}
 		}
 

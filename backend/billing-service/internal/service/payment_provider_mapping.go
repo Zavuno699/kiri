@@ -35,7 +35,7 @@ func BuildPendingPayment(
 	if providerPayment.Amount != request.Amount {
 		return model.Payment{}, errors.New("provider amount mismatch")
 	}
-	if strings.ToUpper(providerPayment.Currency) != strings.ToUpper(request.Currency) {
+	if !strings.EqualFold(providerPayment.Currency, request.Currency) {
 		return model.Payment{}, errors.New("provider currency mismatch")
 	}
 

@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/google/uuid"
+	sharedhttp "github.com/kirilock/backend/shared/http"
 )
 
 // identityClient is the interface for session validation
@@ -17,6 +20,7 @@ type identityClient interface {
 type mockIdentityClient struct {
 	shouldFail   bool
 	validSession bool
+	subjectID    string
 }
 
 func (m *mockIdentityClient) ValidateSession(ctx context.Context, sessionID string) (AuthenticatedSubject, error) {
@@ -26,8 +30,12 @@ func (m *mockIdentityClient) ValidateSession(ctx context.Context, sessionID stri
 	if !m.validSession {
 		return AuthenticatedSubject{}, errors.New("invalid session")
 	}
+	subjectID := m.subjectID
+	if subjectID == "" {
+		subjectID = uuid.New().String()
+	}
 	return AuthenticatedSubject{
-		SubjectID:    "test-subject-id",
+		SubjectID:    subjectID,
 		Email:        "test@example.com",
 		Roles:        []string{"tenant"},
 		IsAdmin:      false,
@@ -130,6 +138,82 @@ func TestAuthenticationMiddleware_ValidSession(t *testing.T) {
 	// Should return 200 since session is valid
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", w.Code)
+	}
+}
+
+func TestAuthenticationMiddleware_PrincipalContract(t *testing.T) {
+	// Test that authentication sets the shared/http.Principal in context
+	testUUID := uuid.New()
+	mockClient := &mockIdentityClient{shouldFail: false, validSession: true}
+	mockClient.subjectID = testUUID.String()
+	authMiddleware := NewAuthenticationMiddleware(mockClient)
+
+	var retrievedPrincipal sharedhttp.Principal
+	handler := authMiddleware.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		principal, err := sharedhttp.PrincipalFromContext(r.Context())
+		if err != nil {
+			t.Errorf("failed to get principal from context: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		retrievedPrincipal = principal
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "valid-session-id")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+
+	if retrievedPrincipal.TenantID != testUUID {
+		t.Errorf("expected TenantID to be %s, got %s", testUUID, retrievedPrincipal.TenantID)
+	}
+}
+
+func TestAuthenticationMiddleware_InvalidSubjectID(t *testing.T) {
+	// Test that invalid SubjectID returns 401
+	mockClient := &mockIdentityClient{shouldFail: false, validSession: true}
+	mockClient.subjectID = "not-a-uuid"
+	authMiddleware := NewAuthenticationMiddleware(mockClient)
+
+	handler := authMiddleware.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "valid-session-id")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 for invalid SubjectID, got %d", w.Code)
+	}
+}
+
+func TestAuthenticationMiddleware_NilSubjectID(t *testing.T) {
+	// Test that nil UUID SubjectID returns 401
+	mockClient := &mockIdentityClient{shouldFail: false, validSession: true}
+	mockClient.subjectID = (uuid.UUID{}).String()
+	authMiddleware := NewAuthenticationMiddleware(mockClient)
+
+	handler := authMiddleware.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "valid-session-id")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 for nil SubjectID, got %d", w.Code)
 	}
 }
 

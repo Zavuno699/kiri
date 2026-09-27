@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	"github.com/google/uuid"
+	sharedhttp "github.com/kirilock/backend/shared/http"
 )
 
 type authenticatedSubjectKey struct{}
@@ -82,6 +85,24 @@ func (m *AuthenticationMiddleware) Authenticate(next http.Handler) http.Handler 
 
 		// Populate authenticated subject context
 		ctx := WithAuthenticatedSubject(r.Context(), subject)
+
+		// Also populate shared/http.Principal for handler compatibility
+		// Parse SubjectID as UUID and set as TenantID
+		subjectUUID, err := uuid.Parse(subject.SubjectID)
+		if err != nil {
+			http.Error(w, "invalid subject ID", http.StatusUnauthorized)
+			return
+		}
+
+		if subjectUUID == (uuid.UUID{}) {
+			http.Error(w, "invalid subject ID", http.StatusUnauthorized)
+			return
+		}
+
+		principal := sharedhttp.Principal{
+			TenantID: subjectUUID,
+		}
+		ctx = sharedhttp.WithPrincipal(ctx, principal)
 
 		// Call next handler with authenticated context
 		next.ServeHTTP(w, r.WithContext(ctx))

@@ -242,18 +242,27 @@ func (s *Service) Stop() {
 }
 
 func (s *Service) RegisterRoutes(mux *http.ServeMux) {
-	// Wrap all /api/v1/* routes with authentication middleware
+	// Apply authentication middleware to all /api/v1/* routes
 	apiMux := http.NewServeMux()
-	s.paymentHandler.RegisterRoutes(apiMux)
 
-	// Register reconciliation handler if present
+	// Wire payment creation with payment.write scope
+	paymentWriteAuth := middleware.NewAuthorizationMiddleware(middleware.ScopePaymentWrite)
+	apiMux.Handle(
+		"POST /api/v1/payments",
+		s.authMiddleware.Authenticate(paymentWriteAuth.Authorize(s.paymentHandler)),
+	)
+
+	// Wire reconciliation with payment.reconcile scope (if present)
 	if s.reconciliationHandler != nil {
+		paymentReconcileAuth := middleware.NewAuthorizationMiddleware(middleware.ScopePaymentReconcile)
 		apiMux.Handle(
 			"POST /api/v1/payments/reconcile",
-			http.HandlerFunc(s.reconciliationHandler.Reconcile),
+			s.authMiddleware.Authenticate(paymentReconcileAuth.Authorize(
+				http.HandlerFunc(s.reconciliationHandler.Reconcile),
+			)),
 		)
 	}
 
-	// Apply authentication middleware to all /api/v1/* routes
-	mux.Handle("/api/v1/", s.authMiddleware.Authenticate(apiMux))
+	// Register the authenticated and authorized API routes
+	mux.Handle("/api/v1/", apiMux)
 }

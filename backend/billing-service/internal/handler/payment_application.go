@@ -8,6 +8,7 @@ import (
 
 	"github.com/kirilock/backend/billing-service/internal/identity"
 	"github.com/kirilock/backend/billing-service/internal/model"
+	"github.com/kirilock/backend/billing-service/internal/repository"
 	"github.com/kirilock/backend/billing-service/internal/service"
 	"github.com/kirilock/backend/shared/validation"
 )
@@ -96,7 +97,7 @@ func (h *PaymentApplicationHandler) ServeHTTP(
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else if errors.Is(err, identity.ErrResponsibilityNotFound) {
 			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if errors.Is(err, identity.ErrResponsibilityConflict) || err.Error() == "payment responsibility is not active" {
+		} else if errors.Is(err, identity.ErrResponsibilityConflict) || err.Error() == "payment responsibility is not active" || errors.Is(err, repository.ErrIdempotencyConflict) || err.Error() == "idempotency key was already used with a different request" {
 			http.Error(w, err.Error(), http.StatusConflict)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

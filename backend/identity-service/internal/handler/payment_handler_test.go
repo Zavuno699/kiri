@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -205,4 +206,262 @@ func TestGetPaymentResponsibilityInternal_NoPrincipal_Unauthorized(t *testing.T)
 	if resolver.called {
 		t.Error("service should not have been called when principal is missing")
 	}
+}
+
+func TestGetPaymentResponsibilityInternal_HappyPath_ResponseFields(t *testing.T) {
+	// Test 200 happy-path with full response JSON field assertions
+	responsibilityID := uuid.New()
+	tenantSubjectID := uuid.New()
+	paymentAccountID := uuid.New()
+	tenancyID := uuid.New()
+
+	resolver := &testPaymentResolver{
+		responsibility: model.PaymentResponsibility{
+			ID:                      responsibilityID,
+			TenantSubjectID:         tenantSubjectID,
+			PaymentAccountID:        paymentAccountID,
+			TenancyID:               tenancyID,
+			Status:                  model.PaymentResponsibilityActive,
+			ResponsibleForRent:      true,
+			ResponsibleForUtilities: false,
+			ResponsibleForFees:      true,
+			MonthlyRentAmountMinor:  500000,
+			Notes:                   "Test responsibility",
+			CreatedAt:               time.Now(),
+			UpdatedAt:               time.Now(),
+		},
+		account: model.PaymentAccount{
+			ID:       paymentAccountID,
+			Provider: model.ProviderStripe,
+			Status:   model.PaymentAccountActive,
+		},
+	}
+
+	mockService := &mockPaymentService{resolver: resolver}
+
+	handler, err := NewPaymentHandler(mockService)
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/internal/payment-responsibilities?id="+responsibilityID.String(), nil)
+
+	principal := client.Principal{
+		Subject: uuid.New().String(),
+		Roles:   []string{"finance_admin"},
+	}
+	ctx := middleware.WithPrincipal(context.Background(), principal)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.GetPaymentResponsibilityInternal(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Decode and assert response fields
+	var response PaymentResponsibilityWithAccountResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.ID != responsibilityID {
+		t.Errorf("expected ID %s, got %s", responsibilityID, response.ID)
+	}
+	if response.TenantSubjectID != tenantSubjectID {
+		t.Errorf("expected TenantSubjectID %s, got %s", tenantSubjectID, response.TenantSubjectID)
+	}
+	if response.PaymentAccountID != paymentAccountID {
+		t.Errorf("expected PaymentAccountID %s, got %s", paymentAccountID, response.PaymentAccountID)
+	}
+	if response.TenancyID != tenancyID {
+		t.Errorf("expected TenancyID %s, got %s", tenancyID, response.TenancyID)
+	}
+	if response.Status != model.PaymentResponsibilityActive {
+		t.Errorf("expected Status %s, got %s", model.PaymentResponsibilityActive, response.Status)
+	}
+	if response.PaymentAccountProvider != model.ProviderStripe {
+		t.Errorf("expected PaymentAccountProvider %s, got %s", model.ProviderStripe, response.PaymentAccountProvider)
+	}
+	if response.PaymentAccountStatus != model.PaymentAccountActive {
+		t.Errorf("expected PaymentAccountStatus %s, got %s", model.PaymentAccountActive, response.PaymentAccountStatus)
+	}
+}
+
+func TestGetPaymentResponsibilityInternal_NotFound(t *testing.T) {
+	// Test 404 when responsibility is not found
+	responsibilityID := uuid.New()
+
+	resolver := &testPaymentResolver{
+		responsibility: model.PaymentResponsibility{}, // Nil ID to trigger not found
+		account:        model.PaymentAccount{},
+	}
+
+	mockService := &mockPaymentService{resolver: resolver}
+
+	handler, err := NewPaymentHandler(mockService)
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/internal/payment-responsibilities?id="+responsibilityID.String(), nil)
+
+	principal := client.Principal{
+		Subject: uuid.New().String(),
+		Roles:   []string{"finance_admin"},
+	}
+	ctx := middleware.WithPrincipal(context.Background(), principal)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.GetPaymentResponsibilityInternal(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestGetPaymentResponsibilityInternal_InactiveResponsibility(t *testing.T) {
+	// Test 409 when responsibility is not ACTIVE
+	responsibilityID := uuid.New()
+
+	resolver := &testPaymentResolver{
+		responsibility: model.PaymentResponsibility{
+			ID:               responsibilityID,
+			TenantSubjectID:  uuid.New(),
+			PaymentAccountID: uuid.New(),
+			TenancyID:        uuid.New(),
+			Status:           model.PaymentResponsibilityInactive, // Not ACTIVE
+		},
+		account: model.PaymentAccount{
+			ID:       uuid.New(),
+			Provider: model.ProviderStripe,
+			Status:   model.PaymentAccountActive,
+		},
+	}
+
+	mockService := &mockPaymentService{resolver: resolver}
+
+	handler, err := NewPaymentHandler(mockService)
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/internal/payment-responsibilities?id="+responsibilityID.String(), nil)
+
+	principal := client.Principal{
+		Subject: uuid.New().String(),
+		Roles:   []string{"finance_admin"},
+	}
+	ctx := middleware.WithPrincipal(context.Background(), principal)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.GetPaymentResponsibilityInternal(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Errorf("expected status 409, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestGetPaymentResponsibilityInternal_InactiveAccount(t *testing.T) {
+	// Test 409 when payment account is not ACTIVE
+	responsibilityID := uuid.New()
+
+	resolver := &testPaymentResolver{
+		responsibility: model.PaymentResponsibility{
+			ID:               responsibilityID,
+			TenantSubjectID:  uuid.New(),
+			PaymentAccountID: uuid.New(),
+			TenancyID:        uuid.New(),
+			Status:           model.PaymentResponsibilityActive,
+		},
+		account: model.PaymentAccount{
+			ID:       uuid.New(),
+			Provider: model.ProviderStripe,
+			Status:   model.PaymentAccountPaused, // Not ACTIVE
+		},
+	}
+
+	mockService := &mockPaymentService{resolver: resolver}
+
+	handler, err := NewPaymentHandler(mockService)
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/internal/payment-responsibilities?id="+responsibilityID.String(), nil)
+
+	principal := client.Principal{
+		Subject: uuid.New().String(),
+		Roles:   []string{"finance_admin"},
+	}
+	ctx := middleware.WithPrincipal(context.Background(), principal)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.GetPaymentResponsibilityInternal(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Errorf("expected status 409, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestGetPaymentResponsibilityInternal_GlobalTrustSemantics(t *testing.T) {
+	// Test global-trust: finance_admin can resolve responsibility belonging to an arbitrary tenant
+	// This is the intentional platform-level finance boundary
+	responsibilityID := uuid.New()
+	arbitraryTenantID := uuid.New() // Arbitrary tenant, not the admin's tenant
+
+	resolver := &testPaymentResolver{
+		responsibility: model.PaymentResponsibility{
+			ID:               responsibilityID,
+			TenantSubjectID:  arbitraryTenantID, // Different from admin
+			PaymentAccountID: uuid.New(),
+			TenancyID:        uuid.New(),
+			Status:           model.PaymentResponsibilityActive,
+		},
+		account: model.PaymentAccount{
+			ID:       uuid.New(),
+			Provider: model.ProviderStripe,
+			Status:   model.PaymentAccountActive,
+		},
+	}
+
+	mockService := &mockPaymentService{resolver: resolver}
+
+	handler, err := NewPaymentHandler(mockService)
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/internal/payment-responsibilities?id="+responsibilityID.String(), nil)
+
+	principal := client.Principal{
+		Subject: uuid.New().String(), // Finance admin (different from arbitraryTenantID)
+		Roles:   []string{"finance_admin"},
+	}
+	ctx := middleware.WithPrincipal(context.Background(), principal)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.GetPaymentResponsibilityInternal(w, req)
+
+	// Should succeed (200) - global-trust allows admin to resolve any responsibility
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200 (global-trust allows admin to resolve arbitrary tenant's responsibility), got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Decode and verify the response contains the arbitrary tenant's data
+	var response PaymentResponsibilityWithAccountResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.TenantSubjectID != arbitraryTenantID {
+		t.Errorf("expected TenantSubjectID %s (arbitrary tenant), got %s", arbitraryTenantID, response.TenantSubjectID)
+	}
+
+	t.Logf("✓ Verified: global-trust semantics - finance_admin can resolve responsibility belonging to arbitrary tenant %s", arbitraryTenantID)
 }

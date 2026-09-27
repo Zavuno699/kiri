@@ -1,4 +1,4 @@
-package middleware
+package service
 
 import (
 	"net/http"
@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func TestCORSMiddleware_AllowedOrigin(t *testing.T) {
+func TestDeviceHTTPCORSMiddleware_AllowedOrigin(t *testing.T) {
 	// Set up allowed origins
 	os.Setenv("CORS_ALLOWED_ORIGINS", "https://example.com,https://www.example.com")
 	defer os.Unsetenv("CORS_ALLOWED_ORIGINS")
 
-	middleware := CORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	middleware := NewDeviceHTTPCORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -37,12 +37,12 @@ func TestCORSMiddleware_AllowedOrigin(t *testing.T) {
 	}
 }
 
-func TestCORSMiddleware_NotAllowedOrigin(t *testing.T) {
+func TestDeviceHTTPCORSMiddleware_NotAllowedOrigin(t *testing.T) {
 	// Set up allowed origins
 	os.Setenv("CORS_ALLOWED_ORIGINS", "https://example.com")
 	defer os.Unsetenv("CORS_ALLOWED_ORIGINS")
 
-	middleware := CORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	middleware := NewDeviceHTTPCORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -62,11 +62,11 @@ func TestCORSMiddleware_NotAllowedOrigin(t *testing.T) {
 	}
 }
 
-func TestCORSMiddleware_DevFallback(t *testing.T) {
+func TestDeviceHTTPCORSMiddleware_DevFallback(t *testing.T) {
 	// No env var set, should use localhost fallback
 	os.Unsetenv("CORS_ALLOWED_ORIGINS")
 
-	middleware := CORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	middleware := NewDeviceHTTPCORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -86,11 +86,11 @@ func TestCORSMiddleware_DevFallback(t *testing.T) {
 	}
 }
 
-func TestCORSMiddleware_DevFallback_Rejected(t *testing.T) {
+func TestDeviceHTTPCORSMiddleware_DevFallback_Rejected(t *testing.T) {
 	// No env var set, should use localhost fallback
 	os.Unsetenv("CORS_ALLOWED_ORIGINS")
 
-	middleware := CORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	middleware := NewDeviceHTTPCORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -110,11 +110,11 @@ func TestCORSMiddleware_DevFallback_Rejected(t *testing.T) {
 	}
 }
 
-func TestCORSMiddleware_Preflight(t *testing.T) {
+func TestDeviceHTTPCORSMiddleware_Preflight(t *testing.T) {
 	os.Setenv("CORS_ALLOWED_ORIGINS", "https://example.com")
 	defer os.Unsetenv("CORS_ALLOWED_ORIGINS")
 
-	middleware := CORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	middleware := NewDeviceHTTPCORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -124,8 +124,8 @@ func TestCORSMiddleware_Preflight(t *testing.T) {
 
 	middleware.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected 200 for OPTIONS, got %d", w.Code)
+	if w.Code != http.StatusNoContent {
+		t.Errorf("expected 204 for OPTIONS, got %d", w.Code)
 	}
 
 	allowedOrigin := w.Header().Get("Access-Control-Allow-Origin")
@@ -134,26 +134,21 @@ func TestCORSMiddleware_Preflight(t *testing.T) {
 	}
 
 	allowMethods := w.Header().Get("Access-Control-Allow-Methods")
-	if allowMethods != "GET, POST, PUT, DELETE, OPTIONS" {
-		t.Errorf("expected Access-Control-Allow-Methods to include all methods, got %s", allowMethods)
+	if allowMethods != "GET, POST, OPTIONS" {
+		t.Errorf("expected Access-Control-Allow-Methods to be GET, POST, OPTIONS, got %s", allowMethods)
 	}
 
 	allowHeaders := w.Header().Get("Access-Control-Allow-Headers")
-	if allowHeaders != "Content-Type, Authorization" {
-		t.Errorf("expected Access-Control-Allow-Headers to be Content-Type, Authorization, got %s", allowHeaders)
-	}
-
-	allowCredentials := w.Header().Get("Access-Control-Allow-Credentials")
-	if allowCredentials != "true" {
-		t.Errorf("expected Access-Control-Allow-Credentials to be true, got %s", allowCredentials)
+	if allowHeaders != "Content-Type, Authorization, X-Request-ID" {
+		t.Errorf("expected Access-Control-Allow-Headers to be Content-Type, Authorization, X-Request-ID, got %s", allowHeaders)
 	}
 }
 
-func TestCORSMiddleware_NoOriginHeader(t *testing.T) {
+func TestDeviceHTTPCORSMiddleware_NoOriginHeader(t *testing.T) {
 	os.Setenv("CORS_ALLOWED_ORIGINS", "https://example.com")
 	defer os.Unsetenv("CORS_ALLOWED_ORIGINS")
 
-	middleware := CORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	middleware := NewDeviceHTTPCORSMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 

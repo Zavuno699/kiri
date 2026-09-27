@@ -14,37 +14,28 @@ import (
 // CORSMiddleware adds CORS headers for development
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Read allowed origins from environment, fallback to * for development
+		// Read allowed origins from environment, fallback to localhost dev origins
 		allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
 		if allowedOrigins == "" {
-			allowedOrigins = "*"
+			// Safe dev fallback: only allow localhost frontend
+			allowedOrigins = "http://localhost:5173,http://localhost:3000"
 		}
 
 		origin := r.Header.Get("Origin")
 		if origin != "" {
-			// Check if origin is allowed
-			if allowedOrigins == "*" {
-				// When credentials are allowed, cannot use *, so echo the specific origin
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-			} else {
-				// Split on commas, trim spaces, and check for exact match
-				allowedOriginsList := strings.Split(allowedOrigins, ",")
-				allowed := false
-				for _, allowedOrigin := range allowedOriginsList {
-					allowedOrigin = strings.TrimSpace(allowedOrigin)
-					if allowedOrigin == origin {
-						allowed = true
-						break
-					}
-				}
-				if allowed {
-					w.Header().Set("Access-Control-Allow-Origin", origin)
+			// Split on commas, trim spaces, and check for exact match
+			allowedOriginsList := strings.Split(allowedOrigins, ",")
+			allowed := false
+			for _, allowedOrigin := range allowedOriginsList {
+				allowedOrigin = strings.TrimSpace(allowedOrigin)
+				if allowedOrigin == origin {
+					allowed = true
+					break
 				}
 			}
-		} else {
-			// If no origin header, use the allowed origins value (only for * or fallback)
-			if allowedOrigins == "*" {
-				w.Header().Set("Access-Control-Allow-Origin", "*")
+			if allowed {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Vary", "Origin")
 			}
 		}
 

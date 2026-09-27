@@ -430,21 +430,36 @@ func (h *PaymentHandler) GetTenantPaymentResponsibility(w http.ResponseWriter, r
 
 // GetPaymentResponsibilityInternal is an internal service-to-service endpoint
 // for billing-service to resolve payment responsibility and derive ownership
-// Requires payment.write scope for authorization
+//
+// AUTHORIZATION DECISION: Global-trust model
+// This endpoint uses a global-trust model where any finance_admin or super_admin can resolve
+// ANY payment responsibility, regardless of which tenant/tenancy it belongs to. This is
+// intentional because:
+// 1. Billing-service is a trusted backend service with service-to-service calls
+// 2. Finance admins need global visibility for payment operations, reconciliation, and disputes
+// 3. The responsibility is READ-ONLY for ownership derivation; no mutations occur here
+// 4. The actual payment creation is still scoped by payment.write authorization in billing-service
+//
+// If per-responsibility scoping is added in the future, ensure it does not break the
+// billing-service service-to-service call (billing forwards the finance-admin session).
+//
+// Requires payment.write scope equivalent (finance_admin or super_admin roles)
 func (h *PaymentHandler) GetPaymentResponsibilityInternal(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Check authorization - require payment.write scope
+	// Check authorization - require payment.write scope equivalent
 	principal, err := middleware.PrincipalFromContext(r.Context())
 	if err != nil {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// Verify caller has payment.write scope (finance_admin or super_admin)
+	// Verify caller has payment.write scope equivalent (finance_admin or super_admin)
+	// Note: identity-service does not have a canonical scope system like billing-service,
+	// so we use the equivalent role check. This is documented as global-trust above.
 	hasPaymentWrite := false
 	for _, role := range principal.Roles {
 		if role == "finance_admin" || role == "super_admin" {

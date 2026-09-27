@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +20,7 @@ import (
 type applicationTestIdentityClient struct {
 	responsibility identity.PaymentResponsibilityResponse
 	err            error
+	resolveFunc    func(_ context.Context, _ string, responsibilityID uuid.UUID) (identity.PaymentResponsibilityResponse, error)
 }
 
 func (c *applicationTestIdentityClient) ValidateSession(_ context.Context, _ string) (middleware.AuthenticatedSubject, error) {
@@ -25,6 +28,9 @@ func (c *applicationTestIdentityClient) ValidateSession(_ context.Context, _ str
 }
 
 func (c *applicationTestIdentityClient) ResolvePaymentResponsibility(_ context.Context, _ string, responsibilityID uuid.UUID) (identity.PaymentResponsibilityResponse, error) {
+	if c.resolveFunc != nil {
+		return c.resolveFunc(nil, "", responsibilityID)
+	}
 	if c.err != nil {
 		return identity.PaymentResponsibilityResponse{}, c.err
 	}
@@ -567,4 +573,234 @@ func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testi
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestPaymentApplication_IdempotencyOwnershipRegression(t *testing.T) {
+	// Test that same idempotency key with different responsibility is rejected
+	// The request hash includes PaymentResponsibilityID, so this should be a conflict
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	repo := repository.NewPaymentRepository(db)
+
+	tenantID := uuid.New()
+	responsibilityA := uuid.New()
+	responsibilityB := uuid.New()
+
+	identityClient := &applicationTestIdentityClient{
+		// Return appropriate responsibility based on ID
+		resolveFunc: func(_ context.Context, _ string, respID uuid.UUID) (identity.PaymentResponsibilityResponse, error) {
+			if respID == responsibilityA {
+				return identity.PaymentResponsibilityResponse{
+					ID:              responsibilityA,
+					TenantSubjectID: tenantID,
+					Status:          "ACTIVE",
+				}, nil
+			}
+			if respID == responsibilityB {
+				return identity.PaymentResponsibilityResponse{
+					ID:              responsibilityB,
+					TenantSubjectID: tenantID,
+					Status:          "ACTIVE",
+				}, nil
+			}
+			return identity.PaymentResponsibilityResponse{}, errors.New("not found")
+		},
+	}
+
+	provider := &applicationTestProvider{
+		payment: model.ProviderPayment{
+			ID:        "flw-charge-001",
+			Reference: "KIRI-TEST-001",
+			Amount:    20000,
+			Currency:  "UGX",
+			Status:    "PENDING",
+		},
+	}
+
+	application, err := NewPaymentApplication(provider, repo, identityClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// First request with responsibility A
+	requestA := CreatePaymentRequest{
+		PaymentResponsibilityID: responsibilityA,
+		Reference:               "KIRI-TEST-001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "same-key-001",
+		TraceID:                 "trace-001",
+	}
+
+	// Setup expectations for first request
+	mock.ExpectQuery("SELECT id, tenant_id, payment_responsibility_id, reference, provider, provider_charge_id, amount_minor, currency, status, idempotency_key, request_hash, correlation_id, created_at, updated_at, settled_at, version FROM payments WHERE provider = \\$1 AND idempotency_key = \\$2").
+		WithArgs("FLUTTERWAVE", "same-key-001").
+		WillReturnError(repository.ErrPaymentNotFound)
+
+	mock.ExpectExec("INSERT INTO payment_idempotency_claims").
+		WithArgs(sqlmock.AnyArg(), "FLUTTERWAVE", "same-key-001", sqlmock.AnyArg(), "KIRI-TEST-001", "PROCESSING", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		INSERT INTO payments (
+                        id,
+                        tenant_id,
+                        payment_responsibility_id,
+                        reference,
+                        provider,
+                        provider_charge_id,
+                        amount_minor,
+                        currency,
+                        status,
+                        idempotency_key,
+                        request_hash,
+                        correlation_id,
+                        created_at,
+                        updated_at,
+                        settled_at,
+                        version
+                )
+                VALUES (
+                        $1,
+                        $2,
+                        $3,
+                        $4,
+                        $5,
+                        $6,
+                        $7,
+                        $8,
+                        $9,
+                        $10,
+                        $11,
+                        $12,
+                        $13,
+                        $14,
+                        $15,
+                        $16
+                )
+	`)).
+		WithArgs(
+			sqlmock.AnyArg(),
+			tenantID,
+			responsibilityA,
+			"KIRI-TEST-001",
+			"FLUTTERWAVE",
+			"flw-charge-001",
+			20000,
+			"UGX",
+			"PENDING",
+			"same-key-001",
+			sqlmock.AnyArg(),
+			"trace-001",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			1,
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectExec("UPDATE payment_idempotency_claims").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), "FLUTTERWAVE", "same-key-001").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	// Execute first request
+	_, err = application.CreatePendingPayment(context.Background(), "session-001", requestA)
+	if err != nil {
+		t.Fatalf("first request failed: %v", err)
+	}
+
+	// Verify first request expectations met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Second request with SAME idempotency key but DIFFERENT responsibility
+	// This should be rejected as idempotency conflict because the hash differs
+	requestB := CreatePaymentRequest{
+		PaymentResponsibilityID: responsibilityB, // Different responsibility
+		Reference:               "KIRI-TEST-001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "same-key-001", // Same key
+		TraceID:                 "trace-001",
+	}
+
+	// Setup expectations for second request
+	// GetByIdempotencyKey should return the existing payment from first request
+	existingPayment := model.Payment{
+		ID:                      uuid.New(),
+		TenantID:                tenantID,
+		PaymentResponsibilityID: &responsibilityA, // Still responsibility A
+		Reference:               "KIRI-TEST-001",
+		AmountMinor:             20000,
+		Currency:                "UGX",
+		Status:                  model.PaymentPending,
+		IdempotencyKey:          "same-key-001",
+		RequestHash:             "hash-for-responsibility-A", // Different hash
+	}
+
+	mock.ExpectQuery("SELECT id, tenant_id, payment_responsibility_id, reference, provider, provider_charge_id, amount_minor, currency, status, idempotency_key, request_hash, correlation_id, created_at, updated_at, settled_at, version FROM payments WHERE provider = \\$1 AND idempotency_key = \\$2").
+		WithArgs("FLUTTERWAVE", "same-key-001").
+		WillReturnRows(
+			sqlmock.NewRows([]string{
+				"id", "tenant_id", "payment_responsibility_id", "reference", "provider",
+				"provider_charge_id", "amount_minor", "currency", "status", "idempotency_key",
+				"request_hash", "correlation_id", "created_at", "updated_at", "settled_at", "version",
+			}).AddRow(
+				existingPayment.ID,
+				existingPayment.TenantID,
+				existingPayment.PaymentResponsibilityID,
+				existingPayment.Reference,
+				existingPayment.Provider,
+				existingPayment.ProviderChargeID,
+				existingPayment.AmountMinor,
+				existingPayment.Currency,
+				existingPayment.Status,
+				existingPayment.IdempotencyKey,
+				existingPayment.RequestHash,
+				existingPayment.CorrelationID,
+				existingPayment.CreatedAt,
+				existingPayment.UpdatedAt,
+				existingPayment.SettledAt,
+				existingPayment.Version,
+			),
+		)
+
+	// Execute second request - should fail with idempotency conflict
+	_, err = application.CreatePendingPayment(context.Background(), "session-001", requestB)
+	if err == nil {
+		t.Fatal("expected idempotency conflict error, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "idempotency key was already used with a different request") {
+		t.Fatalf("expected idempotency conflict error, got: %v", err)
+	}
+
+	// Verify second request expectations met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Critical assertion: the original payment's tenant/responsibility are unchanged
+	if existingPayment.TenantID != tenantID {
+		t.Fatalf("original payment tenant changed")
+	}
+	if existingPayment.PaymentResponsibilityID == nil || *existingPayment.PaymentResponsibilityID != responsibilityA {
+		t.Fatalf("original payment responsibility changed")
+	}
+
+	t.Logf("✓ Verified: same idempotency key with different responsibility rejected as conflict")
+	t.Logf("✓ Verified: original payment ownership (tenant=%s, responsibility=%s) unchanged", existingPayment.TenantID, *existingPayment.PaymentResponsibilityID)
 }

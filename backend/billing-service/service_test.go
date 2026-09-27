@@ -119,3 +119,36 @@ func TestService_AuthenticatedAuthorizedReachesHandler(t *testing.T) {
 		t.Errorf("expected 200 for authenticated + authorized request, got %d", w.Code)
 	}
 }
+
+func TestService_SuperAdminPermitted(t *testing.T) {
+	// Test that super_admin is permitted for payment.write
+	testUUID := uuid.New()
+
+	identityClient := &mockIdentityClient{
+		shouldFail:   false,
+		validSession: true,
+		subjectID:    testUUID.String(),
+		roles:        []string{"super_admin"}, // Has payment.write scope
+	}
+
+	authMiddleware := middleware.NewAuthenticationMiddleware(identityClient)
+
+	// Create a simple handler that returns 200 after auth/authz
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Wire up auth + auth + handler
+	paymentWriteAuth := middleware.NewAuthorizationMiddleware(middleware.ScopePaymentWrite)
+	wiredHandler := authMiddleware.Authenticate(paymentWriteAuth.Authorize(testHandler))
+
+	req := httptest.NewRequest("POST", "/api/v1/payments", nil)
+	req.Header.Set("Authorization", "valid-session-id")
+	w := httptest.NewRecorder()
+	wiredHandler.ServeHTTP(w, req)
+
+	// Should be 200 (super_admin has payment.write scope)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for super_admin, got %d", w.Code)
+	}
+}

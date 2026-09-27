@@ -51,7 +51,7 @@ func New(
 		return nil, errors.New("identity client is required")
 	}
 
-	application, err := service.NewPaymentApplication(provider, repo)
+	application, err := service.NewPaymentApplication(provider, repo, identityClient)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"create payment application: %w",

@@ -9,9 +9,27 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 
+	"github.com/kirilock/backend/billing-service/internal/identity"
+	"github.com/kirilock/backend/billing-service/internal/middleware"
 	"github.com/kirilock/backend/billing-service/internal/model"
 	"github.com/kirilock/backend/billing-service/internal/repository"
 )
+
+type applicationTestIdentityClient struct {
+	responsibility identity.PaymentResponsibilityResponse
+	err            error
+}
+
+func (c *applicationTestIdentityClient) ValidateSession(_ context.Context, _ string) (middleware.AuthenticatedSubject, error) {
+	return middleware.AuthenticatedSubject{}, errors.New("not implemented in test")
+}
+
+func (c *applicationTestIdentityClient) ResolvePaymentResponsibility(_ context.Context, _ string, responsibilityID uuid.UUID) (identity.PaymentResponsibilityResponse, error) {
+	if c.err != nil {
+		return identity.PaymentResponsibilityResponse{}, c.err
+	}
+	return c.responsibility, nil
+}
 
 type applicationTestProvider struct {
 	payment model.ProviderPayment
@@ -63,7 +81,7 @@ func TestBuildPendingPaymentPersistsProviderIdentity(t *testing.T) {
 	}
 
 	payment, err := BuildPendingPayment(
-		tenantID.String(),
+		tenantID,
 		request,
 		"FLUTTERWAVE",
 		providerPayment,
@@ -119,7 +137,7 @@ func TestBuildPendingPaymentRejectsProviderIdentityMismatch(t *testing.T) {
 	}
 
 	_, err := BuildPendingPayment(
-		uuid.New().String(),
+		uuid.New(),
 		request,
 		"FLUTTERWAVE",
 		model.ProviderPayment{
@@ -155,23 +173,33 @@ func TestPaymentApplicationPersistsCompletePayment(t *testing.T) {
 		},
 	}
 
-	application, err := NewPaymentApplication(provider, repo)
+	tenantID := uuid.New()
+	responsibilityID := uuid.New()
+
+	identityClient := &applicationTestIdentityClient{
+		responsibility: identity.PaymentResponsibilityResponse{
+			ID:              responsibilityID,
+			TenantSubjectID: tenantID,
+			Status:          "ACTIVE",
+		},
+	}
+
+	application, err := NewPaymentApplication(provider, repo, identityClient)
 	if err != nil {
 		t.Fatalf("NewPaymentApplication() error = %v", err)
 	}
 
-	tenantID := uuid.New()
-
 	request := CreatePaymentRequest{
-		Reference:      "KIRI-APP-0001",
-		Amount:         20000,
-		Currency:       "UGX",
-		CustomerEmail:  "tenant@example.com",
-		CustomerPhone:  "+256700000000",
-		Network:        "MTN",
-		CountryCode:    "UG",
-		IdempotencyKey: "application-test-001",
-		TraceID:        "trace-application-001",
+		PaymentResponsibilityID: responsibilityID,
+		Reference:               "KIRI-APP-0001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "application-test-001",
+		TraceID:                 "trace-application-001",
 	}
 
 	mock.ExpectQuery("SELECT.*FROM payments.*WHERE provider = \\$1.*AND idempotency_key = \\$2").
@@ -196,7 +224,7 @@ func TestPaymentApplicationPersistsCompletePayment(t *testing.T) {
 		WithArgs(
 			sqlmock.AnyArg(),
 			tenantID,
-			nil, // payment_responsibility_id
+			responsibilityID, // payment_responsibility_id
 			request.Reference,
 			"FLUTTERWAVE",
 			provider.payment.ID,
@@ -224,7 +252,7 @@ func TestPaymentApplicationPersistsCompletePayment(t *testing.T) {
 
 	payment, err := application.CreatePendingPayment(
 		context.Background(),
-		tenantID,
+		"test-session-id",
 		request,
 	)
 	if err != nil {
@@ -237,6 +265,14 @@ func TestPaymentApplicationPersistsCompletePayment(t *testing.T) {
 
 	if payment.TenantID != tenantID {
 		t.Fatalf("tenant ID = %s, want %s", payment.TenantID, tenantID)
+	}
+
+	if payment.PaymentResponsibilityID == nil {
+		t.Fatal("payment responsibility ID must be set")
+	}
+
+	if *payment.PaymentResponsibilityID != responsibilityID {
+		t.Fatalf("payment responsibility ID = %s, want %s", *payment.PaymentResponsibilityID, responsibilityID)
 	}
 
 	if payment.ProviderChargeID != provider.payment.ID {
@@ -289,16 +325,20 @@ func TestPaymentApplicationReplaysSameIdempotencyRequest(t *testing.T) {
 
 	repo := repository.NewPaymentRepository(db)
 
+	tenantID := uuid.New()
+	responsibilityID := uuid.New()
+
 	request := CreatePaymentRequest{
-		Reference:      "KIRI-REPLAY-0001",
-		Amount:         20000,
-		Currency:       "UGX",
-		CustomerEmail:  "tenant@example.com",
-		CustomerPhone:  "+256700000000",
-		Network:        "MTN",
-		CountryCode:    "UG",
-		IdempotencyKey: "replay-test-001",
-		TraceID:        "trace-replay-001",
+		PaymentResponsibilityID: responsibilityID,
+		Reference:               "KIRI-REPLAY-0001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "replay-test-001",
+		TraceID:                 "trace-replay-001",
 	}
 
 	hash, err := PaymentRequestHash(request)
@@ -307,20 +347,21 @@ func TestPaymentApplicationReplaysSameIdempotencyRequest(t *testing.T) {
 	}
 
 	existing := model.Payment{
-		ID:               uuid.New(),
-		TenantID:         uuid.New(),
-		Reference:        request.Reference,
-		Provider:         "FLUTTERWAVE",
-		ProviderChargeID: "flw-existing-replay-001",
-		AmountMinor:      request.Amount,
-		Currency:         "UGX",
-		Status:           model.PaymentPending,
-		IdempotencyKey:   request.IdempotencyKey,
-		RequestHash:      hash,
-		CorrelationID:    request.TraceID,
-		CreatedAt:        time.Now().UTC(),
-		UpdatedAt:        time.Now().UTC(),
-		Version:          1,
+		ID:                      uuid.New(),
+		TenantID:                tenantID,
+		PaymentResponsibilityID: &responsibilityID,
+		Reference:               request.Reference,
+		Provider:                "FLUTTERWAVE",
+		ProviderChargeID:        "flw-existing-replay-001",
+		AmountMinor:             request.Amount,
+		Currency:                "UGX",
+		Status:                  model.PaymentPending,
+		IdempotencyKey:          request.IdempotencyKey,
+		RequestHash:             hash,
+		CorrelationID:           request.TraceID,
+		CreatedAt:               time.Now().UTC(),
+		UpdatedAt:               time.Now().UTC(),
+		Version:                 1,
 	}
 
 	mock.ExpectQuery("SELECT.*FROM payments.*WHERE provider = \\$1.*AND idempotency_key = \\$2").
@@ -371,14 +412,22 @@ func TestPaymentApplicationReplaysSameIdempotencyRequest(t *testing.T) {
 		},
 	}
 
-	application, err := NewPaymentApplication(provider, repo)
+	identityClient := &applicationTestIdentityClient{
+		responsibility: identity.PaymentResponsibilityResponse{
+			ID:              responsibilityID,
+			TenantSubjectID: tenantID,
+			Status:          "ACTIVE",
+		},
+	}
+
+	application, err := NewPaymentApplication(provider, repo, identityClient)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	payment, err := application.CreatePendingPayment(
 		context.Background(),
-		existing.TenantID,
+		"test-session-id",
 		request,
 	)
 	if err != nil {
@@ -407,16 +456,20 @@ func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testi
 
 	repo := repository.NewPaymentRepository(db)
 
+	tenantID := uuid.New()
+	responsibilityID := uuid.New()
+
 	request := CreatePaymentRequest{
-		Reference:      "KIRI-CONFLICT-0001",
-		Amount:         20000,
-		Currency:       "UGX",
-		CustomerEmail:  "tenant@example.com",
-		CustomerPhone:  "+256700000000",
-		Network:        "MTN",
-		CountryCode:    "UG",
-		IdempotencyKey: "conflict-test-001",
-		TraceID:        "trace-conflict-001",
+		PaymentResponsibilityID: responsibilityID,
+		Reference:               "KIRI-CONFLICT-0001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "conflict-test-001",
+		TraceID:                 "trace-conflict-001",
 	}
 
 	changedRequest := request
@@ -427,22 +480,22 @@ func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testi
 		t.Fatal(err)
 	}
 
-	tenantID := uuid.New()
 	existing := model.Payment{
-		ID:               uuid.New(),
-		TenantID:         tenantID,
-		Reference:        request.Reference,
-		Provider:         "FLUTTERWAVE",
-		ProviderChargeID: "flw-existing-conflict-001",
-		AmountMinor:      request.Amount,
-		Currency:         "UGX",
-		Status:           model.PaymentPending,
-		IdempotencyKey:   request.IdempotencyKey,
-		RequestHash:      hash,
-		CorrelationID:    request.TraceID,
-		CreatedAt:        time.Now().UTC(),
-		UpdatedAt:        time.Now().UTC(),
-		Version:          1,
+		ID:                      uuid.New(),
+		TenantID:                tenantID,
+		PaymentResponsibilityID: &responsibilityID,
+		Reference:               request.Reference,
+		Provider:                "FLUTTERWAVE",
+		ProviderChargeID:        "flw-existing-conflict-001",
+		AmountMinor:             request.Amount,
+		Currency:                "UGX",
+		Status:                  model.PaymentPending,
+		IdempotencyKey:          request.IdempotencyKey,
+		RequestHash:             hash,
+		CorrelationID:           request.TraceID,
+		CreatedAt:               time.Now().UTC(),
+		UpdatedAt:               time.Now().UTC(),
+		Version:                 1,
 	}
 
 	mock.ExpectQuery("SELECT.*FROM payments.*WHERE provider = \\$1.*AND idempotency_key = \\$2").
@@ -485,14 +538,22 @@ func TestPaymentApplicationRejectsDifferentRequestForSameIdempotencyKey(t *testi
 
 	provider := &applicationTestProvider{}
 
-	application, err := NewPaymentApplication(provider, repo)
+	identityClient := &applicationTestIdentityClient{
+		responsibility: identity.PaymentResponsibilityResponse{
+			ID:              responsibilityID,
+			TenantSubjectID: tenantID,
+			Status:          "ACTIVE",
+		},
+	}
+
+	application, err := NewPaymentApplication(provider, repo, identityClient)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = application.CreatePendingPayment(
 		context.Background(),
-		tenantID,
+		"test-session-id",
 		changedRequest,
 	)
 	if err == nil {

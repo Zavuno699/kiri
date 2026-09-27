@@ -276,6 +276,10 @@ func main() {
 	mux.Handle("POST /payments/responsibilities", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.CreatePaymentResponsibility)))
 	mux.Handle("GET /payments/responsibility", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetTenantPaymentResponsibility)))
 
+	// Internal service-to-service endpoint for billing-service to resolve payment responsibility
+	// Protected with authentication only - service-to-service trust
+	mux.Handle("GET /internal/payment-responsibilities", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetPaymentResponsibilityInternal)))
+
 	// Landlord application routes
 	mux.Handle("GET /landlords/application/status", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.GetApplicationStatus)))
 	mux.Handle("POST /landlords/application/submit", authMiddleware.Authenticate(http.HandlerFunc(landlordApplicationHandler.SubmitVerification)))

@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	httpx "github.com/kirilock/backend/shared/http"
-
 	"github.com/kirilock/backend/billing-service/internal/service"
 	"github.com/kirilock/backend/shared/validation"
 )
@@ -57,21 +55,42 @@ func (h *PaymentApplicationHandler) ServeHTTP(
 		return
 	}
 
-	principal, err := httpx.PrincipalFromContext(r.Context())
-	if err != nil {
-		http.Error(w, "tenant identity is required", http.StatusUnauthorized)
+	// Extract session ID from Authorization header for identity-service call
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "authorization header is required", http.StatusUnauthorized)
 		return
 	}
 
-	tenantID := principal.TenantID
+	// Accept both "Bearer <session-id>" and raw session ID
+	var sessionID string
+	if len(authHeader) >= 7 && authHeader[:7] == "Bearer " {
+		sessionID = authHeader[7:]
+	} else {
+		sessionID = authHeader
+	}
+
+	if sessionID == "" {
+		http.Error(w, "session ID is required", http.StatusUnauthorized)
+		return
+	}
 
 	payment, err := h.application.CreatePendingPayment(
 		r.Context(),
-		tenantID,
+		sessionID,
 		request,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadGateway)
+		// Return appropriate status code based on error type
+		if err.Error() == "payment responsibility not found" {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else if err.Error() == "payment responsibility is not active" {
+			http.Error(w, err.Error(), http.StatusConflict)
+		} else if err.Error() == "session ID is required" {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 

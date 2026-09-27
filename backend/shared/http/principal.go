@@ -8,7 +8,8 @@ import (
 )
 
 type Principal struct {
-	TenantID uuid.UUID
+	SubjectID uuid.UUID // Authenticated caller's subject ID (always set for authenticated requests)
+	TenantID  uuid.UUID // Tenant ID (set only for tenant callers, Nil for admin/service accounts)
 }
 
 type principalContextKey struct{}
@@ -21,7 +22,7 @@ func PrincipalFromContext(ctx context.Context) (Principal, error) {
 	value := ctx.Value(principalContextKey{})
 
 	principal, ok := value.(Principal)
-	if !ok || principal.TenantID == uuid.Nil {
+	if !ok || principal.SubjectID == uuid.Nil {
 		return Principal{}, errors.New("authenticated principal is missing")
 	}
 

@@ -158,6 +158,22 @@ func (s *PaymentService) GetTenantPaymentResponsibility(ctx context.Context, ten
 	return s.paymentResponsibilityRepo.GetActiveByTenantSubjectID(ctx, tenantSubjectID)
 }
 
+// GetPaymentResponsibilityWithAccount returns a payment responsibility with its payment account details
+// This is used by billing-service to resolve ownership and validate account/provider match
+func (s *PaymentService) GetPaymentResponsibilityWithAccount(ctx context.Context, responsibilityID uuid.UUID) (model.PaymentResponsibility, model.PaymentAccount, error) {
+	responsibility, err := s.paymentResponsibilityRepo.GetByID(ctx, responsibilityID)
+	if err != nil {
+		return model.PaymentResponsibility{}, model.PaymentAccount{}, err
+	}
+
+	account, err := s.paymentAccountRepo.GetByID(ctx, responsibility.PaymentAccountID)
+	if err != nil {
+		return model.PaymentResponsibility{}, model.PaymentAccount{}, err
+	}
+
+	return responsibility, account, nil
+}
+
 func (s *PaymentService) UpdatePaymentResponsibility(
 	ctx context.Context,
 	landlordSubjectID uuid.UUID,

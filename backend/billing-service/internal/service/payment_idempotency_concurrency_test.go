@@ -11,6 +11,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 
+	"github.com/kirilock/backend/billing-service/internal/identity"
 	"github.com/kirilock/backend/billing-service/internal/model"
 	"github.com/kirilock/backend/billing-service/internal/repository"
 )
@@ -64,23 +65,33 @@ func TestPaymentApplicationConcurrentSameIdempotencyKey(t *testing.T) {
 		},
 	}
 
-	application, err := NewPaymentApplication(provider, repo)
+	tenantID := uuid.New()
+	responsibilityID := uuid.New()
+
+	identityClient := &applicationTestIdentityClient{
+		responsibility: identity.PaymentResponsibilityResponse{
+			ID:              responsibilityID,
+			TenantSubjectID: tenantID,
+			Status:          "ACTIVE",
+		},
+	}
+
+	application, err := NewPaymentApplication(provider, repo, identityClient)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tenantID := uuid.New()
-
 	request := CreatePaymentRequest{
-		Reference:      "KIRI-CONCURRENT-001",
-		Amount:         20000,
-		Currency:       "UGX",
-		CustomerEmail:  "tenant@example.com",
-		CustomerPhone:  "+256700000000",
-		Network:        "MTN",
-		CountryCode:    "UG",
-		IdempotencyKey: "concurrent-idempotency-001",
-		TraceID:        "trace-concurrent-001",
+		PaymentResponsibilityID: responsibilityID,
+		Reference:               "KIRI-CONCURRENT-001",
+		Amount:                  20000,
+		Currency:                "UGX",
+		CustomerEmail:           "tenant@example.com",
+		CustomerPhone:           "+256700000000",
+		Network:                 "MTN",
+		CountryCode:             "UG",
+		IdempotencyKey:          "concurrent-idempotency-001",
+		TraceID:                 "trace-concurrent-001",
 	}
 
 	requestHash, err := PaymentRequestHash(request)
@@ -104,7 +115,7 @@ func TestPaymentApplicationConcurrentSameIdempotencyKey(t *testing.T) {
 
 	_, err = application.CreatePendingPayment(
 		context.Background(),
-		tenantID,
+		"test-session-id",
 		request,
 	)
 	if err != nil {
@@ -139,7 +150,7 @@ func TestPaymentApplicationConcurrentSameIdempotencyKey(t *testing.T) {
 			}).AddRow(
 				paymentID,
 				tenantID,
-				nil, // payment_responsibility_id
+				&responsibilityID, // payment_responsibility_id
 				request.Reference,
 				"FLUTTERWAVE",
 				provider.payment.ID,
@@ -158,7 +169,7 @@ func TestPaymentApplicationConcurrentSameIdempotencyKey(t *testing.T) {
 
 	_, err = application.CreatePendingPayment(
 		context.Background(),
-		tenantID,
+		"test-session-id",
 		request,
 	)
 	if err != nil {

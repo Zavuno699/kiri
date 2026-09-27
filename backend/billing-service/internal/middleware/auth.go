@@ -83,11 +83,7 @@ func (m *AuthenticationMiddleware) Authenticate(next http.Handler) http.Handler 
 			return
 		}
 
-		// Populate authenticated subject context
-		ctx := WithAuthenticatedSubject(r.Context(), subject)
-
-		// Also populate shared/http.Principal for handler compatibility
-		// Parse SubjectID as UUID and set as TenantID
+		// Parse SubjectID as UUID for principal
 		subjectUUID, err := uuid.Parse(subject.SubjectID)
 		if err != nil {
 			http.Error(w, "invalid subject ID", http.StatusUnauthorized)
@@ -99,8 +95,14 @@ func (m *AuthenticationMiddleware) Authenticate(next http.Handler) http.Handler 
 			return
 		}
 
+		// Populate authenticated subject context
+		ctx := WithAuthenticatedSubject(r.Context(), subject)
+
+		// Also populate shared/http.Principal for handler compatibility
+		// Set SubjectID (authenticated caller) - TenantID is only for tenant callers
 		principal := sharedhttp.Principal{
-			TenantID: subjectUUID,
+			SubjectID: subjectUUID,
+			TenantID:  uuid.UUID{}, // Nil for admin/service accounts
 		}
 		ctx = sharedhttp.WithPrincipal(ctx, principal)
 

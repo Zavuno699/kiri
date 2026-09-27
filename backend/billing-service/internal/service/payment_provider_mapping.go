@@ -11,18 +11,13 @@ import (
 )
 
 func BuildPendingPayment(
-	tenantID string,
+	tenantID uuid.UUID,
 	request CreatePaymentRequest,
 	provider string,
 	providerPayment model.ProviderPayment,
 ) (model.Payment, error) {
-	if strings.TrimSpace(tenantID) == "" {
+	if tenantID == uuid.Nil {
 		return model.Payment{}, errors.New("tenant ID is required")
-	}
-
-	tenantUUID, err := uuid.Parse(tenantID)
-	if err != nil {
-		return model.Payment{}, errors.New("tenant ID must be a valid UUID")
 	}
 
 	if strings.TrimSpace(provider) == "" {
@@ -48,7 +43,7 @@ func BuildPendingPayment(
 
 	return model.Payment{
 		ID:               uuid.New(),
-		TenantID:         tenantUUID,
+		TenantID:         tenantID,
 		Provider:         provider,
 		ProviderChargeID: providerPayment.ID,
 		Reference:        request.Reference,

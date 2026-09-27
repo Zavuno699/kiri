@@ -3,23 +3,27 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/kirilock/backend/billing-service/internal/identity"
 	"github.com/kirilock/backend/billing-service/internal/model"
 	"github.com/kirilock/backend/billing-service/internal/repository"
 )
 
 type PaymentApplication struct {
-	provider PaymentProvider
-	repo     *repository.PaymentRepository
+	provider       PaymentProvider
+	repo           *repository.PaymentRepository
+	identityClient identity.IdentityClient
 }
 
 func NewPaymentApplication(
 	provider PaymentProvider,
 	repo *repository.PaymentRepository,
+	identityClient identity.IdentityClient,
 ) (*PaymentApplication, error) {
 	if provider == nil {
 		return nil, errors.New("payment provider is required")
@@ -27,22 +31,52 @@ func NewPaymentApplication(
 	if repo == nil {
 		return nil, errors.New("payment repository is required")
 	}
+	if identityClient == nil {
+		return nil, errors.New("identity client is required")
+	}
 
 	return &PaymentApplication{
-		provider: provider,
-		repo:     repo,
+		provider:       provider,
+		repo:           repo,
+		identityClient: identityClient,
 	}, nil
 }
 
 func (s *PaymentApplication) CreatePendingPayment(
 	ctx context.Context,
-	tenantID uuid.UUID,
+	sessionID string,
 	request CreatePaymentRequest,
 ) (model.Payment, error) {
-	if tenantID == uuid.Nil {
-		return model.Payment{}, errors.New("tenant ID is required")
+	if sessionID == "" {
+		return model.Payment{}, errors.New("session ID is required")
 	}
 
+	if request.PaymentResponsibilityID == uuid.Nil {
+		return model.Payment{}, errors.New("payment responsibility ID is required")
+	}
+
+	// Resolve responsibility from identity-service to derive ownership
+	responsibility, err := s.identityClient.ResolvePaymentResponsibility(ctx, sessionID, request.PaymentResponsibilityID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return model.Payment{}, errors.New("payment responsibility not found")
+		}
+		return model.Payment{}, fmt.Errorf("resolve payment responsibility: %w", err)
+	}
+
+	// Validate responsibility is active
+	if responsibility.Status != "ACTIVE" {
+		return model.Payment{}, errors.New("payment responsibility is not active")
+	}
+
+	// Use tenant ID from responsibility directly (already a UUID)
+	tenantUUID := responsibility.TenantSubjectID
+
+	if tenantUUID == uuid.Nil {
+		return model.Payment{}, errors.New("invalid tenant subject ID in responsibility")
+	}
+
+	// Include responsibility reference in idempotency hash
 	requestHash, err := PaymentRequestHash(request)
 	if err != nil {
 		return model.Payment{}, err
@@ -97,7 +131,7 @@ func (s *PaymentApplication) CreatePendingPayment(
 	}
 
 	payment, err := BuildPendingPayment(
-		tenantID.String(),
+		responsibility.TenantSubjectID,
 		request,
 		"FLUTTERWAVE",
 		providerPayment,
@@ -106,7 +140,8 @@ func (s *PaymentApplication) CreatePendingPayment(
 		return model.Payment{}, err
 	}
 
-	payment.TenantID = tenantID
+	payment.TenantID = tenantUUID
+	payment.PaymentResponsibilityID = &request.PaymentResponsibilityID
 
 	if strings.TrimSpace(providerPayment.ID) == "" {
 		return model.Payment{}, errors.New(

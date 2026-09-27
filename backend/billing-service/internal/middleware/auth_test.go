@@ -170,8 +170,13 @@ func TestAuthenticationMiddleware_PrincipalContract(t *testing.T) {
 		t.Errorf("expected 200, got %d", w.Code)
 	}
 
-	if retrievedPrincipal.TenantID != testUUID {
-		t.Errorf("expected TenantID to be %s, got %s", testUUID, retrievedPrincipal.TenantID)
+	if retrievedPrincipal.SubjectID != testUUID {
+		t.Errorf("expected SubjectID to be %s, got %s", testUUID, retrievedPrincipal.SubjectID)
+	}
+
+	// For admin/service accounts, TenantID should be NilUUID
+	if retrievedPrincipal.TenantID != uuid.Nil {
+		t.Errorf("expected TenantID to be NilUUID for admin, got %s", retrievedPrincipal.TenantID)
 	}
 }
 

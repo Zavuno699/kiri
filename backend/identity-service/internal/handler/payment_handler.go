@@ -70,6 +70,24 @@ type PaymentResponsibilityResponse struct {
 	UpdatedAt               time.Time                         `json:"updated_at"`
 }
 
+type PaymentResponsibilityWithAccountResponse struct {
+	ID                      uuid.UUID                         `json:"id"`
+	TenantSubjectID         uuid.UUID                         `json:"tenant_subject_id"`
+	PaymentAccountID        uuid.UUID                         `json:"payment_account_id"`
+	TenancyID               uuid.UUID                         `json:"tenancy_id"`
+	Status                  model.PaymentResponsibilityStatus `json:"status"`
+	ResponsibleForRent      bool                              `json:"responsible_for_rent"`
+	ResponsibleForUtilities bool                              `json:"responsible_for_utilities"`
+	ResponsibleForFees      bool                              `json:"responsible_for_fees"`
+	MonthlyRentAmountMinor  int64                             `json:"monthly_rent_amount_minor"`
+	Notes                   string                            `json:"notes"`
+	CreatedAt               time.Time                         `json:"created_at"`
+	UpdatedAt               time.Time                         `json:"updated_at"`
+	// Payment account details
+	PaymentAccountProvider model.PaymentProvider      `json:"payment_account_provider"`
+	PaymentAccountStatus   model.PaymentAccountStatus `json:"payment_account_status"`
+}
+
 func NewPaymentHandler(paymentService *service.PaymentService) (*PaymentHandler, error) {
 	if paymentService == nil {
 		return nil, errors.New("payment service is required")
@@ -404,6 +422,93 @@ func (h *PaymentHandler) GetTenantPaymentResponsibility(w http.ResponseWriter, r
 		Notes:                   responsibility.Notes,
 		CreatedAt:               responsibility.CreatedAt,
 		UpdatedAt:               responsibility.UpdatedAt,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetPaymentResponsibilityInternal is an internal service-to-service endpoint
+// for billing-service to resolve payment responsibility and derive ownership
+// Requires payment.write scope for authorization
+func (h *PaymentHandler) GetPaymentResponsibilityInternal(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check authorization - require payment.write scope
+	principal, err := middleware.PrincipalFromContext(r.Context())
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Verify caller has payment.write scope (finance_admin or super_admin)
+	hasPaymentWrite := false
+	for _, role := range principal.Roles {
+		if role == "finance_admin" || role == "super_admin" {
+			hasPaymentWrite = true
+			break
+		}
+	}
+
+	if !hasPaymentWrite {
+		http.Error(w, "insufficient scope", http.StatusForbidden)
+		return
+	}
+
+	// Extract responsibility ID from path
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		http.Error(w, "responsibility id is required", http.StatusBadRequest)
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "invalid responsibility id", http.StatusBadRequest)
+		return
+	}
+
+	// Get responsibility with account details
+	responsibility, account, err := h.paymentService.GetPaymentResponsibilityWithAccount(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, repository.ErrPaymentResponsibilityNotFound) {
+			http.Error(w, "payment responsibility not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Validate responsibility is active
+	if responsibility.Status != model.PaymentResponsibilityActive {
+		http.Error(w, "payment responsibility is not active", http.StatusConflict)
+		return
+	}
+
+	// Validate payment account is active
+	if account.Status != model.PaymentAccountActive {
+		http.Error(w, "payment account is not active", http.StatusConflict)
+		return
+	}
+
+	response := PaymentResponsibilityWithAccountResponse{
+		ID:                      responsibility.ID,
+		TenantSubjectID:         responsibility.TenantSubjectID,
+		PaymentAccountID:        responsibility.PaymentAccountID,
+		TenancyID:               responsibility.TenancyID,
+		Status:                  responsibility.Status,
+		ResponsibleForRent:      responsibility.ResponsibleForRent,
+		ResponsibleForUtilities: responsibility.ResponsibleForUtilities,
+		ResponsibleForFees:      responsibility.ResponsibleForFees,
+		MonthlyRentAmountMinor:  responsibility.MonthlyRentAmountMinor,
+		Notes:                   responsibility.Notes,
+		CreatedAt:               responsibility.CreatedAt,
+		UpdatedAt:               responsibility.UpdatedAt,
+		PaymentAccountProvider:  account.Provider,
+		PaymentAccountStatus:    account.Status,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

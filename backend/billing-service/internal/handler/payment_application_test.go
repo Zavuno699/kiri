@@ -14,6 +14,7 @@ import (
 
 	"github.com/kirilock/backend/billing-service/internal/identity"
 	"github.com/kirilock/backend/billing-service/internal/model"
+	"github.com/kirilock/backend/billing-service/internal/repository"
 	"github.com/kirilock/backend/billing-service/internal/service"
 	"github.com/kirilock/backend/shared/validation"
 )
@@ -90,6 +91,27 @@ func TestPaymentApplicationHandler_ErrorCodeMapping(t *testing.T) {
 			name: "payment responsibility not active returns 409",
 			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
 				return model.Payment{}, errors.New("payment responsibility is not active")
+			},
+			expectedStatus: http.StatusConflict,
+		},
+		{
+			name: "idempotency conflict returns 409",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, fmt.Errorf("idempotency key was already used with a different request: %w", repository.ErrIdempotencyConflict)
+			},
+			expectedStatus: http.StatusConflict,
+		},
+		{
+			name: "idempotency conflict string returns 409",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, errors.New("idempotency key was already used with a different request")
+			},
+			expectedStatus: http.StatusConflict,
+		},
+		{
+			name: "idempotency claimed returns 409",
+			createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+				return model.Payment{}, repository.ErrIdempotencyClaimed
 			},
 			expectedStatus: http.StatusConflict,
 		},

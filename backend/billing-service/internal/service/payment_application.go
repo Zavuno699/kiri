@@ -99,8 +99,9 @@ func (s *PaymentApplication) CreatePendingPayment(
 	)
 	if err == nil {
 		if existingPayment.RequestHash != requestHash {
-			return model.Payment{}, errors.New(
-				"idempotency key was already used with a different request",
+			return model.Payment{}, fmt.Errorf(
+				"idempotency key was already used with a different request: %w",
+				repository.ErrIdempotencyConflict,
 			)
 		}
 		return existingPayment, nil

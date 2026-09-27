@@ -97,7 +97,7 @@ func (h *PaymentApplicationHandler) ServeHTTP(
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else if errors.Is(err, identity.ErrResponsibilityNotFound) {
 			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if errors.Is(err, identity.ErrResponsibilityConflict) || err.Error() == "payment responsibility is not active" || errors.Is(err, repository.ErrIdempotencyConflict) || err.Error() == "idempotency key was already used with a different request" {
+		} else if errors.Is(err, identity.ErrResponsibilityConflict) || err.Error() == "payment responsibility is not active" || errors.Is(err, repository.ErrIdempotencyConflict) || errors.Is(err, repository.ErrIdempotencyClaimed) || err.Error() == "idempotency key was already used with a different request" {
 			http.Error(w, err.Error(), http.StatusConflict)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

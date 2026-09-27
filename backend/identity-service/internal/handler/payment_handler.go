@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -17,8 +18,20 @@ import (
 )
 
 type PaymentHandler struct {
-	paymentService *service.PaymentService
+	paymentService paymentService
 	validator      *validation.Validator
+}
+
+// paymentService is the interface that PaymentHandler depends on
+// This allows test injection without requiring the full concrete PaymentService
+type paymentService interface {
+	GetPaymentResponsibilityWithAccount(ctx context.Context, responsibilityID uuid.UUID) (model.PaymentResponsibility, model.PaymentAccount, error)
+	CreatePaymentAccount(ctx context.Context, landlordSubjectID uuid.UUID, account model.PaymentAccount) (model.PaymentAccount, error)
+	GetPaymentAccount(ctx context.Context, landlordSubjectID uuid.UUID, accountID uuid.UUID) (model.PaymentAccount, error)
+	GetLandlordPaymentAccounts(ctx context.Context, landlordSubjectID uuid.UUID) ([]model.PaymentAccount, error)
+	ActivatePaymentAccount(ctx context.Context, landlordSubjectID uuid.UUID, accountID uuid.UUID) error
+	CreatePaymentResponsibility(ctx context.Context, landlordSubjectID uuid.UUID, responsibility model.PaymentResponsibility) (model.PaymentResponsibility, error)
+	GetTenantPaymentResponsibility(ctx context.Context, tenantSubjectID uuid.UUID) (model.PaymentResponsibility, error)
 }
 
 type CreatePaymentAccountRequest struct {
@@ -88,7 +101,7 @@ type PaymentResponsibilityWithAccountResponse struct {
 	PaymentAccountStatus   model.PaymentAccountStatus `json:"payment_account_status"`
 }
 
-func NewPaymentHandler(paymentService *service.PaymentService) (*PaymentHandler, error) {
+func NewPaymentHandler(paymentService paymentService) (*PaymentHandler, error) {
 	if paymentService == nil {
 		return nil, errors.New("payment service is required")
 	}

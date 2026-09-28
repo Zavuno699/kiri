@@ -289,3 +289,108 @@ func TestPaymentApplicationHandler_SessionIDRequired(t *testing.T) {
 		t.Errorf("expected 401, got %d: %s", w.Code, w.Body.String())
 	}
 }
+
+func TestPaymentApplicationHandler_SnakeCaseJSONDecodes(t *testing.T) {
+	fake := &fakePaymentCreator{
+		createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+			// Verify the request was decoded correctly
+			if request.Reference != "KIRI-TEST-001" {
+				t.Errorf("expected Reference 'KIRI-TEST-001', got '%s'", request.Reference)
+			}
+			if request.Amount != 20000 {
+				t.Errorf("expected Amount 20000, got %d", request.Amount)
+			}
+			if request.Currency != "UGX" {
+				t.Errorf("expected Currency 'UGX', got '%s'", request.Currency)
+			}
+			if request.CustomerEmail != "tenant@example.com" {
+				t.Errorf("expected CustomerEmail 'tenant@example.com', got '%s'", request.CustomerEmail)
+			}
+			if request.CustomerPhone != "+256700000000" {
+				t.Errorf("expected CustomerPhone '+256700000000', got '%s'", request.CustomerPhone)
+			}
+			if request.Network != "MTN" {
+				t.Errorf("expected Network 'MTN', got '%s'", request.Network)
+			}
+			if request.CountryCode != "UG" {
+				t.Errorf("expected CountryCode 'UG', got '%s'", request.CountryCode)
+			}
+			if request.IdempotencyKey != "test-key-001" {
+				t.Errorf("expected IdempotencyKey 'test-key-001', got '%s'", request.IdempotencyKey)
+			}
+			if request.TraceID != "trace-001" {
+				t.Errorf("expected TraceID 'trace-001', got '%s'", request.TraceID)
+			}
+			return model.Payment{
+				ID:                      uuid.New(),
+				TenantID:                uuid.New(),
+				PaymentResponsibilityID: &request.PaymentResponsibilityID,
+				Reference:               request.Reference,
+				AmountMinor:             request.Amount,
+				Currency:                request.Currency,
+				Status:                  model.PaymentPending,
+			}, nil
+		},
+	}
+	handler, err := NewPaymentApplicationHandler(validation.New(), fake)
+	if err != nil {
+		t.Fatalf("NewPaymentApplicationHandler: %v", err)
+	}
+
+	// Snake_case JSON body (actual API contract)
+	snakeCaseBody := `{
+		"payment_responsibility_id": "00000000-0000-0000-0000-000000000001",
+		"reference": "KIRI-TEST-001",
+		"amount": 20000,
+		"currency": "UGX",
+		"customer_email": "tenant@example.com",
+		"customer_phone": "+256700000000",
+		"network": "MTN",
+		"country_code": "UG",
+		"idempotency_key": "test-key-001",
+		"trace_id": "trace-001"
+	}`
+
+	req := httptest.NewRequest("POST", "/api/v1/payments", strings.NewReader(snakeCaseBody))
+	req.Header.Set("Authorization", "Bearer test-session-id")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	// Should decode successfully and reach the fake, returning 201
+	if w.Code != http.StatusCreated {
+		t.Errorf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestPaymentApplicationHandler_UnknownFieldRejected(t *testing.T) {
+	fake := &fakePaymentCreator{
+		createFunc: func(ctx context.Context, sessionID string, request service.CreatePaymentRequest) (model.Payment, error) {
+			return model.Payment{}, nil
+		},
+	}
+	handler, err := NewPaymentApplicationHandler(validation.New(), fake)
+	if err != nil {
+		t.Fatalf("NewPaymentApplicationHandler: %v", err)
+	}
+
+	// Valid snake_case body with an unknown field
+	bodyWithUnknownField := `{
+		"payment_responsibility_id": "00000000-0000-0000-0000-000000000001",
+		"reference": "KIRI-TEST-001",
+		"amount": 20000,
+		"currency": "UGX",
+		"unknown_field": "should be rejected"
+	}`
+
+	req := httptest.NewRequest("POST", "/api/v1/payments", strings.NewReader(bodyWithUnknownField))
+	req.Header.Set("Authorization", "Bearer test-session-id")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	// DisallowUnknownFields should reject the unknown field with 400
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for unknown field, got %d: %s", w.Code, w.Body.String())
+	}
+}

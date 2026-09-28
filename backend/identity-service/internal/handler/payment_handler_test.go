@@ -16,6 +16,14 @@ import (
 	"github.com/kirilock/backend/identity-service/internal/repository"
 )
 
+func pointerTo[T any](v T) *T {
+	return &v
+}
+
+func int64Ptr(v int64) *int64 {
+	return &v
+}
+
 // mockPaymentService is a minimal mock for testing the authorization boundary
 // It wraps a test payment resolver and stubs out all other PaymentService methods
 type mockPaymentService struct {
@@ -60,10 +68,14 @@ type testPaymentResolver struct {
 	responsibility model.PaymentResponsibility
 	account        model.PaymentAccount
 	called         bool
+	err            error
 }
 
 func (t *testPaymentResolver) GetPaymentResponsibilityWithAccount(ctx context.Context, id uuid.UUID) (model.PaymentResponsibility, model.PaymentAccount, error) {
 	t.called = true
+	if t.err != nil {
+		return model.PaymentResponsibility{}, model.PaymentAccount{}, t.err
+	}
 	if t.responsibility.ID == uuid.Nil || t.account.ID == uuid.Nil {
 		return model.PaymentResponsibility{}, model.PaymentAccount{}, repository.ErrPaymentResponsibilityNotFound
 	}
@@ -78,13 +90,15 @@ func TestGetPaymentResponsibilityInternal_AuthorizationBoundary(t *testing.T) {
 	// Create a test resolver that returns a valid responsibility
 	resolver := &testPaymentResolver{
 		responsibility: model.PaymentResponsibility{
-			ID:               responsibilityID,
-			TenantSubjectID:  uuid.New(),
-			PaymentAccountID: uuid.New(),
-			TenancyID:        uuid.New(),
-			Status:           model.PaymentResponsibilityActive,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
+			ID:                     responsibilityID,
+			TenantSubjectID:        uuid.New(),
+			PaymentAccountID:       uuid.New(),
+			TenancyID:              uuid.New(),
+			Status:                 model.PaymentResponsibilityActive,
+			MonthlyRentAmountMinor: int64Ptr(100000),
+			Notes:                  pointerTo("Test responsibility"),
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
 		},
 		account: model.PaymentAccount{
 			ID:       uuid.New(),
@@ -225,8 +239,8 @@ func TestGetPaymentResponsibilityInternal_HappyPath_ResponseFields(t *testing.T)
 			ResponsibleForRent:      true,
 			ResponsibleForUtilities: false,
 			ResponsibleForFees:      true,
-			MonthlyRentAmountMinor:  500000,
-			Notes:                   "Test responsibility",
+			MonthlyRentAmountMinor:  int64Ptr(500000),
+			Notes:                   pointerTo("Test responsibility"),
 			CreatedAt:               time.Now(),
 			UpdatedAt:               time.Now(),
 		},
@@ -235,6 +249,8 @@ func TestGetPaymentResponsibilityInternal_HappyPath_ResponseFields(t *testing.T)
 			Provider: model.ProviderStripe,
 			Status:   model.PaymentAccountActive,
 		},
+		called: false,
+		err:    nil,
 	}
 
 	mockService := &mockPaymentService{resolver: resolver}
@@ -296,6 +312,8 @@ func TestGetPaymentResponsibilityInternal_NotFound(t *testing.T) {
 	resolver := &testPaymentResolver{
 		responsibility: model.PaymentResponsibility{}, // Nil ID to trigger not found
 		account:        model.PaymentAccount{},
+		called:         false,
+		err:            nil,
 	}
 
 	mockService := &mockPaymentService{resolver: resolver}
@@ -339,6 +357,8 @@ func TestGetPaymentResponsibilityInternal_InactiveResponsibility(t *testing.T) {
 			Provider: model.ProviderStripe,
 			Status:   model.PaymentAccountActive,
 		},
+		called: false,
+		err:    nil,
 	}
 
 	mockService := &mockPaymentService{resolver: resolver}
@@ -382,6 +402,8 @@ func TestGetPaymentResponsibilityInternal_InactiveAccount(t *testing.T) {
 			Provider: model.ProviderStripe,
 			Status:   model.PaymentAccountPaused, // Not ACTIVE
 		},
+		called: false,
+		err:    nil,
 	}
 
 	mockService := &mockPaymentService{resolver: resolver}
@@ -427,6 +449,8 @@ func TestGetPaymentResponsibilityInternal_GlobalTrustSemantics(t *testing.T) {
 			Provider: model.ProviderStripe,
 			Status:   model.PaymentAccountActive,
 		},
+		called: false,
+		err:    nil,
 	}
 
 	mockService := &mockPaymentService{resolver: resolver}
@@ -464,4 +488,41 @@ func TestGetPaymentResponsibilityInternal_GlobalTrustSemantics(t *testing.T) {
 	}
 
 	t.Logf("✓ Verified: global-trust semantics - finance_admin can resolve responsibility belonging to arbitrary tenant %s", arbitraryTenantID)
+}
+
+func TestGetPaymentResponsibilityInternal_InternalError(t *testing.T) {
+	// Test 500 when repository returns an internal error
+	responsibilityID := uuid.New()
+
+	resolver := &testPaymentResolver{
+		err: errors.New("database connection failed"),
+	}
+
+	mockService := &mockPaymentService{resolver: resolver}
+
+	handler, err := NewPaymentHandler(mockService)
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/internal/payment-responsibilities?id="+responsibilityID.String(), nil)
+
+	principal := client.Principal{
+		Subject: uuid.New().String(),
+		Roles:   []string{"finance_admin"},
+	}
+	ctx := middleware.WithPrincipal(context.Background(), principal)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.GetPaymentResponsibilityInternal(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Response body should be generic, not leak internal error
+	if w.Body.String() != "internal server error\n" {
+		t.Errorf("expected generic error message, got: %s", w.Body.String())
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -16,6 +17,27 @@ import (
 	"github.com/kirilock/backend/identity-service/internal/repository"
 	"github.com/kirilock/backend/identity-service/internal/service"
 )
+
+func pointerToOrNil(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func fromStringPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func fromInt64Ptr(i *int64) int64 {
+	if i == nil {
+		return 0
+	}
+	return *i
+}
 
 type PaymentHandler struct {
 	paymentService paymentService
@@ -50,8 +72,8 @@ type CreatePaymentResponsibilityRequest struct {
 	ResponsibleForRent      bool      `json:"responsible_for_rent"`
 	ResponsibleForUtilities bool      `json:"responsible_for_utilities"`
 	ResponsibleForFees      bool      `json:"responsible_for_fees"`
-	MonthlyRentAmountMinor  int64     `json:"monthly_rent_amount_minor"`
-	Notes                   string    `json:"notes"`
+	MonthlyRentAmountMinor  *int64    `json:"monthly_rent_amount_minor"`
+	Notes                   *string   `json:"notes"`
 }
 
 type PaymentAccountResponse struct {
@@ -144,10 +166,10 @@ func (h *PaymentHandler) CreatePaymentAccount(w http.ResponseWriter, r *http.Req
 	account := model.PaymentAccount{
 		AccountName:        req.AccountName,
 		Provider:           req.Provider,
-		ProviderAccountID:  req.ProviderAccountID,
-		ProviderCustomerID: req.ProviderCustomerID,
-		Currency:           req.Currency,
-		Notes:              req.Notes,
+		ProviderAccountID:  pointerToOrNil(req.ProviderAccountID),
+		ProviderCustomerID: pointerToOrNil(req.ProviderCustomerID),
+		Currency:           pointerToOrNil(req.Currency),
+		Notes:              pointerToOrNil(req.Notes),
 	}
 
 	created, err := h.paymentService.CreatePaymentAccount(r.Context(), subjectID, account)
@@ -165,11 +187,11 @@ func (h *PaymentHandler) CreatePaymentAccount(w http.ResponseWriter, r *http.Req
 		LandlordProfileID:  created.LandlordProfileID,
 		AccountName:        created.AccountName,
 		Provider:           created.Provider,
-		ProviderAccountID:  created.ProviderAccountID,
-		ProviderCustomerID: created.ProviderCustomerID,
+		ProviderAccountID:  fromStringPtr(created.ProviderAccountID),
+		ProviderCustomerID: fromStringPtr(created.ProviderCustomerID),
 		Status:             created.Status,
-		Currency:           created.Currency,
-		Notes:              created.Notes,
+		Currency:           fromStringPtr(created.Currency),
+		Notes:              fromStringPtr(created.Notes),
 		CreatedAt:          created.CreatedAt,
 		UpdatedAt:          created.UpdatedAt,
 	}
@@ -223,11 +245,11 @@ func (h *PaymentHandler) GetPaymentAccount(w http.ResponseWriter, r *http.Reques
 		LandlordProfileID:  account.LandlordProfileID,
 		AccountName:        account.AccountName,
 		Provider:           account.Provider,
-		ProviderAccountID:  account.ProviderAccountID,
-		ProviderCustomerID: account.ProviderCustomerID,
+		ProviderAccountID:  fromStringPtr(account.ProviderAccountID),
+		ProviderCustomerID: fromStringPtr(account.ProviderCustomerID),
 		Status:             account.Status,
-		Currency:           account.Currency,
-		Notes:              account.Notes,
+		Currency:           fromStringPtr(account.Currency),
+		Notes:              fromStringPtr(account.Notes),
 		CreatedAt:          account.CreatedAt,
 		UpdatedAt:          account.UpdatedAt,
 	}
@@ -273,11 +295,11 @@ func (h *PaymentHandler) GetLandlordPaymentAccounts(w http.ResponseWriter, r *ht
 			LandlordProfileID:  account.LandlordProfileID,
 			AccountName:        account.AccountName,
 			Provider:           account.Provider,
-			ProviderAccountID:  account.ProviderAccountID,
-			ProviderCustomerID: account.ProviderCustomerID,
+			ProviderAccountID:  fromStringPtr(account.ProviderAccountID),
+			ProviderCustomerID: fromStringPtr(account.ProviderCustomerID),
 			Status:             account.Status,
-			Currency:           account.Currency,
-			Notes:              account.Notes,
+			Currency:           fromStringPtr(account.Currency),
+			Notes:              fromStringPtr(account.Notes),
 			CreatedAt:          account.CreatedAt,
 			UpdatedAt:          account.UpdatedAt,
 		})
@@ -388,8 +410,8 @@ func (h *PaymentHandler) CreatePaymentResponsibility(w http.ResponseWriter, r *h
 		ResponsibleForRent:      created.ResponsibleForRent,
 		ResponsibleForUtilities: created.ResponsibleForUtilities,
 		ResponsibleForFees:      created.ResponsibleForFees,
-		MonthlyRentAmountMinor:  created.MonthlyRentAmountMinor,
-		Notes:                   created.Notes,
+		MonthlyRentAmountMinor:  fromInt64Ptr(created.MonthlyRentAmountMinor),
+		Notes:                   fromStringPtr(created.Notes),
 		CreatedAt:               created.CreatedAt,
 		UpdatedAt:               created.UpdatedAt,
 	}
@@ -431,8 +453,8 @@ func (h *PaymentHandler) GetTenantPaymentResponsibility(w http.ResponseWriter, r
 		ResponsibleForRent:      responsibility.ResponsibleForRent,
 		ResponsibleForUtilities: responsibility.ResponsibleForUtilities,
 		ResponsibleForFees:      responsibility.ResponsibleForFees,
-		MonthlyRentAmountMinor:  responsibility.MonthlyRentAmountMinor,
-		Notes:                   responsibility.Notes,
+		MonthlyRentAmountMinor:  fromInt64Ptr(responsibility.MonthlyRentAmountMinor),
+		Notes:                   fromStringPtr(responsibility.Notes),
 		CreatedAt:               responsibility.CreatedAt,
 		UpdatedAt:               responsibility.UpdatedAt,
 	}
@@ -506,6 +528,7 @@ func (h *PaymentHandler) GetPaymentResponsibilityInternal(w http.ResponseWriter,
 			http.Error(w, "payment responsibility not found", http.StatusNotFound)
 			return
 		}
+		log.Printf("payment responsibility internal error: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -531,8 +554,8 @@ func (h *PaymentHandler) GetPaymentResponsibilityInternal(w http.ResponseWriter,
 		ResponsibleForRent:      responsibility.ResponsibleForRent,
 		ResponsibleForUtilities: responsibility.ResponsibleForUtilities,
 		ResponsibleForFees:      responsibility.ResponsibleForFees,
-		MonthlyRentAmountMinor:  responsibility.MonthlyRentAmountMinor,
-		Notes:                   responsibility.Notes,
+		MonthlyRentAmountMinor:  fromInt64Ptr(responsibility.MonthlyRentAmountMinor),
+		Notes:                   fromStringPtr(responsibility.Notes),
 		CreatedAt:               responsibility.CreatedAt,
 		UpdatedAt:               responsibility.UpdatedAt,
 		PaymentAccountProvider:  account.Provider,

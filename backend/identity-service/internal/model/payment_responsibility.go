@@ -24,8 +24,8 @@ type PaymentResponsibility struct {
 	ResponsibleForRent      bool
 	ResponsibleForUtilities bool
 	ResponsibleForFees      bool
-	MonthlyRentAmountMinor  int64 // Amount in minor units (cents), never float64
-	Notes                   string
+	MonthlyRentAmountMinor  *int64 // Amount in minor units (cents), nullable in database
+	Notes                   *string
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 	Version                 int
@@ -52,7 +52,7 @@ func (p PaymentResponsibility) Validate() error {
 		return errors.New("invalid payment responsibility status")
 	}
 
-	if p.MonthlyRentAmountMinor < 0 {
+	if p.MonthlyRentAmountMinor != nil && *p.MonthlyRentAmountMinor < 0 {
 		return errors.New("monthly_rent_amount_minor must be >= 0")
 	}
 

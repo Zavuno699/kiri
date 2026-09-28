@@ -38,7 +38,7 @@ func (r *DBPaymentResponsibilityRepository) Create(ctx context.Context, responsi
 		INSERT INTO payment_responsibilities (
 			id, tenant_subject_id, payment_account_id, tenancy_id,
 			status, responsible_for_rent, responsible_for_utilities, responsible_for_fees,
-			monthly_rent_amount, notes,
+			monthly_rent_amount_cents, notes,
 			created_at, updated_at, version
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
@@ -57,7 +57,7 @@ func (r *DBPaymentResponsibilityRepository) GetByID(ctx context.Context, id uuid
 	query := `
 		SELECT id, tenant_subject_id, payment_account_id, tenancy_id,
 			status, responsible_for_rent, responsible_for_utilities, responsible_for_fees,
-			monthly_rent_amount, notes,
+			monthly_rent_amount_cents, notes,
 			created_at, updated_at, version
 		FROM payment_responsibilities
 		WHERE id = $1
@@ -82,7 +82,7 @@ func (r *DBPaymentResponsibilityRepository) GetByTenantSubjectID(ctx context.Con
 	query := `
 		SELECT id, tenant_subject_id, payment_account_id, tenancy_id,
 			status, responsible_for_rent, responsible_for_utilities, responsible_for_fees,
-			monthly_rent_amount, notes,
+			monthly_rent_amount_cents, notes,
 			created_at, updated_at, version
 		FROM payment_responsibilities
 		WHERE tenant_subject_id = $1
@@ -117,7 +117,7 @@ func (r *DBPaymentResponsibilityRepository) GetActiveByTenantSubjectID(ctx conte
 	query := `
 		SELECT id, tenant_subject_id, payment_account_id, tenancy_id,
 			status, responsible_for_rent, responsible_for_utilities, responsible_for_fees,
-			monthly_rent_amount, notes,
+			monthly_rent_amount_cents, notes,
 			created_at, updated_at, version
 		FROM payment_responsibilities
 		WHERE tenant_subject_id = $1 AND status = 'ACTIVE'
@@ -143,7 +143,7 @@ func (r *DBPaymentResponsibilityRepository) GetByTenancyID(ctx context.Context, 
 	query := `
 		SELECT id, tenant_subject_id, payment_account_id, tenancy_id,
 			status, responsible_for_rent, responsible_for_utilities, responsible_for_fees,
-			monthly_rent_amount, notes,
+			monthly_rent_amount_cents, notes,
 			created_at, updated_at, version
 		FROM payment_responsibilities
 		WHERE tenancy_id = $1
@@ -178,7 +178,7 @@ func (r *DBPaymentResponsibilityRepository) Update(ctx context.Context, responsi
 	query := `
 		UPDATE payment_responsibilities
 		SET status = $2, responsible_for_rent = $3, responsible_for_utilities = $4, responsible_for_fees = $5,
-			monthly_rent_amount = $6, notes = $7,
+			monthly_rent_amount_cents = $6, notes = $7,
 			updated_at = $8, version = version + 1
 		WHERE id = $1 AND version = $9
 	`

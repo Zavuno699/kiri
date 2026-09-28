@@ -29,18 +29,18 @@ const (
 )
 
 type PaymentAccount struct {
-	ID                  uuid.UUID
-	LandlordProfileID   uuid.UUID
-	AccountName         string
-	Provider            PaymentProvider
-	ProviderAccountID   string
-	ProviderCustomerID  string
-	Status              PaymentAccountStatus
-	Currency            string
-	Notes               string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	Version             int
+	ID                 uuid.UUID
+	LandlordProfileID  uuid.UUID
+	AccountName        string
+	Provider           PaymentProvider
+	ProviderAccountID  *string
+	ProviderCustomerID *string
+	Status             PaymentAccountStatus
+	Currency           *string
+	Notes              *string
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+	Version            int
 }
 
 func (p PaymentAccount) Validate() error {

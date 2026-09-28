@@ -110,6 +110,12 @@ func TestClaimPaymentIdempotency_Concurrent(t *testing.T) {
 		t.Errorf("Expected exactly 1 claim row in database, got %d", count)
 	}
 
+	// Complete the claim so replay can succeed
+	err = repo.CompletePaymentIdempotency(ctx, provider, idempotencyKey, uuid.New(), now)
+	if err != nil {
+		t.Fatalf("Failed to complete claim: %v", err)
+	}
+
 	// Test 2: Replay with same key and same request should return existing claim
 	existingClaim, err := repo.ClaimPaymentIdempotency(ctx, provider, idempotencyKey, requestHash, reference, now)
 	if err != nil {
@@ -147,6 +153,12 @@ func TestClaimPaymentIdempotency_Concurrent(t *testing.T) {
 
 	if count != 1 {
 		t.Errorf("Expected exactly 1 claim row after conflict, got %d", count)
+	}
+
+	// Complete the claim before cleanup
+	err = repo.CompletePaymentIdempotency(ctx, provider, idempotencyKey, uuid.New(), now)
+	if err != nil {
+		t.Fatalf("Failed to complete claim: %v", err)
 	}
 
 	// Cleanup
@@ -238,6 +250,12 @@ func TestClaimPaymentIdempotency_DeterministicConcurrency(t *testing.T) {
 
 			if count != 1 {
 				t.Errorf("Run %d: Expected exactly 1 claim row, got %d", i, count)
+			}
+
+			// Complete the claim before cleanup
+			err = repo.CompletePaymentIdempotency(ctx, provider, idempotencyKey, uuid.New(), now)
+			if err != nil {
+				t.Fatalf("Run %d: Failed to complete claim: %v", i, err)
 			}
 
 			// Cleanup

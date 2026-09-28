@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -118,6 +119,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 		}
 
 		if err != nil {
+			log.Printf("authentication failed: %v", err)
 			http.Error(w, "authentication failed", http.StatusUnauthorized)
 			return
 		}

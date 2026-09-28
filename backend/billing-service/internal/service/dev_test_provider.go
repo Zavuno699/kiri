@@ -33,13 +33,13 @@ func (p *DevTestProvider) CreatePayment(
 		return model.ProviderPayment{}, errors.New("currency is required")
 	}
 
-	// Simulate a successful payment
+	// Simulate a pending payment (never successful/settled in dev/test)
 	return model.ProviderPayment{
 		ID:        uuid.New().String(),
 		Reference: request.Reference,
 		Amount:    request.Amount,
 		Currency:  request.Currency,
-		Status:    "successful",
+		Status:    "pending",
 	}, nil
 }
 
@@ -51,10 +51,10 @@ func (p *DevTestProvider) VerifyPayment(
 		return model.ProviderPayment{}, errors.New("transaction ID is required")
 	}
 
-	// Simulate a successful payment verification
+	// Simulate a pending payment verification (never successful/settled in dev/test)
 	return model.ProviderPayment{
 		ID:       uuid.New().String(),
-		Status:   "successful",
+		Status:   "pending",
 		Amount:   0, // Simulated payment without specific amount
 		Currency: "UGX",
 	}, nil

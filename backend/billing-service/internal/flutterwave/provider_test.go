@@ -2,7 +2,12 @@ package flutterwave
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/kirilock/backend/billing-service/internal/service"
 )
@@ -217,7 +222,60 @@ func TestVerifyPaymentRejectsEmptyReference(t *testing.T) {
 }
 
 func TestVerifyPaymentNeverManufacturesSuccessfulPayment(t *testing.T) {
-	provider := testProvider(t)
+	// Create a mock server that returns a non-successful verification response
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Mock token endpoint
+		if r.URL.Path == "/token" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"access_token": "test-token",
+				"token_type":   "Bearer",
+				"expires_in":   3600,
+			})
+			return
+		}
+
+		// Mock verification endpoint - return pending status (not successful)
+		if strings.HasPrefix(r.URL.Path, "/charges/") {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"status":  "success",
+				"message": "Charge fetched",
+				"data": map[string]any{
+					"id":        "FLW-VERIFY-001",
+					"reference": "KIRI-VERIFY-001",
+					"amount":    20000,
+					"currency":  "UGX",
+					"status":    "pending", // Explicitly non-successful
+				},
+			})
+			return
+		}
+
+		http.NotFound(w, r)
+	}))
+	defer mockServer.Close()
+
+	// Create a client with the mock server
+	client, err := NewClient(Config{
+		BaseURL:      mockServer.URL,
+		ClientID:     "test-client-id",
+		ClientSecret: "test-client-secret",
+		Timeout:      15 * time.Second,
+	})
+	if err != nil {
+		t.Fatalf("NewClient() error = %v", err)
+	}
+
+	// Override tokenURL to point to mock server for testing
+	client.tokenURL = mockServer.URL + "/token"
+
+	provider, err := NewProvider(client)
+	if err != nil {
+		t.Fatalf("NewProvider() error = %v", err)
+	}
 
 	payment, err := provider.VerifyPayment(
 		context.Background(),

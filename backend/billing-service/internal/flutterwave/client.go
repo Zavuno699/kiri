@@ -36,6 +36,7 @@ type Client struct {
 	clientID     string
 	clientSecret string
 	httpClient   *http.Client
+	tokenURL     string // Allow override for testing
 
 	mu                sync.Mutex
 	cachedAccessToken string
@@ -131,6 +132,7 @@ func NewClient(cfg Config) (*Client, error) {
 		httpClient: &http.Client{
 			Timeout: cfg.Timeout,
 		},
+		tokenURL: tokenURL,
 	}, nil
 }
 
@@ -150,7 +152,7 @@ func (c *Client) accessToken(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		tokenURL,
+		c.tokenURL,
 		strings.NewReader(form.Encode()),
 	)
 	if err != nil {
